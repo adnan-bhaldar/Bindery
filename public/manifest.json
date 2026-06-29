@@ -1,0 +1,53 @@
+{
+    "name": "Bindery",
+    "short_name": "Bindery",
+    "description": "Professional image to PDF converter — works entirely offline",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#0d0d14",
+    "theme_color": "#6366f1",
+    "orientation": "any",
+    "categories": [
+        "productivity",
+        "utilities"
+    ],
+    "icons": [
+        {
+            "src": "/icons/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/icons/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ],
+    "screenshots": [],
+    "shortcuts": [
+        {
+            "name": "Import Images",
+            "short_name": "Import",
+            "url": "/?action=import",
+            "icons": [
+                {
+                    "src": "/icons/icon-192.png",
+                    "sizes": "192x192"
+                }
+            ]
+        },
+        {
+            "name": "New Project",
+            "short_name": "New",
+            "url": "/?action=new",
+            "icons": [
+                {
+                    "src": "/icons/icon-192.png",
+                    "sizes": "192x192"
+                }
+            ]
+        }
+    ]
+}
