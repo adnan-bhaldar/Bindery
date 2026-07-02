@@ -6,7 +6,7 @@ import {
 } from '@dnd-kit/core'
 import {
     SortableContext, verticalListSortingStrategy,
-    rectSortingStrategy, useSortable, arrayMove,
+    rectSortingStrategy, useSortable,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { usePagesStore } from '@/stores/pagesStore'
@@ -57,12 +57,20 @@ const SortableListRow = memo(({ page, index, allPageIds, disabled }: {
     page: Page; index: number; allPageIds: string[]; disabled: boolean
 }) => {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-        id: page.id, disabled,
+        id: page.id,
     })
     return (
-        <div ref={setNodeRef}
-            style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }}
-            {...attributes} {...listeners}>
+        <div
+            ref={setNodeRef}
+            style={{
+                transform: CSS.Transform.toString(transform),
+                transition,
+                opacity: isDragging ? 0.4 : 1,
+                cursor: disabled ? 'default' : undefined,
+            }}
+            {...attributes}
+            {...(disabled ? {} : listeners)}
+        >
             <PageThumbnail page={page} index={index} allPageIds={allPageIds} />
         </div>
     )
@@ -73,12 +81,20 @@ const SortableGridCell = memo(({ page, index, allPageIds, disabled }: {
     page: Page; index: number; allPageIds: string[]; disabled: boolean
 }) => {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-        id: page.id, disabled,
+        id: page.id,
     })
     return (
-        <div ref={setNodeRef}
-            style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }}
-            {...attributes} {...listeners}>
+        <div
+            ref={setNodeRef}
+            style={{
+                transform: CSS.Transform.toString(transform),
+                transition,
+                opacity: isDragging ? 0.4 : 1,
+                cursor: disabled ? 'default' : undefined,
+            }}
+            {...attributes}
+            {...(disabled ? {} : listeners)}
+        >
             <PageThumbnailGrid page={page} index={index} allPageIds={allPageIds} />
         </div>
     )
@@ -203,6 +219,7 @@ export const VirtualizedPageList = memo(() => {
     const [sortDir, setSortDir] = useState<SortDir>('asc')
 
     const isSorted = sortKey !== 'manual'
+    const dragDisabled = isSorted && !settings.allowDragWhenSorted
 
     // Apply sort
     const pages = useMemo(() => sortPages(rawPages, sortKey, sortDir), [rawPages, sortKey, sortDir])
@@ -231,10 +248,13 @@ export const VirtualizedPageList = memo(() => {
         const oldIdx = pages.findIndex(p => p.id === active.id)
         const newIdx = pages.findIndex(p => p.id === over.id)
         if (oldIdx === -1 || newIdx === -1) return
-        const before = pages.map(p => p.id)
+        const before = pages
         reorderPages(oldIdx, newIdx)
-        pushHistory('reorder-pages', `Moved page ${oldIdx + 1} → ${newIdx + 1}`, before, arrayMove(before, oldIdx, newIdx))
-    }, [pages, reorderPages, pushHistory])
+        const after = usePagesStore.getState().pages
+        pushHistory('reorder-pages', `Moved page ${oldIdx + 1} → ${newIdx + 1}`, before, after)
+        // If dragging while a sort was active, revert to manual so the dragged order is preserved
+        if (sortKey !== 'manual') setSortKey('manual')
+    }, [pages, reorderPages, pushHistory, sortKey])
 
     const handleSort = useCallback((key: SortKey) => {
         if (key === 'manual') {
@@ -383,7 +403,7 @@ export const VirtualizedPageList = memo(() => {
                                     }}>
                                         <SortableListRow
                                             page={page} index={vRow.index}
-                                            allPageIds={allPageIds} disabled={isSorted}
+                                            allPageIds={allPageIds} disabled={dragDisabled}
                                         />
                                     </div>
                                 )
@@ -406,7 +426,7 @@ export const VirtualizedPageList = memo(() => {
                                             <SortableGridCell
                                                 key={page.id}
                                                 page={page} index={startIdx + ci}
-                                                allPageIds={allPageIds} disabled={isSorted}
+                                                allPageIds={allPageIds} disabled={dragDisabled}
                                             />
                                         ))}
                                     </div>

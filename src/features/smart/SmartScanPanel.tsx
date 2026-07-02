@@ -1,3 +1,4 @@
+import { useShallow } from 'zustand/react/shallow'
 import { memo, useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -73,13 +74,16 @@ ResultSection.displayName = 'ResultSection'
 export const SmartScanPanel = memo(() => {
     const [scanning, setScanning] = useState(false)
     const [result, setResult] = useState<SmartScanResult | null>(null)
-    const { pages, removePages, setPages } = usePagesStore()
+    const pageCount = usePagesStore(s => s.pages.length)
+    const { removePages, setPages } = usePagesStore(
+        useShallow(s => ({ removePages: s.removePages, setPages: s.setPages }))
+    )
 
     const handleScan = useCallback(async () => {
         setScanning(true)
         setResult(null)
         try {
-            const r = await runSmartScan(pages)
+            const r = await runSmartScan(usePagesStore.getState().pages)
             setResult(r)
             const issues = r.duplicates.length + r.blankPageIds.length + r.resolutionWarnings.length
             if (issues === 0) {
@@ -92,7 +96,7 @@ export const SmartScanPanel = memo(() => {
         } finally {
             setScanning(false)
         }
-    }, [pages])
+    }, [])
 
     const removeDuplicates = useCallback((_keepId: string, removeIds: string[]) => {
         removePages(removeIds)
@@ -104,19 +108,19 @@ export const SmartScanPanel = memo(() => {
         removePages(result.blankPageIds)
         setResult(r => r ? { ...r, blankPageIds: [] } : null)
         toast.success(`Removed ${result.blankPageIds.length} blank page${result.blankPageIds.length > 1 ? 's' : ''}`)
-    }, [result, removePages])
+    }, [removePages])
 
     const sortByName = useCallback(() => {
-        const sorted = sortPagesByFilename(pages)
+        const sorted = sortPagesByFilename(usePagesStore.getState().pages)
         setPages(sorted)
         toast.success('Pages sorted by filename')
-    }, [pages, setPages])
+    }, [setPages])
 
     const sortByDate = useCallback(() => {
-        const sorted = sortPagesByDate(pages)
+        const sorted = sortPagesByDate(usePagesStore.getState().pages)
         setPages(sorted)
         toast.success('Pages sorted by date')
-    }, [pages, setPages])
+    }, [setPages])
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: '16px 14px' }}>
@@ -128,7 +132,7 @@ export const SmartScanPanel = memo(() => {
                 <div style={{ display: 'flex', gap: 6 }}>
                     <button
                         onClick={sortByName}
-                        disabled={pages.length === 0}
+                        disabled={pageCount === 0}
                         style={sortBtnStyle}
                         onMouseEnter={e => { e.currentTarget.style.background = 'var(--s4)' }}
                         onMouseLeave={e => { e.currentTarget.style.background = 'var(--s3)' }}
@@ -137,7 +141,7 @@ export const SmartScanPanel = memo(() => {
                     </button>
                     <button
                         onClick={sortByDate}
-                        disabled={pages.length === 0}
+                        disabled={pageCount === 0}
                         style={sortBtnStyle}
                         onMouseEnter={e => { e.currentTarget.style.background = 'var(--s4)' }}
                         onMouseLeave={e => { e.currentTarget.style.background = 'var(--s3)' }}
@@ -156,7 +160,7 @@ export const SmartScanPanel = memo(() => {
                 </p>
                 <button
                     onClick={handleScan}
-                    disabled={scanning || pages.length === 0}
+                    disabled={scanning || pageCount === 0}
                     style={{
                         display: 'flex', alignItems: 'center', gap: 8,
                         width: '100%', justifyContent: 'center',
@@ -166,8 +170,8 @@ export const SmartScanPanel = memo(() => {
                         borderColor: scanning ? 'var(--border)' : 'var(--accent-border)',
                         color: scanning ? 'var(--tx-3)' : 'var(--accent)',
                         fontSize: 12.5, fontWeight: 600, fontFamily: 'var(--font-sans)',
-                        cursor: (scanning || pages.length === 0) ? 'not-allowed' : 'pointer',
-                        opacity: pages.length === 0 ? 0.4 : 1,
+                        cursor: (scanning || pageCount === 0) ? 'not-allowed' : 'pointer',
+                        opacity: pageCount === 0 ? 0.4 : 1,
                         transition: 'all 110ms',
                     }}
                 >
@@ -199,7 +203,7 @@ export const SmartScanPanel = memo(() => {
                                 <p style={{ fontSize: 11.5, color: 'var(--tx-3)', padding: '4px 0' }}>No duplicates found</p>
                             ) : result.duplicates.map((group, i) => {
                                 const removeIds = group.pageIds.slice(1)
-                                const pg = pages.find(p => p.id === group.pageIds[0])
+                                const pg = usePagesStore.getState().pages.find(p => p.id === group.pageIds[0])
                                 return (
                                     <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', borderBottom: '1px solid var(--border-soft)' }}>
                                         <div style={{ flex: 1, minWidth: 0 }}>

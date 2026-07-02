@@ -3,7 +3,8 @@ import { useProjectStore } from '@/stores/projectStore'
 import { useSettingsStore } from '@/stores/settingsStore'
 
 export function useAutoSave(onSave: () => Promise<void>) {
-    const { isDirty, currentProject } = useProjectStore()
+    const isDirty = useProjectStore(s => s.isDirty)
+    const hasProject = useProjectStore(s => s.currentProject !== null)
     const { settings } = useSettingsStore()
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
     const isSavingRef = useRef(false)
@@ -16,7 +17,7 @@ export function useAutoSave(onSave: () => Promise<void>) {
         const intervalMs = settings.autoSaveInterval * 1000
 
         timerRef.current = setInterval(async () => {
-            if (!isDirty || !currentProject || isSavingRef.current) return
+            if (!isDirty || !hasProject || isSavingRef.current) return
 
             isSavingRef.current = true
             try {
@@ -33,5 +34,5 @@ export function useAutoSave(onSave: () => Promise<void>) {
                 clearInterval(timerRef.current)
             }
         }
-    }, [isDirty, currentProject, settings.autoSaveInterval, onSave])
+    }, [isDirty, hasProject, settings.autoSaveInterval, onSave])
 }

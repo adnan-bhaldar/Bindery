@@ -51,8 +51,6 @@ const TBtn = memo(({ tooltip, shortcut, onClick, danger, disabled, children }: T
 ))
 TBtn.displayName = 'TBtn'
 
-// ─── Separator ────────────────────────────────────────────────────────────────
-
 const Sep = () => (
     <div style={{ width: 1, height: 20, background: 'var(--border)', margin: '0 2px' }} />
 )
@@ -60,9 +58,8 @@ const Sep = () => (
 // ─── BatchEditToolbar ─────────────────────────────────────────────────────────
 
 export const BatchEditToolbar = memo(() => {
-    // ── Use stable hooks, NOT selectSelectedIdsArray ──────────────────────────
-    const selectedIds = useSelectedIdsArray()          // stable via useShallow
-    const count = useSelectionStore(selectSelectedCount)  // primitive — safe
+    const selectedIds = useSelectedIdsArray()
+    const count = useSelectionStore(selectSelectedCount)
     const { deselectAll } = useSelectionStore()
 
     const { removePages, rotatePages, duplicatePages, setCoverPage } = usePagesStore(
@@ -73,49 +70,57 @@ export const BatchEditToolbar = memo(() => {
             setCoverPage: s.setCoverPage,
         }))
     )
-    const pages = usePagesStore((s) => s.pages)
     const { push: pushHistory } = useHistoryStore()
+
+    // Always read the freshest pages snapshot at call time, not via stale closure
+    const snapshot = useCallback(() => usePagesStore.getState().pages, [])
 
     const rotateCW = useCallback(() => {
         if (selectedIds.length === 0) return
-        const before = pages.map(p => ({ id: p.id, rotation: p.rotation }))
+        const before = snapshot()
         selectedIds.forEach(id => {
-            const page = pages.find(p => p.id === id)
+            const page = before.find(p => p.id === id)
             if (page) rotatePages([id], ((page.rotation + 90) % 360) as 0 | 90 | 180 | 270)
         })
-        pushHistory('rotate-pages', `Rotated ${count} page${count > 1 ? 's' : ''} CW`, before, null)
-    }, [selectedIds, pages, rotatePages, pushHistory, count])
+        const after = usePagesStore.getState().pages
+        pushHistory('rotate-pages', `Rotated ${count} page${count > 1 ? 's' : ''} CW`, before, after)
+    }, [selectedIds, rotatePages, pushHistory, count, snapshot])
 
     const rotateCCW = useCallback(() => {
         if (selectedIds.length === 0) return
-        const before = pages.map(p => ({ id: p.id, rotation: p.rotation }))
+        const before = snapshot()
         selectedIds.forEach(id => {
-            const page = pages.find(p => p.id === id)
+            const page = before.find(p => p.id === id)
             if (page) rotatePages([id], ((page.rotation + 270) % 360) as 0 | 90 | 180 | 270)
         })
-        pushHistory('rotate-pages', `Rotated ${count} page${count > 1 ? 's' : ''} CCW`, before, null)
-    }, [selectedIds, pages, rotatePages, pushHistory, count])
+        const after = usePagesStore.getState().pages
+        pushHistory('rotate-pages', `Rotated ${count} page${count > 1 ? 's' : ''} CCW`, before, after)
+    }, [selectedIds, rotatePages, pushHistory, count, snapshot])
 
     const duplicate = useCallback(() => {
         if (selectedIds.length === 0) return
-        const before = pages.map(p => p.id)
+        const before = snapshot()
         duplicatePages(selectedIds)
-        pushHistory('duplicate-pages', `Duplicated ${count} page${count > 1 ? 's' : ''}`, before, null)
-    }, [selectedIds, pages, duplicatePages, pushHistory, count])
+        const after = usePagesStore.getState().pages
+        pushHistory('duplicate-pages', `Duplicated ${count} page${count > 1 ? 's' : ''}`, before, after)
+    }, [selectedIds, duplicatePages, pushHistory, count, snapshot])
 
     const deleteSelected = useCallback(() => {
         if (selectedIds.length === 0) return
-        const before = pages.map(p => p.id)
+        const before = snapshot()
         removePages(selectedIds)
+        const after = usePagesStore.getState().pages
+        pushHistory('delete-pages', `Deleted ${count} page${count > 1 ? 's' : ''}`, before, after)
         deselectAll()
-        pushHistory('delete-pages', `Deleted ${count} page${count > 1 ? 's' : ''}`, before, null)
-    }, [selectedIds, pages, removePages, deselectAll, pushHistory, count])
+    }, [selectedIds, removePages, deselectAll, pushHistory, count, snapshot])
 
     const setAsCover = useCallback(() => {
         if (selectedIds.length !== 1) return
+        const before = snapshot()
         setCoverPage(selectedIds[0])
-        pushHistory('set-cover', 'Changed cover page', null, selectedIds[0])
-    }, [selectedIds, setCoverPage, pushHistory])
+        const after = usePagesStore.getState().pages
+        pushHistory('set-cover', 'Changed cover page', before, after)
+    }, [selectedIds, setCoverPage, pushHistory, snapshot])
 
     return (
         <AnimatePresence>
@@ -141,7 +146,6 @@ export const BatchEditToolbar = memo(() => {
                         whiteSpace: 'nowrap',
                     }}
                 >
-                    {/* Count badge */}
                     <div style={{
                         padding: '3px 10px', borderRadius: 'var(--r-full)',
                         background: 'var(--accent-dim)',
@@ -190,7 +194,6 @@ export const BatchEditToolbar = memo(() => {
 
                     <Sep />
 
-                    {/* Deselect */}
                     <Tooltip content="Deselect all" shortcut="Esc" placement="top">
                         <button
                             onClick={deselectAll}

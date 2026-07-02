@@ -2,6 +2,7 @@ import { memo, useState } from 'react'
 import { RotateCw, Trash2, Copy, Crown } from 'lucide-react'
 import { usePagesStore } from '@/stores/pagesStore'
 import { useSelectionStore } from '@/stores/selectionStore'
+import { useUIStore } from '@/stores/uiStore'
 import { Tooltip } from '@/components/ui/Tooltip'
 import type { Page } from '@/types'
 
@@ -17,11 +18,13 @@ export const PageThumbnailGrid = memo(({ page, index, allPageIds }: Props) => {
     const isSelected = useSelectionStore(s => s.selectedIds.has(page.id))
     const anchorId = useSelectionStore(s => s.anchorId)
     const { selectOnly, toggle, selectRange, setAnchor } = useSelectionStore()
+    const setPreviewPage = useUIStore(s => s.setCurrentPreviewPageId)
 
     const handleClick = (e: React.MouseEvent) => {
         if (e.shiftKey && anchorId) selectRange(allPageIds, anchorId, page.id)
         else if (e.metaKey || e.ctrlKey) toggle(page.id)
         else { selectOnly(page.id); setAnchor(page.id) }
+        setPreviewPage(page.id, allPageIds.map(id => ({ id })))
     }
 
     return (

@@ -1,9 +1,11 @@
+import { useShallow } from 'zustand/react/shallow'
 import { memo, useEffect, useCallback, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     FolderOpen, Plus, Clock, Trash2,
     FileText, Save, Download,
 } from 'lucide-react'
+import { suppressNextDirtyFlag } from '@/stores/storeLinks'
 import { useProjectStore } from '@/stores/projectStore'
 import { usePagesStore } from '@/stores/pagesStore'
 import { projectService, formatProjectDate } from '@/services/projectService'
@@ -94,7 +96,10 @@ RecentCard.displayName = 'RecentCard'
 
 export const ProjectPanel = memo(() => {
     const { currentProject, setCurrentProject, recentProjects, setRecentProjects, removeRecentProject } = useProjectStore()
-    const { pages, setPages, clearPages } = usePagesStore()
+    const pageCount = usePagesStore(s => s.pages.length)
+    const { setPages, clearPages } = usePagesStore(
+        useShallow(s => ({ setPages: s.setPages, clearPages: s.clearPages }))
+    )
     const [saving, setSaving] = useState(false)
     const confirm = useConfirm()
 
@@ -105,6 +110,7 @@ export const ProjectPanel = memo(() => {
 
     const handleNew = useCallback(async () => {
         const project = await projectService.createProject()
+        suppressNextDirtyFlag()
         clearPages()
         setCurrentProject(project)
         toast.success('New project created')
@@ -117,7 +123,7 @@ export const ProjectPanel = memo(() => {
         }
         setSaving(true)
         try {
-            await projectService.saveProject(currentProject, pages)
+            await projectService.saveProject(useProjectStore.getState().currentProject!, usePagesStore.getState().pages)
             setCurrentProject({ ...currentProject, status: 'saved' })
             toast.success('Project saved')
         } catch {
@@ -125,14 +131,14 @@ export const ProjectPanel = memo(() => {
         } finally {
             setSaving(false)
         }
-    }, [currentProject, pages, setCurrentProject])
+    }, [currentProject, setCurrentProject])
 
     const handleOpen = useCallback(async (project: Project) => {
         try {
             const result = await projectService.loadProject(project.id)
             if (!result) { toast.error('Project not found'); return }
             setCurrentProject(result.project)
-            setPages(result.pages)
+            suppressNextDirtyFlag(); setPages(result.pages)
             toast.success(`Opened "${result.project.name}"`)
         } catch {
             toast.error('Failed to open project')
@@ -161,7 +167,7 @@ export const ProjectPanel = memo(() => {
     const handleExportFile = useCallback(async () => {
         if (!currentProject) return
         try {
-            const blob = await projectService.exportProjectFile(currentProject, pages)
+            const blob = await projectService.exportProjectFile(useProjectStore.getState().currentProject!, usePagesStore.getState().pages)
             const url = URL.createObjectURL(blob)
             const a = document.createElement('a')
             a.href = url
@@ -172,7 +178,7 @@ export const ProjectPanel = memo(() => {
         } catch {
             toast.error('Export failed')
         }
-    }, [currentProject, pages])
+    }, [currentProject])
 
     const handleImportFile = useCallback(() => {
         const input = document.createElement('input')
@@ -184,7 +190,7 @@ export const ProjectPanel = memo(() => {
             try {
                 const result = await projectService.importProjectFile(file)
                 setCurrentProject(result.project)
-                setPages(result.pages)
+                suppressNextDirtyFlag(); setPages(result.pages)
                 toast.success(`Imported "${result.project.name}"`)
             } catch {
                 toast.error('Invalid .bindery file')
@@ -222,7 +228,7 @@ export const ProjectPanel = memo(() => {
                                     {currentProject.name}
                                 </p>
                                 <p style={{ fontSize: 11, color: 'var(--tx-3)', marginTop: 2 }}>
-                                    {pages.length} page{pages.length !== 1 ? 's' : ''} · {
+                                    {pageCount} page{pageCount !== 1 ? 's' : ''} · {
                                         currentProject.status === 'saved' ? 'Saved' :
                                             currentProject.status === 'modified' ? 'Unsaved changes' : 'New project'
                                     }

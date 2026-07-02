@@ -1,3 +1,4 @@
+import { useShallow } from 'zustand/react/shallow'
 import { useCallback, useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { importService, type ImportProgress } from '@/services/importService'
@@ -6,7 +7,6 @@ import { useProjectStore } from '@/stores/projectStore'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { useHistoryStore } from '@/stores/historyStore'
 import { generateId } from '@/lib/utils'
-import type { Page } from '@/types'
 
 export interface UseImportReturn {
     isImporting: boolean
@@ -20,8 +20,12 @@ export function useImport(): UseImportReturn {
     const [isImporting, setIsImporting] = useState(false)
     const [progress, setProgress] = useState<ImportProgress | null>(null)
 
-    const { pages, addPages, setThumbnail } = usePagesStore()
-    const { currentProject, setCurrentProject, setDirty } = useProjectStore()
+    const { addPages, setThumbnail } = usePagesStore(
+        useShallow(s => ({ addPages: s.addPages, setThumbnail: s.setThumbnail }))
+    )
+    const { setCurrentProject, setDirty } = useProjectStore(
+        useShallow(s => ({ setCurrentProject: s.setCurrentProject, setDirty: s.setDirty }))
+    )
     const { settings } = useSettingsStore()
     const { push: pushHistory } = useHistoryStore()
 
@@ -34,6 +38,7 @@ export function useImport(): UseImportReturn {
     }, [setThumbnail])
 
     const ensureProject = useCallback(() => {
+        const currentProject = useProjectStore.getState().currentProject
         if (currentProject) return currentProject.id
         const id = generateId()
         const newProject = {
@@ -51,7 +56,7 @@ export function useImport(): UseImportReturn {
         }
         setCurrentProject(newProject)
         return id
-    }, [currentProject, setCurrentProject])
+    }, [setCurrentProject])
 
     const importFiles = useCallback(async (files: File[]) => {
         if (files.length === 0) return
@@ -65,7 +70,7 @@ export function useImport(): UseImportReturn {
             const result = await importService.importFiles(
                 files,
                 projectId,
-                pages.length,
+                usePagesStore.getState().pages.length,
                 (p) => {
                     setProgress(p)
                     // As soon as we hit 'done', push pages to store immediately
@@ -80,14 +85,14 @@ export function useImport(): UseImportReturn {
             )
 
             if (result.imported.length > 0) {
-                const before = pages.map(p => p.id)
+                const before = usePagesStore.getState().pages
                 addPages(result.imported)
                 setDirty(true)
                 pushHistory(
                     'add-pages',
                     `Added ${result.imported.length} image${result.imported.length !== 1 ? 's' : ''}`,
                     before,
-                    [...before, ...result.imported.map(p => p.id)]
+                    [...before, ...result.imported]
                 )
 
                 toast.success(
@@ -122,7 +127,7 @@ export function useImport(): UseImportReturn {
             setIsImporting(false)
             setProgress(null)
         }
-    }, [ensureProject, pages, addPages, setDirty, pushHistory, settings])
+    }, [ensureProject, addPages, setDirty, pushHistory, settings])
 
     const importFromPicker = useCallback(async () => {
         const input = document.createElement('input')

@@ -1,5 +1,6 @@
 import { memo, useCallback } from 'react'
 import { Crown, RotateCw } from 'lucide-react'
+import { useShallow } from 'zustand/react/shallow'
 import { usePagesStore, selectCoverPage } from '@/stores/pagesStore'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { Tooltip } from '@/components/ui/Tooltip'
@@ -9,8 +10,10 @@ import { Toggle } from '@/components/ui/Toggle'
 
 const CoverPreview = memo(() => {
     const coverPage = usePagesStore(selectCoverPage)
-    const { setCoverPage, rotatePage } = usePagesStore()
-    const pages = usePagesStore((s) => s.pages)
+    const { setCoverPage, rotatePage } = usePagesStore(
+        useShallow(s => ({ setCoverPage: s.setCoverPage, rotatePage: s.rotatePage }))
+    )
+    const pages = usePagesStore(s => s.pages)
 
     const handleSetCover = useCallback((pageId: string) => {
         setCoverPage(pageId)

@@ -1,74 +1,65 @@
-import { useState, useCallback } from 'react'
+import { useCallback } from 'react'
+import { useShallow } from 'zustand/react/shallow'
 import { usePagesStore } from '@/stores/pagesStore'
 import { useUIStore } from '@/stores/uiStore'
 import { clamp } from '@/lib/utils'
-import type { Page } from '@/types'
 
 export type PreviewView = 'single' | 'continuous' | 'grid'
 
-export interface PreviewState {
-    currentPageIndex: number
-    view: PreviewView
-    zoom: number
-    isFullscreen: boolean
-    imageUrls: Map<string, string>
-}
-
 export function usePreview() {
-    const pages = usePagesStore((s) => s.pages)
-    const { zoom, setZoom, zoomIn, zoomOut, resetZoom } = useUIStore()
+    const pages = usePagesStore(s => s.pages)
 
-    const [currentPageIndex, setCurrentPageIndex] = useState(0)
-    const [view, setView] = useState<PreviewView>('single')
-    const [isFullscreen, setIsFullscreen] = useState(false)
-    const [imageUrls, setImageUrls] = useState<Map<string, string>>(new Map())
+    // Numbers and functions — all primitive or stable refs
+    const zoom = useUIStore(s => s.zoom)
+    const currentPreviewIndex = useUIStore(s => s.currentPreviewIndex)
+    const view = useUIStore(s => s.workspaceView) as PreviewView
+    const isFullscreen = useUIStore(s => s.isFullscreen)
 
-    const currentPage = pages[currentPageIndex] ?? null
+    // Actions — stable refs, safe to group
+    const { setZoom, zoomIn, zoomOut, resetZoom, setCurrentPreviewIndex, setWorkspaceView, setFullscreen } =
+        useUIStore(useShallow(s => ({
+            setZoom: s.setZoom,
+            zoomIn: s.zoomIn,
+            zoomOut: s.zoomOut,
+            resetZoom: s.resetZoom,
+            setCurrentPreviewIndex: s.setCurrentPreviewIndex,
+            setWorkspaceView: s.setWorkspaceView,
+            setFullscreen: s.setFullscreen,
+        })))
+
+    const safeIndex = clamp(currentPreviewIndex, 0, Math.max(0, pages.length - 1))
+    const currentPage = pages[safeIndex] ?? null
 
     const goTo = useCallback((index: number) => {
-        setCurrentPageIndex(clamp(index, 0, pages.length - 1))
-    }, [pages.length])
+        setCurrentPreviewIndex(clamp(index, 0, pages.length - 1))
+    }, [pages.length, setCurrentPreviewIndex])
 
-    const goNext = useCallback(() => goTo(currentPageIndex + 1), [currentPageIndex, goTo])
-    const goPrev = useCallback(() => goTo(currentPageIndex - 1), [currentPageIndex, goTo])
+    const goNext = useCallback(() => goTo(safeIndex + 1), [safeIndex, goTo])
+    const goPrev = useCallback(() => goTo(safeIndex - 1), [safeIndex, goTo])
     const goFirst = useCallback(() => goTo(0), [goTo])
     const goLast = useCallback(() => goTo(pages.length - 1), [pages.length, goTo])
 
-    // Ensure image URL is available for a page (create from blob if needed)
-    const ensureImageUrl = useCallback(async (page: Page): Promise<string> => {
-        if (imageUrls.has(page.id)) return imageUrls.get(page.id)!
-        if (page.imageUrl) return page.imageUrl
-
-        const url = URL.createObjectURL(page.imageBlob)
-        setImageUrls(prev => new Map(prev).set(page.id, url))
-        return url
-    }, [imageUrls])
-
-    const handleWheelZoom = useCallback((e: WheelEvent) => {
-        if (!e.ctrlKey && !e.metaKey) return
-        e.preventDefault()
-        const delta = e.deltaY > 0 ? -0.1 : 0.1
-        setZoom(clamp(zoom + delta, 0.1, 8))
-    }, [zoom, setZoom])
+    const setView = useCallback((v: PreviewView) => {
+        setWorkspaceView(v as 'single' | 'continuous' | 'grid')
+    }, [setWorkspaceView])
 
     const toggleFullscreen = useCallback(async () => {
         if (!document.fullscreenElement) {
             await document.documentElement.requestFullscreen().catch(() => { })
-            setIsFullscreen(true)
+            setFullscreen(true)
         } else {
             await document.exitFullscreen().catch(() => { })
-            setIsFullscreen(false)
+            setFullscreen(false)
         }
-    }, [])
+    }, [setFullscreen])
 
     return {
         pages,
         currentPage,
-        currentPageIndex,
+        currentPageIndex: safeIndex,
         view,
         zoom,
         isFullscreen,
-        imageUrls,
         goTo,
         goNext,
         goPrev,
@@ -79,10 +70,8 @@ export function usePreview() {
         zoomOut,
         resetZoom,
         setZoom,
-        ensureImageUrl,
-        handleWheelZoom,
         toggleFullscreen,
-        canGoNext: currentPageIndex < pages.length - 1,
-        canGoPrev: currentPageIndex > 0,
+        canGoNext: safeIndex < pages.length - 1,
+        canGoPrev: safeIndex > 0,
     }
 }

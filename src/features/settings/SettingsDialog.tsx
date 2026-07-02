@@ -210,6 +210,9 @@ const AppearanceSection = memo(() => {
                     onChange={v => updateSetting('thumbnailSize', Number(v))}
                 />
             </Row>
+            <Row label="Allow drag when sorted" desc="Enable drag-to-reorder even while a sort is active">
+                <Toggle checked={settings.allowDragWhenSorted} onChange={v => updateSetting('allowDragWhenSorted', v)} />
+            </Row>
             <Row label="Sidebar layout" desc="Show pages as a list or 2-column grid in the sidebar">
                 <SegRow
                     value={settings.sidebarLayout ?? 'list'}

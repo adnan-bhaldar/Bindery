@@ -8,6 +8,7 @@ import { useSettingsStore } from '@/stores/settingsStore'
 import { formatRelativeTime } from '@/lib/utils'
 import { toast } from 'sonner'
 import type { RecoverySnapshot } from '@/types'
+import { suppressNextDirtyFlag } from '@/stores/storeLinks'
 
 export const RecoveryDialog = memo(() => {
     const [snapshots, setSnapshots] = useState<RecoverySnapshot[]>([])
@@ -47,7 +48,7 @@ export const RecoveryDialog = memo(() => {
                 return
             }
             setCurrentProject(result.project)
-            setPages(result.pages)
+            suppressNextDirtyFlag(); setPages(result.pages)
             toast.success(`Restored "${result.project.name}" — ${result.pages.length} pages`)
             setVisible(false)
         } catch {

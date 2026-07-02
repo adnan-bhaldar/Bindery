@@ -1,15 +1,51 @@
-import { memo } from 'react'
+import { memo, useState, useCallback, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Download, X, BookOpen } from 'lucide-react'
 import { usePWA } from '@/hooks/usePWA'
 import { APP_NAME } from '@/constants'
 
+const DISMISS_KEY = 'bindery:install-banner-dismissed'
+const DISMISS_DURATION_MS = 7 * 24 * 60 * 60 * 1000 // 7 days
+
 export const InstallBanner = memo(() => {
     const { canInstall, install } = usePWA()
+    const [dismissed, setDismissed] = useState(true) // default true until we check storage
+
+    // Check if user dismissed recently
+    useEffect(() => {
+        try {
+            const stored = localStorage.getItem(DISMISS_KEY)
+            if (!stored) { setDismissed(false); return }
+            const dismissedAt = Number(stored)
+            const expired = Date.now() - dismissedAt > DISMISS_DURATION_MS
+            setDismissed(!expired)
+        } catch {
+            setDismissed(false)
+        }
+    }, [])
+
+    const handleDismiss = useCallback(() => {
+        setDismissed(true)
+        try {
+            localStorage.setItem(DISMISS_KEY, String(Date.now()))
+        } catch {
+            // localStorage may be unavailable — dismissal just won't persist
+        }
+    }, [])
+
+    const handleInstall = useCallback(async () => {
+        const accepted = await install()
+        if (!accepted) {
+            // User dismissed the native prompt — also hide our banner for a while
+            handleDismiss()
+        }
+    }, [install, handleDismiss])
+
+    const visible = canInstall && !dismissed
 
     return (
         <AnimatePresence>
-            {canInstall && (
+            {visible && (
                 <motion.div
                     initial={{ opacity: 0, y: 16 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -49,8 +85,9 @@ export const InstallBanner = memo(() => {
                         </div>
                         <button
                             className="icon-btn"
-                            onClick={() => { }} // handled by AnimatePresence exit when canInstall flips
+                            onClick={handleDismiss}
                             style={{ flexShrink: 0 }}
+                            aria-label="Dismiss install prompt"
                         >
                             <X size={13} />
                         </button>
@@ -58,7 +95,7 @@ export const InstallBanner = memo(() => {
 
                     {/* Install button */}
                     <button
-                        onClick={install}
+                        onClick={handleInstall}
                         style={{
                             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
                             padding: '9px 16px',

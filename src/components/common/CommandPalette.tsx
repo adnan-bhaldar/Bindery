@@ -3,14 +3,15 @@ import { Command } from 'cmdk'
 import {
     Upload, Download, RotateCw, Trash2, Settings,
     Moon, Sun, ScanText, Save, FolderOpen,
-    Plus, FileText, Layers,
+    Plus, Layers,
 } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useUIStore } from '@/stores/uiStore'
 import { useExportStore } from '@/stores/exportStore'
 import { useThemeStore } from '@/stores/themeStore'
 import { usePagesStore, selectPageCount } from '@/stores/pagesStore'
-import { useSelectedIdsArray } from '@/stores/selectionStore'
+import { useSelectionStore, useSelectedIdsArray } from '@/stores/selectionStore'
+import { useHistoryStore } from '@/stores/historyStore'
 import { cn } from '@/lib/utils'
 import type { Theme } from '@/types'
 
@@ -30,14 +31,22 @@ interface Props {
     onOpenSettings: () => void
     onRunOCR: () => void
     onImport: () => void
+    onSave: () => void
+    onNewProject: () => void
+    onOpenFile: () => void
 }
 
-export const CommandPalette = memo(({ onOpenSettings, onRunOCR, onImport }: Props) => {
+export const CommandPalette = memo(({
+    onOpenSettings, onRunOCR, onImport, onSave, onNewProject, onOpenFile,
+}: Props) => {
     const { isCommandPaletteOpen, closeCommandPalette } = useUIStore()
     const { openDialog: openExport } = useExportStore()
     const { resolvedTheme, setTheme } = useThemeStore()
     const pageCount = usePagesStore(selectPageCount)
     const selectedIds = useSelectedIdsArray()
+    const { removePages, rotatePages, duplicatePages } = usePagesStore()
+    const { deselectAll } = useSelectionStore()
+    const { push: pushHistory } = useHistoryStore()
 
     const run = useCallback((fn: () => void) => {
         closeCommandPalette()
@@ -48,6 +57,34 @@ export const CommandPalette = memo(({ onOpenSettings, onRunOCR, onImport }: Prop
     const ThemeIcon = resolvedTheme === 'dark' ? Sun : Moon
     const hasPages = pageCount > 0
     const hasSelection = selectedIds.length > 0
+
+    const rotateSelected = useCallback(() => {
+        if (selectedIds.length === 0) return
+        const before = usePagesStore.getState().pages
+        selectedIds.forEach(id => {
+            const page = before.find(p => p.id === id)
+            if (page) rotatePages([id], ((page.rotation + 90) % 360) as 0 | 90 | 180 | 270)
+        })
+        const after = usePagesStore.getState().pages
+        pushHistory('rotate-pages', `Rotated ${selectedIds.length} page${selectedIds.length > 1 ? 's' : ''}`, before, after)
+    }, [selectedIds, rotatePages, pushHistory])
+
+    const duplicateSelected = useCallback(() => {
+        if (selectedIds.length === 0) return
+        const before = usePagesStore.getState().pages
+        duplicatePages(selectedIds)
+        const after = usePagesStore.getState().pages
+        pushHistory('duplicate-pages', `Duplicated ${selectedIds.length} page${selectedIds.length > 1 ? 's' : ''}`, before, after)
+    }, [selectedIds, duplicatePages, pushHistory])
+
+    const deleteSelected = useCallback(() => {
+        if (selectedIds.length === 0) return
+        const before = usePagesStore.getState().pages
+        removePages(selectedIds)
+        const after = usePagesStore.getState().pages
+        pushHistory('delete-pages', `Deleted ${selectedIds.length} page${selectedIds.length > 1 ? 's' : ''}`, before, after)
+        deselectAll()
+    }, [selectedIds, removePages, deselectAll, pushHistory])
 
     const cmds: Cmd[] = [
         {
@@ -63,39 +100,35 @@ export const CommandPalette = memo(({ onOpenSettings, onRunOCR, onImport }: Prop
         {
             id: 'save', label: 'Save Project', desc: 'Save current project',
             Icon: Save, shortcut: ['⌘', 'S'], group: 'Actions',
-            action: () => { }, disabled: !hasPages,
+            action: onSave, disabled: !hasPages,
         },
         {
             id: 'new', label: 'New Project', desc: 'Start fresh',
-            Icon: Plus, group: 'Actions', action: () => { },
+            Icon: Plus, group: 'Actions', action: onNewProject,
         },
         {
             id: 'open', label: 'Open Project', desc: 'Open a .bindery file',
-            Icon: FolderOpen, group: 'Actions', action: () => { },
+            Icon: FolderOpen, group: 'Actions', action: onOpenFile,
         },
         {
             id: 'rotate', label: 'Rotate Selected Pages', desc: '90° clockwise',
             Icon: RotateCw, group: 'Pages',
-            action: () => { }, disabled: !hasSelection,
+            action: rotateSelected, disabled: !hasSelection,
         },
         {
             id: 'dup', label: 'Duplicate Selected', desc: 'Copy selected pages',
             Icon: Layers, group: 'Pages',
-            action: () => { }, disabled: !hasSelection,
+            action: duplicateSelected, disabled: !hasSelection,
         },
         {
             id: 'delete', label: 'Delete Selected Pages',
             Icon: Trash2, shortcut: ['⌫'], group: 'Pages',
-            action: () => { }, danger: true, disabled: !hasSelection,
+            action: deleteSelected, danger: true, disabled: !hasSelection,
         },
         {
             id: 'ocr', label: 'Run OCR', desc: 'Extract text for searchable PDF',
             Icon: ScanText, group: 'Tools',
             action: onRunOCR, disabled: !hasPages,
-        },
-        {
-            id: 'meta', label: 'Edit Metadata', desc: 'Title, author, keywords',
-            Icon: FileText, group: 'Tools', action: () => { },
         },
         {
             id: 'theme', label: `Switch to ${nextTheme} theme`,
@@ -123,7 +156,7 @@ export const CommandPalette = memo(({ onOpenSettings, onRunOCR, onImport }: Prop
                         onClick={closeCommandPalette}
                         style={{
                             position: 'fixed', inset: 0, zIndex: 100,
-                            background: 'rgba(0,0,0,0.65)',
+                            background: 'color-mix(in srgb, var(--bg-app) 50%, transparent)',
                             backdropFilter: 'blur(6px)',
                             WebkitBackdropFilter: 'blur(6px)',
                         }}

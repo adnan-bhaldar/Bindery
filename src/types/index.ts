@@ -196,6 +196,7 @@ export interface AppSettings {
     autoGenerateThumbnails: boolean
     thumbnailSize: number
     sidebarLayout: 'list' | 'grid'
+    allowDragWhenSorted: boolean
     detectDuplicates: boolean
     warnLowResolution: boolean
     lowResolutionThreshold: number

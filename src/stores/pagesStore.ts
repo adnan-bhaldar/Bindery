@@ -51,9 +51,16 @@ export const usePagesStore = create<PagesStore>()(
         setPages: (pages) => set({ pages }),
 
         addPages: (newPages) =>
-            set((state) => ({
-                pages: [...state.pages, ...newPages],
-            })),
+            set((state) => {
+                const combined = [...state.pages, ...newPages]
+                // Always keep the first page as cover
+                return {
+                    pages: combined.map((p, i) => ({
+                        ...p,
+                        isCover: i === 0,
+                    })),
+                }
+            }),
 
         removePage: (id) =>
             set((state) => ({
@@ -67,7 +74,7 @@ export const usePagesStore = create<PagesStore>()(
             set((state) => ({
                 pages: state.pages
                     .filter((p) => !idSet.has(p.id))
-                    .map((p, i) => ({ ...p, order: i })),
+                    .map((p, i) => ({ ...p, order: i, isCover: i === 0 })),
             }))
         },
 
@@ -83,6 +90,7 @@ export const usePagesStore = create<PagesStore>()(
                 pages: reorderArray(state.pages, fromIndex, toIndex).map((p, i) => ({
                     ...p,
                     order: i,
+                    isCover: i === 0,
                 })),
             })),
 

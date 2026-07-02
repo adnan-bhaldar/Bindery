@@ -2,8 +2,8 @@ import { memo, useState } from 'react'
 import { RotateCw, Trash2, Copy, Crown } from 'lucide-react'
 import { usePagesStore } from '@/stores/pagesStore'
 import { useSelectionStore } from '@/stores/selectionStore'
+import { useUIStore } from '@/stores/uiStore'
 import { Tooltip } from '@/components/ui/Tooltip'
-import { cn } from '@/lib/utils'
 import type { Page } from '@/types'
 
 interface Props {
@@ -18,20 +18,19 @@ export const PageThumbnail = memo(({ page, index, allPageIds }: Props) => {
     const isSelected = useSelectionStore(s => s.selectedIds.has(page.id))
     const anchorId = useSelectionStore(s => s.anchorId)
     const { selectOnly, toggle, selectRange, setAnchor } = useSelectionStore()
+    const setPreviewPage = useUIStore(s => s.setCurrentPreviewPageId)
 
     const handleClick = (e: React.MouseEvent) => {
         if (e.shiftKey && anchorId) selectRange(allPageIds, anchorId, page.id)
         else if (e.metaKey || e.ctrlKey) toggle(page.id)
         else { selectOnly(page.id); setAnchor(page.id) }
+        // Always update preview to show clicked page
+        setPreviewPage(page.id, allPageIds.map(id => ({ id })))
     }
 
     // Determine natural aspect ratio from metadata
     const { width, height } = page.metadata
     const isLandscape = width > 0 && height > 0 && width > height
-    const aspectRatio = width > 0 && height > 0
-        ? `${width}/${height}`
-        : '3/4'
-
     return (
         <div
             onClick={handleClick}
@@ -83,7 +82,7 @@ export const PageThumbnail = memo(({ page, index, allPageIds }: Props) => {
                             transform: `rotate(${page.rotation}deg)`,
                             transition: 'transform 280ms var(--ease-out)',
                             display: 'block',
-                            imageRendering: 'high-quality',
+                            imageRendering: 'auto',
                         }}
                     />
                 ) : (

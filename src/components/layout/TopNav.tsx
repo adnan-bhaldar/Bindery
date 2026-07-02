@@ -1,4 +1,4 @@
-import { memo } from 'react'
+import { memo, useState, useRef } from 'react'
 import {
   BookOpen, ChevronDown, Undo2, Redo2, Download,
   Save, FolderOpen, Plus, PanelLeft, PanelRight,
@@ -6,28 +6,34 @@ import {
 } from 'lucide-react'
 import { useThemeStore } from '@/stores/themeStore'
 import { useProjectStore, selectProjectName } from '@/stores/projectStore'
-import { useHistoryStore } from '@/stores/historyStore'
+import { useUndoRedo } from '@/hooks/useUndoRedo'
 import { useExportStore } from '@/stores/exportStore'
 import { useUIStore } from '@/stores/uiStore'
 import { usePagesStore, selectPageCount } from '@/stores/pagesStore'
 import { Tooltip } from '@/components/ui/Tooltip'
+import { ProjectDropdown } from '@/features/project/ProjectNameDialog'
 import { APP_NAME } from '@/constants'
 
 interface Props {
   onImport: () => void
   onSettings: () => void
   onRunOCR: () => void
+  onSave: () => void
+  onOpenFile: () => void
 }
 
-export const TopNav = memo(({ onImport, onSettings, onRunOCR }: Props) => {
+export const TopNav = memo(({ onImport, onSettings, onRunOCR, onSave, onOpenFile }: Props) => {
   const { resolvedTheme, setTheme } = useThemeStore()
   const name = useProjectStore(selectProjectName)
   const { isDirty } = useProjectStore()
-  const { canUndo, canRedo, undo, redo } = useHistoryStore()
+  const { canUndo, canRedo, undo, redo } = useUndoRedo()
   const { openDialog: openExport } = useExportStore()
   const { toggleSidebar, togglePropertiesPanel, openCommandPalette } = useUIStore()
   const pageCount = usePagesStore(selectPageCount)
   const isDark = resolvedTheme === 'dark'
+
+  const [dropdownAnchor, setDropdownAnchor] = useState<HTMLElement | null>(null)
+  const projectBtnRef = useRef<HTMLButtonElement>(null)
 
   return (
     <header className="topnav">
@@ -51,12 +57,25 @@ export const TopNav = memo(({ onImport, onSettings, onRunOCR }: Props) => {
         <span className="nav-sep" />
 
         <Tooltip content="Project options" placement="bottom">
-          <button className="nav-project-btn">
+          <button
+            ref={projectBtnRef}
+            className="nav-project-btn"
+            onClick={() => setDropdownAnchor(prev => prev ? null : projectBtnRef.current)}
+          >
             <span className="nav-project-name">{name}</span>
             {isDirty && <span className="nav-dirty-dot" />}
-            <ChevronDown size={11} color="var(--tx-3)" />
+            <ChevronDown
+              size={11}
+              color="var(--tx-3)"
+              style={{
+                transform: dropdownAnchor ? 'rotate(180deg)' : 'none',
+                transition: 'transform 150ms',
+              }}
+            />
           </button>
         </Tooltip>
+
+        <ProjectDropdown anchor={dropdownAnchor} onClose={() => setDropdownAnchor(null)} />
       </div>
 
       {/* ── Center ────────────────────────────────────── */}
@@ -92,10 +111,14 @@ export const TopNav = memo(({ onImport, onSettings, onRunOCR }: Props) => {
           </button>
         </Tooltip>
         <Tooltip content="Open project" placement="bottom">
-          <button className="icon-btn"><FolderOpen size={14} /></button>
+          <button className="icon-btn" onClick={onOpenFile}>
+            <FolderOpen size={14} />
+          </button>
         </Tooltip>
         <Tooltip content="Save project" shortcut="⌘S" placement="bottom">
-          <button className="icon-btn"><Save size={14} /></button>
+          <button className="icon-btn" onClick={onSave}>
+            <Save size={14} />
+          </button>
         </Tooltip>
         <Tooltip content="Run OCR" placement="bottom">
           <button

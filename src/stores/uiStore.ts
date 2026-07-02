@@ -29,6 +29,9 @@ interface UIState {
     // Focused page
     focusedPageId: string | null
 
+    // Preview
+    currentPreviewIndex: number
+
     // Import drop zone
     isDropZoneActive: boolean
 }
@@ -64,6 +67,8 @@ interface UIActions {
 
     // Focus
     setFocusedPage: (id: string | null) => void
+    setCurrentPreviewIndex: (index: number) => void
+    setCurrentPreviewPageId: (id: string, pages: { id: string }[]) => void
 
     // Drop zone
     setDropZoneActive: (active: boolean) => void
@@ -91,6 +96,7 @@ export const useUIStore = create<UIStore>()((set, get) => ({
     previewPageId: null,
     isPreviewOpen: false,
     focusedPageId: null,
+    currentPreviewIndex: 0,
     isDropZoneActive: false,
 
     // ── Sidebar ────────────────────────────────────────────────────────────────
@@ -157,6 +163,11 @@ export const useUIStore = create<UIStore>()((set, get) => ({
     // ── Focus ──────────────────────────────────────────────────────────────────
 
     setFocusedPage: (focusedPageId) => set({ focusedPageId }),
+    setCurrentPreviewIndex: (currentPreviewIndex) => set({ currentPreviewIndex }),
+    setCurrentPreviewPageId: (id, pages) => {
+        const idx = pages.findIndex(p => p.id === id)
+        if (idx !== -1) set({ currentPreviewIndex: idx })
+    },
 
     // ── Drop zone ──────────────────────────────────────────────────────────────
 
