@@ -13,7 +13,7 @@ import { pdfService } from '@/services/pdfService'
 import { Toggle } from '@/components/ui/Toggle'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { formatFileSize } from '@/lib/utils'
-import type { ExportProgress, PageSize, PageOrientation, CompressionQuality } from '@/types'
+import type { ExportProgress, PageSize, PageOrientation, CompressionQuality, PageMargin } from '@/types'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -140,6 +140,7 @@ const ExportSummary = memo(({ pageCount, estimatedSize, preset }: {
                     { label: 'Page size', value: preset.pageSize.toUpperCase() },
                     { label: 'Orientation', value: preset.orientation.charAt(0).toUpperCase() + preset.orientation.slice(1) },
                     { label: 'Compression', value: preset.compression === 'original' ? 'None' : `${preset.compression}%` },
+                    { label: 'Margin', value: preset.margin === 'none' ? 'None' : preset.margin.charAt(0).toUpperCase() + preset.margin.slice(1) },
                     { label: 'OCR text', value: ocrDone > 0 ? `${ocrDone} pages` : 'None' },
                 ].map(({ label, value }) => (
                     <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -249,6 +250,24 @@ const ExportSettings = memo(({ filename, onFilenameChange }: {
                         label={o.charAt(0).toUpperCase() + o.slice(1)}
                         active={preset.orientation === o}
                         onClick={() => updatePreset(preset.id, { orientation: o })}
+                    />
+                ))}
+            </div>
+
+            {/* Margin */}
+            <SLabel>Page Margin</SLabel>
+            <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+                {([
+                    { value: 'none', label: 'None' },
+                    { value: 'small', label: 'Narrow' },
+                    { value: 'medium', label: 'Medium' },
+                    { value: 'large', label: 'Wide' },
+                ] as { value: PageMargin; label: string }[]).map(m => (
+                    <Chip
+                        key={m.value}
+                        label={m.label}
+                        active={preset.margin === m.value}
+                        onClick={() => updatePreset(preset.id, { margin: m.value })}
                     />
                 ))}
             </div>

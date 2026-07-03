@@ -1,7 +1,7 @@
 import { memo, useCallback } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { motion, AnimatePresence } from 'framer-motion'
-import { RotateCw, RotateCcw, Trash2, Copy, Crown, X } from 'lucide-react'
+import { RotateCw, RotateCcw, Trash2, Copy, X } from 'lucide-react'
 import { usePagesStore } from '@/stores/pagesStore'
 import {
     useSelectionStore,
@@ -62,12 +62,11 @@ export const BatchEditToolbar = memo(() => {
     const count = useSelectionStore(selectSelectedCount)
     const { deselectAll } = useSelectionStore()
 
-    const { removePages, rotatePages, duplicatePages, setCoverPage } = usePagesStore(
+    const { removePages, rotatePages, duplicatePages } = usePagesStore(
         useShallow((s) => ({
             removePages: s.removePages,
             rotatePages: s.rotatePages,
             duplicatePages: s.duplicatePages,
-            setCoverPage: s.setCoverPage,
         }))
     )
     const { push: pushHistory } = useHistoryStore()
@@ -114,14 +113,6 @@ export const BatchEditToolbar = memo(() => {
         deselectAll()
     }, [selectedIds, removePages, deselectAll, pushHistory, count, snapshot])
 
-    const setAsCover = useCallback(() => {
-        if (selectedIds.length !== 1) return
-        const before = snapshot()
-        setCoverPage(selectedIds[0])
-        const after = usePagesStore.getState().pages
-        pushHistory('set-cover', 'Changed cover page', before, after)
-    }, [selectedIds, setCoverPage, pushHistory, snapshot])
-
     return (
         <AnimatePresence>
             {count > 0 && (
@@ -132,7 +123,7 @@ export const BatchEditToolbar = memo(() => {
                     transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
                     style={{
                         position: 'fixed',
-                        bottom: 24, left: '50%',
+                        bottom: 80, left: '50%',
                         transform: 'translateX(-50%)',
                         zIndex: 80,
                         display: 'flex', alignItems: 'center', gap: 2,
@@ -178,15 +169,9 @@ export const BatchEditToolbar = memo(() => {
                     <TBtn tooltip="Duplicate selected" shortcut="⌘D" onClick={duplicate}>
                         <Copy size={14} />
                     </TBtn>
-                    <TBtn
-                        tooltip={count === 1 ? 'Set as cover' : 'Select one page to set cover'}
-                        onClick={setAsCover}
-                        disabled={count !== 1}
-                    >
-                        <Crown size={14} />
-                    </TBtn>
-
                     <Sep />
+
+
 
                     <TBtn tooltip="Delete selected" shortcut="⌫" onClick={deleteSelected} danger>
                         <Trash2 size={14} />

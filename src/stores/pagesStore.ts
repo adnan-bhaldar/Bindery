@@ -48,7 +48,7 @@ export const usePagesStore = create<PagesStore>()(
 
         // ── Actions ────────────────────────────────────────────────────────────────
 
-        setPages: (pages) => set({ pages }),
+        setPages: (pages) => set({ pages: pages.map((p, i) => ({ ...p, isCover: i === 0 })) }),
 
         addPages: (newPages) =>
             set((state) => {

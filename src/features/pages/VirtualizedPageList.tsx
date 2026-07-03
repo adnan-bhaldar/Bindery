@@ -2,7 +2,7 @@ import { memo, useRef, useCallback, useMemo, useEffect, useState } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import {
     DndContext, closestCenter, PointerSensor,
-    useSensor, useSensors, type DragEndEvent,
+    useSensor, useSensors, type DragEndEvent, type DragStartEvent,
 } from '@dnd-kit/core'
 import {
     SortableContext, verticalListSortingStrategy,
@@ -10,6 +10,7 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { usePagesStore } from '@/stores/pagesStore'
+import { toast } from 'sonner'
 import { useSelectionStore, useSelectedIdsArray, selectSelectedCount } from '@/stores/selectionStore'
 import { useHistoryStore } from '@/stores/historyStore'
 import { useSettingsStore } from '@/stores/settingsStore'
@@ -30,6 +31,8 @@ type SortDir = 'asc' | 'desc'
 
 function sortPages(pages: Page[], key: SortKey, dir: SortDir): Page[] {
     if (key === 'manual') return pages
+
+    // Sort ALL pages — whichever ends up at index 0 becomes the new cover
     return [...pages].sort((a, b) => {
         let cmp = 0
         if (key === 'name') {
@@ -66,10 +69,13 @@ const SortableListRow = memo(({ page, index, allPageIds, disabled }: {
                 transform: CSS.Transform.toString(transform),
                 transition,
                 opacity: isDragging ? 0.4 : 1,
-                cursor: disabled ? 'default' : undefined,
+                // Keep cursor normal when locked — but always spread listeners
+                // so onDragStart fires and shows the toast
+                cursor: disabled ? 'not-allowed' : undefined,
             }}
+            data-drag-locked={disabled ? 'true' : undefined}
             {...attributes}
-            {...(disabled ? {} : listeners)}
+            {...listeners}
         >
             <PageThumbnail page={page} index={index} allPageIds={allPageIds} />
         </div>
@@ -90,10 +96,11 @@ const SortableGridCell = memo(({ page, index, allPageIds, disabled }: {
                 transform: CSS.Transform.toString(transform),
                 transition,
                 opacity: isDragging ? 0.4 : 1,
-                cursor: disabled ? 'default' : undefined,
+                cursor: disabled ? 'not-allowed' : undefined,
             }}
+            data-drag-locked={disabled ? 'true' : undefined}
             {...attributes}
-            {...(disabled ? {} : listeners)}
+            {...listeners}
         >
             <PageThumbnailGrid page={page} index={index} allPageIds={allPageIds} />
         </div>
@@ -240,7 +247,45 @@ export const VirtualizedPageList = memo(() => {
         paddingEnd: PADDING + 52,
     })
 
-    const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }))
+    // Keep a ref so the drag-start handler can read the latest value without stale closure
+    const dragDisabledRef = useRef(dragDisabled)
+    dragDisabledRef.current = dragDisabled
+
+    // Custom sensor — shows toast and blocks drag when locked
+    // Uses a ref so the activator always reads the latest value
+    class BlockablePointerSensor extends PointerSensor {
+        static activators = [
+            {
+                eventName: 'onPointerDown' as const,
+                handler: ({ nativeEvent: event }: { nativeEvent: PointerEvent }) => {
+                    const el = event.target as HTMLElement
+                    if (el.closest('[data-drag-locked="true"]')) {
+                        // Show toast here — this is the only place that reliably fires
+                        toast.info('Drag is locked while sorted', {
+                            description: 'Switch to Manual sort or enable "Allow drag when sorted" in Settings → Appearance.',
+                            duration: 3500,
+                            id: 'drag-locked',
+                        })
+                        return false // block drag activation entirely
+                    }
+                    return true
+                },
+            },
+        ]
+    }
+
+    const sensors = useSensors(
+        useSensor(BlockablePointerSensor, { activationConstraint: { distance: 6 } })
+    )
+
+    const handleDragStart = useCallback((_event: DragStartEvent) => {
+        // No-op — toast and blocking are handled in the sensor activator above
+    }, [])
+
+    // cancelDrop runs after dragStart — returns true to cancel the drop when locked
+    const handleCancelDrop = useCallback(() => {
+        return dragDisabledRef.current
+    }, [])
 
     const handleDragEnd = useCallback((event: DragEndEvent) => {
         const { active, over } = event
@@ -250,6 +295,11 @@ export const VirtualizedPageList = memo(() => {
         if (oldIdx === -1 || newIdx === -1) return
         const before = pages
         reorderPages(oldIdx, newIdx)
+        // Re-enforce cover on the reordered pages
+        const reordered = usePagesStore.getState().pages
+        if (!reordered[0]?.isCover) {
+            setPages(reordered.map((p, i) => ({ ...p, isCover: i === 0 })))
+        }
         const after = usePagesStore.getState().pages
         pushHistory('reorder-pages', `Moved page ${oldIdx + 1} → ${newIdx + 1}`, before, after)
         // If dragging while a sort was active, revert to manual so the dragged order is preserved
@@ -272,10 +322,11 @@ export const VirtualizedPageList = memo(() => {
     }, [sortKey, sortDir])
 
     // Apply sort to store order when user clicks a sort (makes it persistent for export)
+    // Always re-enforce isCover: true on the first page after sorting
     useEffect(() => {
         if (sortKey === 'manual') return
         const sorted = sortPages(rawPages, sortKey, sortDir)
-        setPages(sorted.map((p, i) => ({ ...p, order: i })))
+        setPages(sorted.map((p, i) => ({ ...p, order: i, isCover: i === 0 })))
     }, [sortKey, sortDir]) // eslint-disable-line
 
     // Kbd
@@ -373,12 +424,15 @@ export const VirtualizedPageList = memo(() => {
                     <SortBtn label="Size" sortKey="size" currentKey={sortKey} currentDir={sortDir} onClick={handleSort} />
                     <SortBtn label="Date" sortKey="date" currentKey={sortKey} currentDir={sortDir} onClick={handleSort} />
                 </div>
+
             </div>
 
             {/* ── Scrollable list ────────────────────────────────────────── */}
             <DndContext
                 sensors={sensors}
                 collisionDetection={closestCenter}
+                onDragStart={handleDragStart}
+                cancelDrop={handleCancelDrop}
                 onDragEnd={handleDragEnd}
             >
                 <SortableContext

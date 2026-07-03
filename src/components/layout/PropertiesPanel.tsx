@@ -157,6 +157,19 @@ const ExportTab = memo(() => {
         />
       </div>
       <div>
+        <p className="section-label">Page Margin</p>
+        <SegRow
+          options={[
+            { value: 'none', label: 'None' },
+            { value: 'small', label: 'Narrow' },
+            { value: 'medium', label: 'Medium' },
+            { value: 'large', label: 'Wide' },
+          ]}
+          value={preset.margin}
+          onChange={v => updatePreset(preset.id, { margin: v as PageMargin })}
+        />
+      </div>
+      <div>
         <p className="section-label">Quality</p>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ fontSize: 10, color: 'var(--tx-4)', fontFamily: 'var(--font-mono)' }}>50%</span>
