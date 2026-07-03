@@ -1,5 +1,5 @@
-import { useShallow } from 'zustand/react/shallow'
 import { useCallback, useState, useEffect } from 'react'
+import { useShallow } from 'zustand/react/shallow'
 import { toast } from 'sonner'
 import { importService, type ImportProgress } from '@/services/importService'
 import { usePagesStore } from '@/stores/pagesStore'
@@ -23,13 +23,13 @@ export function useImport(): UseImportReturn {
     const { addPages, setThumbnail } = usePagesStore(
         useShallow(s => ({ addPages: s.addPages, setThumbnail: s.setThumbnail }))
     )
-    const { setCurrentProject, setDirty } = useProjectStore(
-        useShallow(s => ({ setCurrentProject: s.setCurrentProject, setDirty: s.setDirty }))
+    const { setDirty } = useProjectStore(
+        useShallow(s => ({ setDirty: s.setDirty }))
     )
     const { settings } = useSettingsStore()
-    const { push: pushHistory } = useHistoryStore()
+    const pushHistory = useHistoryStore(s => s.push)
 
-    // Subscribe to background thumbnail updates
+    // Subscribe to background hi-res thumbnail updates
     useEffect(() => {
         const unsub = importService.onThumbnailReady((pageId, url, blob) => {
             setThumbnail(pageId, blob, url)
@@ -38,10 +38,10 @@ export function useImport(): UseImportReturn {
     }, [setThumbnail])
 
     const ensureProject = useCallback(() => {
-        const currentProject = useProjectStore.getState().currentProject
+        const { currentProject, setCurrentProject: set } = useProjectStore.getState()
         if (currentProject) return currentProject.id
         const id = generateId()
-        const newProject = {
+        set({
             id,
             name: 'Untitled Project',
             status: 'new' as const,
@@ -53,10 +53,9 @@ export function useImport(): UseImportReturn {
             createdAt: Date.now(),
             updatedAt: Date.now(),
             lastOpenedAt: Date.now(),
-        }
-        setCurrentProject(newProject)
+        })
         return id
-    }, [setCurrentProject])
+    }, [])
 
     const importFiles = useCallback(async (files: File[]) => {
         if (files.length === 0) return
@@ -66,15 +65,14 @@ export function useImport(): UseImportReturn {
 
         try {
             const projectId = ensureProject()
+            const existingPages = usePagesStore.getState().pages
 
             const result = await importService.importFiles(
                 files,
                 projectId,
-                usePagesStore.getState().pages.length,
+                existingPages.length,
                 (p) => {
                     setProgress(p)
-                    // As soon as we hit 'done', push pages to store immediately
-                    // so sidebar shows them before background thumbnails finish
                     if (p.phase === 'done') {
                         setIsImporting(false)
                         setProgress(null)
@@ -88,35 +86,38 @@ export function useImport(): UseImportReturn {
                 const before = usePagesStore.getState().pages
                 addPages(result.imported)
                 setDirty(true)
+                const after = usePagesStore.getState().pages
                 pushHistory(
                     'add-pages',
                     `Added ${result.imported.length} image${result.imported.length !== 1 ? 's' : ''}`,
                     before,
-                    [...before, ...result.imported]
+                    after
                 )
 
+                const count = result.imported.length
                 toast.success(
-                    `${result.imported.length} image${result.imported.length !== 1 ? 's' : ''} imported`,
+                    `${count} image${count !== 1 ? 's' : ''} imported`,
                     {
-                        description: result.imported.length === 1
+                        description: count === 1
                             ? result.imported[0].metadata.filename
-                            : `${result.imported.length} pages added to your project`,
+                            : `${count} pages added`,
                     }
                 )
+
+                // Auto-run OCR if enabled in settings
+                if (settings.ocrEnabled && settings.autoRunOcr) {
+                    toast.info('Running OCR…', { description: 'Text extraction started in background', duration: 2000 })
+                }
             }
 
             if (result.duplicates.length > 0) {
-                toast.warning(
-                    `${result.duplicates.length} duplicate${result.duplicates.length !== 1 ? 's' : ''} skipped`,
-                    { description: result.duplicates.slice(0, 3).join(', ') }
-                )
+                toast.warning(`${result.duplicates.length} duplicate${result.duplicates.length !== 1 ? 's' : ''} skipped`)
             }
 
             if (result.errors.length > 0) {
-                toast.error(
-                    `${result.errors.length} file${result.errors.length !== 1 ? 's' : ''} failed`,
-                    { description: result.errors[0].reason }
-                )
+                toast.error(`${result.errors.length} file${result.errors.length !== 1 ? 's' : ''} failed`, {
+                    description: result.errors[0].reason,
+                })
             }
 
         } catch (err) {
@@ -133,11 +134,7 @@ export function useImport(): UseImportReturn {
         const input = document.createElement('input')
         input.type = 'file'
         input.multiple = true
-        input.accept = Object.values({
-            jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp',
-            gif: 'image/gif', bmp: 'image/bmp', tiff: 'image/tiff',
-            heic: 'image/heic', heif: 'image/heif',
-        }).join(',')
+        input.accept = 'image/jpeg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/heic,image/heif'
         input.onchange = async () => {
             const files = Array.from(input.files ?? [])
             if (files.length > 0) await importFiles(files)

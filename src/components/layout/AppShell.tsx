@@ -19,6 +19,7 @@ import { useGlobalDropZone } from '@/hooks/useDropZone'
 import { useProjectStore } from '@/stores/projectStore'
 import { usePagesStore } from '@/stores/pagesStore'
 import { projectService } from '@/services/projectService'
+import { useSettingsStore } from '@/stores/settingsStore'
 import { suppressNextDirtyFlag } from '@/stores/storeLinks'
 
 export const AppShell = memo(() => {
@@ -98,9 +99,21 @@ export const AppShell = memo(() => {
 
   useAutoSave(handleAutoSave)
 
+  const { settings } = useSettingsStore()
+
   const handleImportFiles = useCallback((files: File[]) => {
-    void importFiles(files)
-  }, [importFiles])
+    const pagesBefore = usePagesStore.getState().pages.length
+    void importFiles(files).then(() => {
+      // Auto-run OCR on newly imported pages if setting is enabled
+      if (settings.ocrEnabled && settings.autoRunOcr) {
+        const pagesAfter = usePagesStore.getState().pages
+        const newPages = pagesAfter.slice(pagesBefore)
+        if (newPages.length > 0) {
+          void runOCR(newPages)
+        }
+      }
+    })
+  }, [importFiles, settings.ocrEnabled, settings.autoRunOcr, runOCR])
 
   // Accept drops anywhere on the page, not just in the workspace
   useGlobalDropZone(handleImportFiles)
