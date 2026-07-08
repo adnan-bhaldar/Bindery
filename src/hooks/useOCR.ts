@@ -30,7 +30,8 @@ const INITIAL: OCRProgress = {
 
 export function useOCR() {
     const [progress, setProgress] = useState<OCRProgress>(INITIAL)
-    const { pages, updatePage } = usePagesStore()
+    const pages = usePagesStore(s => s.pages)
+    const updatePage = usePagesStore(s => s.updatePage)
     const { settings } = useSettingsStore()
 
     const runOCR = useCallback(async (targetPages?: Page[]) => {

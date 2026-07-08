@@ -11,7 +11,7 @@ import { Toggle } from '@/components/ui/Toggle'
 import { useConfirm } from '@/components/ui/ConfirmDialog'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { OCR_LANGUAGE_LABELS, ACCENT_COLOR_VALUES } from '@/constants'
-import type { AppSettings, Theme, AccentColor } from '@/types'
+import type { AppSettings, AccentColor } from '@/types'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -155,24 +155,240 @@ const GeneralSection = memo(() => {
 })
 GeneralSection.displayName = 'GeneralSection'
 
-const AppearanceSection = memo(() => {
-    const { settings, updateSetting } = useSettingsStore()
-    const { theme, setTheme, accentColor, setAccentColor } = useThemeStore()
+// ─── Theme preview card (premium redesign) ───────────────────────────────────
+
+const ThemePreviewCard = memo(({ previewTheme, accent, active, onClick }: {
+    previewTheme: 'light' | 'dark'
+    accent: string
+    active: boolean
+    onClick: () => void
+}) => {
+    const isDark = previewTheme === 'dark'
+    const bg = isDark ? '#0d0d14' : '#f0f0f6'
+    const nav = isDark ? '#0f0f1c' : '#e4e4ec'
+    const sidebar = isDark ? '#13131f' : '#eaeaf2'
+    const card = isDark ? '#ffffff' : '#ffffff'
+    const tx = isDark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.30)'
+    const border = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)'
+    const shadow = isDark ? '0 8px 32px rgba(0,0,0,0.6)' : '0 8px 32px rgba(0,0,0,0.12)'
 
     return (
-        <div>
+        <button
+            onClick={onClick}
+            style={{
+                flex: 1, border: 'none', background: 'transparent',
+                cursor: 'pointer', borderRadius: 14,
+                outline: active ? `2.5px solid ${accent}` : `2.5px solid transparent`,
+                outlineOffset: 3,
+                transition: 'outline-color 160ms, transform 160ms, box-shadow 160ms',
+                transform: active ? 'translateY(-2px)' : 'none',
+                boxShadow: active ? `0 8px 24px ${accent}33` : 'none',
+            }}
+        >
+            {/* Mini app chrome */}
+            <div style={{
+                borderRadius: 12, overflow: 'hidden',
+                background: bg, border: `1px solid ${border}`,
+                boxShadow: shadow,
+            }}>
+                {/* Nav bar */}
+                <div style={{
+                    height: 22, background: nav,
+                    borderBottom: `1px solid ${border}`,
+                    display: 'flex', alignItems: 'center', gap: 5, padding: '0 8px',
+                }}>
+                    <div style={{ width: 6, height: 6, borderRadius: '50%', background: accent, boxShadow: `0 0 6px ${accent}88` }} />
+                    <div style={{ flex: 1, height: 5, borderRadius: 3, background: isDark ? '#1e1e2e' : '#d8d8e4', margin: '0 4px' }} />
+                    <div style={{ height: 7, width: 24, borderRadius: 4, background: `linear-gradient(135deg,${accent},${accent}bb)` }} />
+                </div>
+
+                {/* Body */}
+                <div style={{ display: 'flex', height: 60 }}>
+                    {/* Sidebar */}
+                    <div style={{
+                        width: 30, background: sidebar,
+                        borderRight: `1px solid ${border}`,
+                        padding: '5px 4px', display: 'flex', flexDirection: 'column', gap: 4,
+                    }}>
+                        <div style={{ height: 14, borderRadius: 3, background: `${accent}33`, border: `1px solid ${accent}44` }} />
+                        {[0.45, 0.35].map((op, i) => (
+                            <div key={i} style={{ height: 5, borderRadius: 2, background: tx, opacity: op }} />
+                        ))}
+                    </div>
+
+                    {/* Canvas area */}
+                    <div style={{
+                        flex: 1, background: bg,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                        <div style={{
+                            width: 30, height: 40,
+                            background: card,
+                            borderRadius: 2,
+                            boxShadow: isDark ? '0 4px 16px rgba(0,0,0,0.6)' : '0 4px 16px rgba(0,0,0,0.14)',
+                        }} />
+                    </div>
+
+                    {/* Right panel */}
+                    <div style={{
+                        width: 26, background: sidebar,
+                        borderLeft: `1px solid ${border}`,
+                        padding: '5px 4px', display: 'flex', flexDirection: 'column', gap: 3,
+                    }}>
+                        {[0.7, 0.5, 0.5, 0.4].map((w, i) => (
+                            <div key={i} style={{ height: 3, width: `${w * 100}%`, borderRadius: 1, background: tx, opacity: 0.6 }} />
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            {/* Label */}
+            <p style={{
+                marginTop: 10, fontSize: 12, fontWeight: active ? 700 : 500,
+                color: active ? accent : 'var(--tx-3)',
+                textAlign: 'center', fontFamily: 'var(--font-sans)',
+                letterSpacing: active ? '-0.2px' : '0',
+                transition: 'color 150ms',
+            }}>
+                {previewTheme === 'dark' ? 'Dark' : 'Light'}
+            </p>
+        </button>
+    )
+})
+ThemePreviewCard.displayName = 'ThemePreviewCard'
+
+// ─── Accent swatch ────────────────────────────────────────────────────────────
+
+const AccentSwatch = memo(({ color, value, active, onClick }: {
+    color: string; value: string; active: boolean; onClick: () => void
+}) => (
+    <Tooltip content={color.charAt(0).toUpperCase() + color.slice(1)} placement="top">
+        <button
+            onClick={onClick}
+            style={{
+                width: 28, height: 28, borderRadius: '50%', border: 'none',
+                background: value, cursor: 'pointer', position: 'relative',
+                transition: 'transform 150ms, box-shadow 150ms',
+                transform: active ? 'scale(1.2)' : 'scale(1)',
+                boxShadow: active
+                    ? `0 0 0 2.5px var(--bg-card), 0 0 0 5px ${value}, 0 4px 12px ${value}66`
+                    : `0 2px 6px ${value}55`,
+            }}
+        />
+    </Tooltip>
+))
+AccentSwatch.displayName = 'AccentSwatch'
+
+// ─── Layout preview toggle ────────────────────────────────────────────────────
+
+const LayoutToggle = memo(({ value, onChange }: {
+    value: 'list' | 'grid'; onChange: (v: 'list' | 'grid') => void
+}) => (
+    <div style={{
+        display: 'flex', gap: 8,
+    }}>
+        {(['list', 'grid'] as const).map(v => {
+            const active = value === v
+            return (
+                <button
+                    key={v}
+                    onClick={() => onChange(v)}
+                    style={{
+                        width: 72, height: 52, borderRadius: 10, border: 'none', cursor: 'pointer',
+                        background: active ? 'var(--accent-dim)' : 'var(--s3)',
+                        outline: active ? '2px solid var(--accent-border)' : '2px solid var(--border)',
+                        outlineOffset: 0,
+                        transition: 'all 150ms',
+                        display: 'flex', flexDirection: 'column',
+                        alignItems: 'center', justifyContent: 'center', gap: 4,
+                        padding: 8,
+                    }}
+                >
+                    {v === 'list' ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 3, width: '100%' }}>
+                            {[1, 0.8, 0.9].map((w, i) => (
+                                <div key={i} style={{
+                                    display: 'flex', alignItems: 'center', gap: 3,
+                                }}>
+                                    <div style={{ width: 10, height: 7, borderRadius: 1, background: active ? 'var(--accent)' : 'var(--tx-4)', opacity: 0.7, flexShrink: 0 }} />
+                                    <div style={{ flex: w, height: 2, borderRadius: 1, background: active ? 'var(--accent)' : 'var(--tx-4)', opacity: 0.4 }} />
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3, width: '100%' }}>
+                            {[0, 1, 2, 3].map(i => (
+                                <div key={i} style={{ height: 14, borderRadius: 2, background: active ? 'var(--accent)' : 'var(--tx-4)', opacity: i === 0 ? 0.8 : 0.4 }} />
+                            ))}
+                        </div>
+                    )}
+                    <span style={{ fontSize: 9, fontWeight: 600, color: active ? 'var(--accent)' : 'var(--tx-4)', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                        {v}
+                    </span>
+                </button>
+            )
+        })}
+    </div>
+))
+LayoutToggle.displayName = 'LayoutToggle'
+
+const AppearanceSection = memo(() => {
+    const { settings, updateSetting } = useSettingsStore()
+    const { theme, setTheme, resolvedTheme, accentColor, setAccentColor } = useThemeStore()
+    const accent = ACCENT_COLOR_VALUES[accentColor] ?? '#6366f1'
+
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+
+            {/* ── Theme ──────────────────────────────────────────────────── */}
             <SectionTitle>Theme</SectionTitle>
-            <Row label="Color scheme" desc="Choose between light and dark interface">
-                <SegRow
-                    value={theme}
-                    options={[
-                        { value: 'light', label: 'Light' },
-                        { value: 'dark', label: 'Dark' },
-                        { value: 'system', label: 'System' },
-                    ]}
-                    onChange={v => setTheme(v as Theme)}
+            <div style={{ display: 'flex', gap: 14, marginBottom: 16 }}>
+                <ThemePreviewCard previewTheme="light" accent={accent} active={resolvedTheme === 'light'} onClick={() => setTheme('light')} />
+                <ThemePreviewCard previewTheme="dark" accent={accent} active={resolvedTheme === 'dark'} onClick={() => setTheme('dark')} />
+            </div>
+
+            <Row label="Follow system theme" desc="Auto-switch based on OS preference">
+                <Toggle
+                    checked={theme === 'system'}
+                    onChange={v => setTheme(v ? 'system' : resolvedTheme === 'dark' ? 'dark' : 'light')}
                 />
             </Row>
+
+            {/* ── Accent color ────────────────────────────────────────────── */}
+            <SectionTitle>Accent Color</SectionTitle>
+            <div style={{
+                padding: '14px 16px',
+                background: 'var(--s3)', borderRadius: 'var(--r-lg)',
+                border: '1px solid var(--border)',
+                marginBottom: 8,
+            }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                    <div>
+                        <p style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--tx-1)' }}>Accent Color</p>
+                        <p style={{ fontSize: 11, color: 'var(--tx-3)', marginTop: 2 }}>Used for buttons, selections and highlights</p>
+                    </div>
+                    <div style={{
+                        width: 32, height: 32, borderRadius: '50%',
+                        background: accent,
+                        boxShadow: `0 4px 12px ${accent}66`,
+                        border: '2px solid rgba(255,255,255,0.15)',
+                    }} />
+                </div>
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                    {(Object.keys(ACCENT_COLOR_VALUES) as AccentColor[]).map(color => (
+                        <AccentSwatch
+                            key={color}
+                            color={color}
+                            value={ACCENT_COLOR_VALUES[color]}
+                            active={accentColor === color}
+                            onClick={() => setAccentColor(color)}
+                        />
+                    ))}
+                </div>
+            </div>
+
+            {/* ── Interface ───────────────────────────────────────────────── */}
+            <SectionTitle>Interface</SectionTitle>
             <Row label="Compact mode" desc="Reduce spacing for a denser layout">
                 <Toggle checked={settings.compactMode} onChange={v => updateSetting('compactMode', v)} />
             </Row>
@@ -180,44 +396,36 @@ const AppearanceSection = memo(() => {
                 <Toggle checked={settings.reducedMotion} onChange={v => updateSetting('reducedMotion', v)} />
             </Row>
 
-            <SectionTitle>Accent Color</SectionTitle>
-            <Row label="Accent color" desc="Primary color used for buttons and highlights">
-                <div style={{ display: 'flex', gap: 6 }}>
-                    {(Object.keys(ACCENT_COLOR_VALUES) as AccentColor[]).map(color => (
-                        <Tooltip key={color} content={color.charAt(0).toUpperCase() + color.slice(1)} placement="top">
-                            <button
-                                onClick={() => setAccentColor(color)}
-                                style={{
-                                    width: 22, height: 22, borderRadius: '50%', border: 'none',
-                                    background: ACCENT_COLOR_VALUES[color],
-                                    cursor: 'pointer',
-                                    boxShadow: accentColor === color
-                                        ? `0 0 0 2px var(--bg-card), 0 0 0 4px ${ACCENT_COLOR_VALUES[color]}`
-                                        : 'none',
-                                    transition: 'box-shadow 150ms',
-                                }}
-                            />
-                        </Tooltip>
-                    ))}
+            {/* ── Sidebar layout ───────────────────────────────────────────── */}
+            <SectionTitle>Sidebar Layout</SectionTitle>
+            <div style={{
+                padding: '14px 16px',
+                background: 'var(--s3)', borderRadius: 'var(--r-lg)',
+                border: '1px solid var(--border)',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16,
+                marginBottom: 8,
+            }}>
+                <div>
+                    <p style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--tx-1)' }}>Page List Style</p>
+                    <p style={{ fontSize: 11, color: 'var(--tx-3)', marginTop: 2 }}>How pages are displayed in the sidebar</p>
                 </div>
+                <LayoutToggle
+                    value={settings.sidebarLayout ?? 'list'}
+                    onChange={v => updateSetting('sidebarLayout', v)}
+                />
+            </div>
+
+            <Row label="Allow drag when sorted" desc="Enable reordering while a sort is active">
+                <Toggle checked={settings.allowDragWhenSorted} onChange={v => updateSetting('allowDragWhenSorted', v)} />
             </Row>
 
+            {/* ── Thumbnails ───────────────────────────────────────────────── */}
             <SectionTitle>Thumbnails</SectionTitle>
             <Row label="Thumbnail size" desc="Size of page thumbnails in the sidebar">
                 <SegRow
                     value={String(settings.thumbnailSize)}
                     options={[{ value: '80', label: 'Small' }, { value: '120', label: 'Medium' }, { value: '160', label: 'Large' }]}
                     onChange={v => updateSetting('thumbnailSize', Number(v))}
-                />
-            </Row>
-            <Row label="Allow drag when sorted" desc="Enable drag-to-reorder even while a sort is active">
-                <Toggle checked={settings.allowDragWhenSorted} onChange={v => updateSetting('allowDragWhenSorted', v)} />
-            </Row>
-            <Row label="Sidebar layout" desc="Show pages as a list or 2-column grid in the sidebar">
-                <SegRow
-                    value={settings.sidebarLayout ?? 'list'}
-                    options={[{ value: 'list', label: 'List' }, { value: 'grid', label: 'Grid' }]}
-                    onChange={v => updateSetting('sidebarLayout', v as 'list' | 'grid')}
                 />
             </Row>
         </div>

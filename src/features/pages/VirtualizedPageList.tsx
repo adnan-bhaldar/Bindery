@@ -4,6 +4,7 @@ import {
     DndContext, closestCenter, PointerSensor,
     useSensor, useSensors, type DragEndEvent, type DragStartEvent,
 } from '@dnd-kit/core'
+import { restrictToVerticalAxis, restrictToParentElement } from '@dnd-kit/modifiers'
 import {
     SortableContext, verticalListSortingStrategy,
     rectSortingStrategy, useSortable,
@@ -431,6 +432,7 @@ export const VirtualizedPageList = memo(() => {
             <DndContext
                 sensors={sensors}
                 collisionDetection={closestCenter}
+                modifiers={layout === 'list' ? [restrictToVerticalAxis, restrictToParentElement] : [restrictToParentElement]}
                 onDragStart={handleDragStart}
                 cancelDrop={handleCancelDrop}
                 onDragEnd={handleDragEnd}

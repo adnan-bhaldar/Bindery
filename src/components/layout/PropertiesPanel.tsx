@@ -2,6 +2,7 @@ import { memo, useCallback } from 'react'
 import { SlidersHorizontal, Download, FileText, Copy } from 'lucide-react'
 import { useUIStore } from '@/stores/uiStore'
 import { useSelectedIdsArray } from '@/stores/selectionStore'
+import { useShallow } from 'zustand/react/shallow'
 import { usePagesStore } from '@/stores/pagesStore'
 import { useExportStore, useActivePreset } from '@/stores/exportStore'
 import { useProjectStore } from '@/stores/projectStore'
@@ -41,7 +42,9 @@ const SegRow = ({ options, value, onChange }: {
 const PageTab = memo(() => {
   const selectedIds = useSelectedIdsArray()
   const pages = usePagesStore(s => s.pages)
-  const { setPageImageFit, setPageMargin } = usePagesStore()
+  const { setPageImageFit, setPageMargin } = usePagesStore(
+    useShallow(s => ({ setPageImageFit: s.setPageImageFit, setPageMargin: s.setPageMargin }))
+  )
 
   const hasSelection = selectedIds.length > 0
   const firstSelected = selectedIds.length > 0 ? pages.find(p => p.id === selectedIds[0]) : null
