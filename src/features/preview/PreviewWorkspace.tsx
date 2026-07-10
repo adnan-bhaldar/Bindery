@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { usePreview } from '@/hooks/usePreview'
 import { PreviewCanvas } from './PreviewCanvas'
 import { PreviewToolbar } from './PreviewToolbar'
+import { RotatedImage } from '@/components/common/RotatedImage'
 
 // ─── Grid view ────────────────────────────────────────────────────────────────
 
@@ -46,15 +47,11 @@ const GridView = memo(({ pages, currentIndex, onSelect }: {
                             position: 'relative',
                         }}>
                             {page.thumbnailUrl ? (
-                                <img
+                                <RotatedImage
                                     src={page.thumbnailUrl}
                                     alt={`Page ${i + 1}`}
-                                    draggable={false}
-                                    style={{
-                                        width: '100%', height: '100%', objectFit: 'contain',
-                                        transform: `rotate(${page.rotation}deg)`,
-                                        transition: 'transform 300ms var(--ease-out)',
-                                    }}
+                                    rotation={page.rotation}
+                                    transitionMs={300}
                                 />
                             ) : (
                                 <div className="skeleton" style={{ width: '100%', height: '100%', borderRadius: 0 }} />
@@ -78,7 +75,7 @@ GridView.displayName = 'GridView'
 // ─── Continuous view ──────────────────────────────────────────────────────────
 
 const ContinuousView = memo(({ pages, zoom }: {
-    pages: { id: string; thumbnailUrl?: string; rotation: number }[]
+    pages: { id: string; thumbnailUrl?: string; rotation: number; metadata: { width: number; height: number } }[]
     zoom: number
 }) => {
     return (
@@ -90,6 +87,18 @@ const ContinuousView = memo(({ pages, zoom }: {
         }}>
             {pages.map((page, i) => {
                 const url = page.thumbnailUrl
+                const isRotated90 = page.rotation === 90 || page.rotation === 270
+                const { width: metaW, height: metaH } = page.metadata
+
+                // The wrapper's own aspect ratio must reflect the ROTATED
+                // shape (swap width/height for 90/270°) — this is what
+                // actually determines the auto-computed height in this
+                // "natural document flow" layout, same role that cardW/cardH
+                // plays in the single-page PreviewCanvas.
+                const aspectRatio = metaW && metaH
+                    ? isRotated90 ? `${metaH} / ${metaW}` : `${metaW} / ${metaH}`
+                    : '3 / 4' // fallback while metadata/thumbnail hasn't loaded yet
+
                 return (
                     <motion.div
                         key={page.id}
@@ -103,22 +112,19 @@ const ContinuousView = memo(({ pages, zoom }: {
                             transform: `scale(${zoom})`,
                             transformOrigin: 'top center',
                             transition: 'transform 200ms var(--ease-out)',
+                            width: '100%', maxWidth: 600,
+                            aspectRatio,
+                            background: '#fff',
                         }}
                     >
                         {url ? (
-                            <img
+                            <RotatedImage
                                 src={url}
                                 alt={`Page ${i + 1}`}
-                                draggable={false}
-                                style={{
-                                    display: 'block', maxWidth: 600,
-                                    width: '100%', height: 'auto',
-                                    transform: `rotate(${page.rotation}deg)`,
-                                    background: '#fff',
-                                }}
+                                rotation={page.rotation}
                             />
                         ) : (
-                            <div className="skeleton" style={{ width: 600, height: 800 }} />
+                            <div className="skeleton" style={{ width: '100%', height: '100%' }} />
                         )}
                         {/* Page number label */}
                         <div style={{

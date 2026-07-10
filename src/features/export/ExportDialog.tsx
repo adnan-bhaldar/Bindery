@@ -1,4 +1,4 @@
-import { memo, useCallback } from 'react'
+import { memo, useCallback, useEffect } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -17,6 +17,18 @@ import type { ExportProgress, PageSize, PageOrientation, CompressionQuality, Pag
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+const DEFAULT_EXPORT_FILENAME = 'bindery-export'
+
+// Strips characters that are invalid in filenames across Windows/macOS/Linux
+// (\ / : * ? " < > |), trims, and collapses repeated whitespace — so a
+// project name typed with odd spacing/punctuation still makes a clean,
+// cross-platform-safe download filename.
+function sanitizeFilename(name: string): string {
+    return name
+        .replace(/[\\/:*?"<>|]/g, '')
+        .trim()
+        .replace(/\s+/g, ' ')
+}
 
 const PAGE_SIZES: { value: PageSize; label: string }[] = [
     { value: 'auto', label: 'Auto (match image)' },
@@ -409,6 +421,21 @@ export const ExportDialog = memo(() => {
     const pages = usePagesStore((s) => s.pages)
     const pageCount = usePagesStore(selectPageCount)
     const { currentProject } = useProjectStore()
+
+    // Whenever the export dialog is opened, default the filename to the
+    // current project's name (sanitized for filesystem safety) — falling
+    // back to a generic default when no real project name has been set
+    // (a fresh/untitled project). The field stays editable afterwards, so
+    // this is just the starting point for this export, not a locked value.
+    useEffect(() => {
+        if (!isDialogOpen) return
+        const hasRealName = !!currentProject?.name && currentProject.name !== 'Untitled Project'
+        const derived = hasRealName ? sanitizeFilename(currentProject!.name) : ''
+        setFilename(derived || DEFAULT_EXPORT_FILENAME)
+        // Only re-derive when the dialog transitions open, not on every
+        // keystroke the user makes in the filename field afterwards.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isDialogOpen])
 
     const estimatedSize = pdfService.estimateSize(pages, preset.compression)
 

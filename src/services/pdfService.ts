@@ -50,6 +50,10 @@ async function normaliseToPdfCompatible(
 }
 
 // ─── Page size ────────────────────────────────────────────────────────────────
+// NOTE: imgW/imgH passed in here should already be the EFFECTIVE (post-rotation)
+// dimensions — see effImgW/effImgH in generate() below — so that 'auto'/'original'
+// page sizing and auto-orientation match what the rotated image will actually
+// look like, exactly mirroring the on-screen preview's resolvePageAspect().
 
 function getPageSizePts(
     size: PageSize,
@@ -69,6 +73,28 @@ function getPageSizePts(
         return [s.width, s.height]
     }
     return [PAGE_SIZES.a4.width, PAGE_SIZES.a4.height]
+}
+
+// ─── Rotation anchor math ──────────────────────────────────────────────────────
+// pdf-lib's drawImage({ rotate }) rotates the image about the (x, y) anchor
+// point — i.e. where the image's bottom-left corner would sit if it were NOT
+// rotated — not about its center. To make a `w × h` box land centered at a
+// target point (cx, cy) after being rotated by `deg` (pdf-lib's y-up, standard
+// math / counter-clockwise-positive convention), the anchor must be offset
+// from the target center by the rotated half-diagonal. Derivation: the box's
+// center, relative to its own bottom-left corner, is (w/2, h/2); rotating the
+// whole box about the anchor by `deg` moves that relative offset to
+// R(deg) · (w/2, h/2); solving anchor + R(deg)·(w/2,h/2) = (cx,cy) for anchor
+// gives the formulas below. Verified against deg = 0/90/180/270 by hand.
+function centeredAnchor(cx: number, cy: number, w: number, h: number, deg: number) {
+    const rad = (deg * Math.PI) / 180
+    // Snap to exact values for our supported 90°-multiples — avoids sub-pixel
+    // drift from floating-point cos/sin of e.g. Math.PI/2.
+    const cos = Math.round(Math.cos(rad) * 1e6) / 1e6
+    const sin = Math.round(Math.sin(rad) * 1e6) / 1e6
+    const x = cx - (w / 2) * cos + (h / 2) * sin
+    const y = cy - (w / 2) * sin - (h / 2) * cos
+    return { x, y }
 }
 
 // ─── PDF Service ──────────────────────────────────────────────────────────────
@@ -139,13 +165,22 @@ export class PDFService {
             const imgW = pdfImage.width
             const imgH = pdfImage.height
 
-            // Page size
-            let [pgW, pgH] = getPageSizePts(preset.pageSize, imgW, imgH)
+            // ── Rotation-aware effective dimensions ──────────────────────────
+            // Mirrors the preview canvas's resolvePageAspect() exactly: when the
+            // page is rotated 90/270, page-size and auto-orientation decisions
+            // must use the SWAPPED dimensions, or the chosen page shape won't
+            // match what the rotated image actually looks like.
+            const isRotated90 = page.rotation === 90 || page.rotation === 270
+            const effImgW = isRotated90 ? imgH : imgW
+            const effImgH = isRotated90 ? imgW : imgH
 
-            // Orientation
+            // Page size — decided from the EFFECTIVE (post-rotation) aspect
+            let [pgW, pgH] = getPageSizePts(preset.pageSize, effImgW, effImgH)
+
+            // Orientation — same effective-dimension awareness
             const shouldLandscape =
                 preset.orientation === 'landscape' ||
-                (preset.orientation === 'auto' && imgW > imgH)
+                (preset.orientation === 'auto' && effImgW > effImgH)
             if (shouldLandscape && pgW < pgH) [pgW, pgH] = [pgH, pgW]
 
             // Margin
@@ -159,30 +194,59 @@ export class PDFService {
 
             const pdfPage = pdfDoc.addPage([pgW, pgH])
 
-            // Page rotation
-            if (page.rotation !== 0) {
-                pdfPage.setRotation(degrees(page.rotation))
-            }
+            // NOTE: we deliberately do NOT call pdfPage.setRotation() here.
+            // A page-level /Rotate flag rotates EVERYTHING on the page —
+            // margins, watermark, page numbers — as one unit, and the page's
+            // own MediaBox would then need a *different* pre-swap to line up
+            // correctly, which is a separate and more error-prone path. Since
+            // pgW/pgH above are already sized using the rotation-aware
+            // effective dimensions, this page is already the correctly-shaped
+            // final page — margins, watermark, and page numbers all sit in
+            // this same untouched coordinate space. Only the image itself
+            // gets rotated, directly in the drawImage() call below.
 
-            // Image draw dimensions
+            // The box the NATIVE (unrotated) image must be fit into so that,
+            // once rotated back to the page's true orientation, it lands
+            // exactly on the real content box (contentW × contentH).
+            const effContentW = isRotated90 ? contentH : contentW
+            const effContentH = isRotated90 ? contentW : contentH
+
+            // Image draw dimensions (in the image's own native orientation)
             let drawW = imgW, drawH = imgH
-            let drawX = margin.left, drawY = margin.bottom
+            let centerX = margin.left + drawW / 2
+            let centerY = margin.bottom + drawH / 2
 
             if (preset.imageFit === 'fit') {
-                const scale = Math.min(contentW / imgW, contentH / imgH)
+                const scale = Math.min(effContentW / imgW, effContentH / imgH)
                 drawW = imgW * scale; drawH = imgH * scale
-                drawX = margin.left + (contentW - drawW) / 2
-                drawY = margin.bottom + (contentH - drawH) / 2
+                centerX = margin.left + contentW / 2
+                centerY = margin.bottom + contentH / 2
             } else if (preset.imageFit === 'fill') {
-                const scale = Math.max(contentW / imgW, contentH / imgH)
+                const scale = Math.max(effContentW / imgW, effContentH / imgH)
                 drawW = imgW * scale; drawH = imgH * scale
-                drawX = margin.left + (contentW - drawW) / 2
-                drawY = margin.bottom + (contentH - drawH) / 2
+                centerX = margin.left + contentW / 2
+                centerY = margin.bottom + contentH / 2
             } else if (preset.imageFit === 'stretch') {
-                drawW = contentW; drawH = contentH
+                drawW = effContentW; drawH = effContentH
+                centerX = margin.left + contentW / 2
+                centerY = margin.bottom + contentH / 2
             }
+            // ('original' fit falls through to the natural-size defaults above,
+            // preserving prior behaviour exactly when page.rotation === 0.)
 
-            pdfPage.drawImage(pdfImage, { x: drawX, y: drawY, width: drawW, height: drawH })
+            // CSS (used by the preview canvas) and pdf-lib use opposite-handed
+            // coordinate systems — CSS is y-down (positive deg = clockwise),
+            // pdf-lib/PDF is y-up (positive deg = counter-clockwise). To make
+            // the export match what the user actually sees in the preview for
+            // the SAME page.rotation value, we flip the angle here.
+            const pdfRotationDeg = (360 - page.rotation) % 360
+
+            const { x: drawX, y: drawY } = centeredAnchor(centerX, centerY, drawW, drawH, pdfRotationDeg)
+
+            pdfPage.drawImage(pdfImage, {
+                x: drawX, y: drawY, width: drawW, height: drawH,
+                rotate: degrees(pdfRotationDeg),
+            })
 
             // Watermark
             if (preset.watermark && helvetica) {

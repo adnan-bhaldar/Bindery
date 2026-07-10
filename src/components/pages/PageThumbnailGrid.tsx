@@ -4,6 +4,7 @@ import { usePagesStore } from '@/stores/pagesStore'
 import { useSelectionStore } from '@/stores/selectionStore'
 import { useUIStore } from '@/stores/uiStore'
 import { Tooltip } from '@/components/ui/Tooltip'
+import { RotatedImage } from '@/components/common/RotatedImage'
 import type { Page } from '@/types'
 
 interface Props {
@@ -40,6 +41,11 @@ export const PageThumbnailGrid = memo(({ page, index, allPageIds }: Props) => {
                 border: `1px solid ${isSelected ? 'var(--accent-border)' : 'transparent'}`,
                 transition: 'background 110ms, border-color 110ms',
                 userSelect: 'none', position: 'relative',
+                minWidth: 0, // flex items default to min-width:auto — without this,
+                // this column's own intrinsic content size (walking down to the
+                // deliberately-oversized rotated <img>) can push it wider than
+                // its 1fr grid track, the same class of issue as the grid item
+                // itself further up in VirtualizedPageList.
             }}
         >
             {/* Thumbnail */}
@@ -55,19 +61,13 @@ export const PageThumbnailGrid = memo(({ page, index, allPageIds }: Props) => {
                 transform: hovered && !isSelected ? 'translateY(-2px)' : 'none',
                 position: 'relative',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
+                minWidth: 0, minHeight: 0,
             }}>
                 {page.thumbnailUrl ? (
-                    <img
+                    <RotatedImage
                         src={page.thumbnailUrl}
                         alt={`Page ${index + 1}`}
-                        draggable={false}
-                        style={{
-                            width: '100%', height: '100%',
-                            objectFit: 'contain',
-                            transform: `rotate(${page.rotation}deg)`,
-                            transition: 'transform 280ms var(--ease-out)',
-                            display: 'block',
-                        }}
+                        rotation={page.rotation}
                     />
                 ) : (
                     <div className="skeleton" style={{ width: '100%', height: '100%', borderRadius: 0 }} />

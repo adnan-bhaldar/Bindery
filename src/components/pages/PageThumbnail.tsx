@@ -4,6 +4,7 @@ import { usePagesStore } from '@/stores/pagesStore'
 import { useSelectionStore } from '@/stores/selectionStore'
 import { useUIStore } from '@/stores/uiStore'
 import { Tooltip } from '@/components/ui/Tooltip'
+import { RotatedImage } from '@/components/common/RotatedImage'
 import type { Page } from '@/types'
 
 interface Props {
@@ -73,15 +74,10 @@ export const PageThumbnail = memo(({ page, index, allPageIds }: Props) => {
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
                 {page.thumbnailUrl ? (
-                    <img
+                    <RotatedImage
                         src={page.thumbnailUrl}
                         alt={`Page ${index + 1}`}
-                        draggable={false}
-                        style={{
-                            width: '100%', height: '100%', objectFit: 'contain',
-                            transform: `rotate(${page.rotation}deg)`,
-                            transition: 'transform 280ms var(--ease-out)',
-                        }}
+                        rotation={page.rotation}
                     />
                 ) : (
                     <div className="skeleton" style={{ width: '100%', height: '100%', borderRadius: 0 }} />

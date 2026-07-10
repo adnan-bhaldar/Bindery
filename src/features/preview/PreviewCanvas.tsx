@@ -56,6 +56,7 @@ export const PreviewCanvas = memo(({ page, zoom, onZoomChange }: Props) => {
     const marginPts = MARGIN_SIZES[marginKey] ?? MARGIN_SIZES.none
     const hasMargin = marginPts.top > 0
     const isAutoSize = preset.pageSize === 'auto' || preset.pageSize === 'original'
+    const isRotated90 = page.rotation === 90 || page.rotation === 270
 
     // Object URL
     useEffect(() => {
@@ -133,6 +134,10 @@ export const PreviewCanvas = memo(({ page, zoom, onZoomChange }: Props) => {
         return { cardW, cardH, inset }
     }, [imgDims, containerSize, preset.pageSize, preset.orientation, marginPts, zoom, page.rotation])
 
+    // Content-area (post-margin) dimensions — the box the image must actually fill
+    const frameW = layout.cardW - layout.inset.left - layout.inset.right
+    const frameH = layout.cardH - layout.inset.top - layout.inset.bottom
+
     // Image fit
     const imgObjectFit: React.CSSProperties['objectFit'] =
         preset.imageFit === 'fill' ? 'cover' :
@@ -178,14 +183,21 @@ export const PreviewCanvas = memo(({ page, zoom, onZoomChange }: Props) => {
                             }}
                         >
                             {isAutoSize ? (
-                                /* Auto/Original — image fills naturally, no white page card */
+                                /* Auto/Original — image fills naturally, no white page card.
+                                   The outer box is already sized to the ROTATED aspect ratio
+                                   (see resolvePageAspect). The <img> itself is given the
+                                   pre-rotation (swapped) dimensions and centered via flexbox,
+                                   then rotated in place — rotating about its own center never
+                                   moves that center, so flex-centering the unrotated box keeps
+                                   the rotated result centered too, with zero drift. */
                                 <div style={{
                                     width: layout.cardW, height: layout.cardH,
                                     position: 'relative',
                                     borderRadius: 2,
                                     boxShadow: '0 8px 40px rgba(0,0,0,0.55), 0 2px 8px rgba(0,0,0,0.35)',
-                                    transition: 'width 200ms, height 200ms',
+                                    overflow: 'hidden',
                                     display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    transition: 'width 200ms, height 200ms',
                                 }}>
                                     <img
                                         src={imageUrl}
@@ -196,22 +208,30 @@ export const PreviewCanvas = memo(({ page, zoom, onZoomChange }: Props) => {
                                             setLoaded(true)
                                         }}
                                         style={{
-                                            width: '100%', height: '100%',
+                                            width: isRotated90 ? layout.cardH : layout.cardW,
+                                            height: isRotated90 ? layout.cardW : layout.cardH,
+                                            maxWidth: 'none', maxHeight: 'none',
                                             objectFit: 'contain', display: 'block',
                                             transform: `rotate(${page.rotation}deg)`,
                                             transformOrigin: 'center',
-                                            transition: 'transform 300ms var(--ease-out)',
+                                            transition: 'transform 300ms var(--ease-out), width 200ms, height 200ms',
                                         }}
                                     />
                                 </div>
                             ) : (
-                                /* Named page size — white card with correct aspect ratio */
+                                /* Named page size — white card with correct aspect ratio.
+                                   The margin guide always represents the true, unrotated
+                                   content area of the page. The image sits in its own
+                                   clipped, flex-centered frame inside that same content
+                                   area, so it rotates in place without ever drifting off
+                                   the margin bounds. */
                                 <motion.div
                                     animate={{ width: layout.cardW, height: layout.cardH }}
                                     transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
                                     style={{
                                         background: '#fff', borderRadius: 2, position: 'relative',
                                         boxShadow: '0 8px 40px rgba(0,0,0,0.55), 0 2px 8px rgba(0,0,0,0.35)',
+                                        overflow: 'hidden',
                                     }}
                                 >
                                     {/* Margin guide */}
@@ -219,33 +239,42 @@ export const PreviewCanvas = memo(({ page, zoom, onZoomChange }: Props) => {
                                         <div style={{
                                             position: 'absolute',
                                             top: layout.inset.top, left: layout.inset.left,
-                                            width: layout.cardW - layout.inset.left - layout.inset.right,
-                                            height: layout.cardH - layout.inset.top - layout.inset.bottom,
+                                            width: frameW,
+                                            height: frameH,
                                             border: '1px dashed rgba(99,102,241,0.4)',
                                             pointerEvents: 'none', zIndex: 2,
                                             transition: 'all 200ms',
                                         }} />
                                     )}
-                                    <img
-                                        src={imageUrl}
-                                        alt={page.metadata.filename}
-                                        draggable={false}
-                                        onLoad={e => {
-                                            setImgDims({ w: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight })
-                                            setLoaded(true)
-                                        }}
-                                        style={{
-                                            position: 'absolute',
-                                            top: layout.inset.top,
-                                            left: layout.inset.left,
-                                            width: layout.cardW - layout.inset.left - layout.inset.right,
-                                            height: layout.cardH - layout.inset.top - layout.inset.bottom,
-                                            objectFit: imgObjectFit, display: 'block',
-                                            transform: `rotate(${page.rotation}deg)`,
-                                            transformOrigin: 'center',
-                                            transition: 'transform 300ms var(--ease-out)',
-                                        }}
-                                    />
+
+                                    {/* Content frame — clips to the margin inset, centers the (possibly rotated) image */}
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: layout.inset.top, left: layout.inset.left,
+                                        width: frameW,
+                                        height: frameH,
+                                        overflow: 'hidden',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    }}>
+                                        <img
+                                            src={imageUrl}
+                                            alt={page.metadata.filename}
+                                            draggable={false}
+                                            onLoad={e => {
+                                                setImgDims({ w: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight })
+                                                setLoaded(true)
+                                            }}
+                                            style={{
+                                                width: isRotated90 ? frameH : frameW,
+                                                height: isRotated90 ? frameW : frameH,
+                                                maxWidth: 'none', maxHeight: 'none',
+                                                objectFit: imgObjectFit, display: 'block',
+                                                transform: `rotate(${page.rotation}deg)`,
+                                                transformOrigin: 'center',
+                                                transition: 'transform 300ms var(--ease-out)',
+                                            }}
+                                        />
+                                    </div>
                                 </motion.div>
                             )}
                         </motion.div>

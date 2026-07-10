@@ -5,6 +5,7 @@ import { usePagesStore, selectCoverPage } from '@/stores/pagesStore'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { Toggle } from '@/components/ui/Toggle'
+import { RotatedImage } from '@/components/common/RotatedImage'
 
 // ─── Cover preview card ───────────────────────────────────────────────────────
 
@@ -55,14 +56,11 @@ const CoverPreview = memo(() => {
                     position: 'relative', background: 'var(--s3)',
                 }}>
                     {coverPage.thumbnailUrl ? (
-                        <img
+                        <RotatedImage
                             src={coverPage.thumbnailUrl}
                             alt="Cover"
-                            style={{
-                                width: '100%', height: '100%', objectFit: 'contain',
-                                transform: `rotate(${coverPage.rotation}deg)`,
-                                transition: 'transform 300ms var(--ease-out)',
-                            }}
+                            rotation={coverPage.rotation}
+                            transitionMs={300}
                         />
                     ) : (
                         <div className="skeleton" style={{ width: '100%', height: '100%', borderRadius: 0 }} />

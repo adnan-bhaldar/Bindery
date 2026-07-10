@@ -51,7 +51,9 @@ function sortPages(pages: Page[], key: SortKey, dir: SortDir): Page[] {
 
 const LIST_ROW_H = 84
 const GRID_COLS = 2
-const GRID_CELL_H = 160  // thumbnail + label
+const GRID_CELL_H = 200  // thumbnail + label — generous headroom so a wider
+                          // sidebar (taller aspectRatio-driven thumbnail) never
+                          // exceeds the row height the virtualizer thinks it has
 const PADDING = 8
 const GAP = 4
 
@@ -98,6 +100,21 @@ const SortableGridCell = memo(({ page, index, allPageIds, disabled }: {
                 transition,
                 opacity: isDragging ? 0.4 : 1,
                 cursor: disabled ? 'not-allowed' : undefined,
+                // CSS Grid items default to min-width:auto / min-height:auto —
+                // their minimum track size is computed from their content's
+                // min-content size, walking all the way down through
+                // descendants, REGARDLESS of overflow:hidden on any wrapper
+                // in between (overflow:hidden only affects painting, not the
+                // grid track-sizing algorithm's intrinsic-size calculation).
+                // Since the rotated thumbnail's <img> is deliberately given a
+                // pre-rotation box larger than its own slot (see RotatedImage),
+                // without this override that oversized box's min-content
+                // contribution inflates this grid column, pushing into the
+                // next one. Resetting to 0 here tells Grid to ignore it and
+                // just honor the declared 1fr track size — the actual visual
+                // clipping is still correctly handled by the overflow:hidden
+                // wrappers further down.
+                minWidth: 0, minHeight: 0,
             }}
             data-drag-locked={disabled ? 'true' : undefined}
             {...attributes}
@@ -477,6 +494,9 @@ export const VirtualizedPageList = memo(() => {
                                         display: 'grid',
                                         gridTemplateColumns: `repeat(${GRID_COLS}, 1fr)`,
                                         gap: GAP,
+                                        overflow: 'hidden', // safety net: even if content ever
+                                        // exceeds GRID_CELL_H, it clips instead of visually
+                                        // overlapping the next row/cell
                                     }}>
                                         {rowPages.map((page, ci) => (
                                             <SortableGridCell
