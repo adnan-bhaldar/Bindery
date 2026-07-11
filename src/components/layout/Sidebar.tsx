@@ -1,17 +1,18 @@
 import { memo } from 'react'
-import { Files, BookOpen, FolderOpen, ImagePlus } from 'lucide-react'
+import { Files, FolderOpen, ImagePlus } from 'lucide-react'
 import { useUIStore } from '@/stores/uiStore'
 import { usePagesStore, selectPageCount } from '@/stores/pagesStore'
 import { VirtualizedPageList } from '@/features/pages/VirtualizedPageList'
-import { CoverPanel } from '@/features/cover/CoverPanel'
 import { ProjectPanel } from '@/features/project/ProjectPanel'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { cn } from '@/lib/utils'
 import type { SidebarTab } from '@/types'
 
+// The first page always acts as the cover — no separate cover-selection UI.
+// See pagesStore: isCover is force-set to (index === 0) on every mutation
+// that can change page order (add/remove/reorder/sort).
 const TABS: { id: SidebarTab; label: string; Icon: React.FC<{ size?: number; strokeWidth?: number }> }[] = [
   { id: 'pages', label: 'Pages', Icon: Files },
-  { id: 'cover', label: 'Cover', Icon: BookOpen },
   { id: 'project', label: 'Project', Icon: FolderOpen },
 ]
 
@@ -56,7 +57,6 @@ export const Sidebar = memo(({ onImport }: Props) => {
               onImport={onImport}
             />
         )}
-        {sidebarTab === 'cover' && <CoverPanel />}
         {sidebarTab === 'project' && <ProjectPanel />}
       </div>
     </aside>

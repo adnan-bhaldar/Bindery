@@ -258,7 +258,7 @@ export interface HistoryEntry {
 
 // ─── UI State ────────────────────────────────────────────────────────────────
 
-export type SidebarTab = 'pages' | 'cover' | 'project'
+export type SidebarTab = 'pages' | 'project'
 
 export type WorkspaceView = 'single' | 'continuous' | 'grid'
 

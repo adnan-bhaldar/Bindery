@@ -26,7 +26,6 @@ interface PagesActions {
     duplicatePages: (ids: string[]) => Page[]
     setPageMargin: (id: string, margin: PageMargin, custom?: CustomMargin) => void
     setPageImageFit: (id: string, fit: ImageFit) => void
-    setCoverPage: (id: string) => void
     setThumbnail: (id: string, thumbnailBlob: Blob, thumbnailUrl: string) => void
     setImageUrl: (id: string, imageUrl: string) => void
     setOcrText: (id: string, text: string) => void
@@ -186,15 +185,6 @@ export const usePagesStore = create<PagesStore>()(
                 pages: state.pages.map((p) =>
                     p.id === id ? { ...p, imageFit, updatedAt: Date.now() } : p
                 ),
-            })),
-
-        setCoverPage: (id) =>
-            set((state) => ({
-                pages: state.pages.map((p) => ({
-                    ...p,
-                    isCover: p.id === id,
-                    updatedAt: Date.now(),
-                })),
             })),
 
         setThumbnail: (id, thumbnailBlob, thumbnailUrl) =>

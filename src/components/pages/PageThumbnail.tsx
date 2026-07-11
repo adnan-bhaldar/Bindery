@@ -68,7 +68,7 @@ export const PageThumbnail = memo(({ page, index, allPageIds }: Props) => {
                 borderRadius: 5, overflow: 'hidden',
                 background: 'var(--s3)',
                 border: `1.5px solid ${isSelected ? 'var(--accent)' : hovered ? 'var(--border-hard)' : 'var(--border)'}`,
-                boxShadow: isSelected ? '0 0 0 2px var(--accent-dim)' : hovered ? 'var(--sh-sm)' : 'var(--sh-xs)',
+                boxShadow: isSelected ? '0 0 0 2px var(--accent-dim)' : 'var(--sh-xs)',
                 transition: 'border-color 110ms, box-shadow 110ms',
                 position: 'relative',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -130,39 +130,43 @@ export const PageThumbnail = memo(({ page, index, allPageIds }: Props) => {
                 </p>
             </div>
 
-            {/* Hover actions */}
-            {hovered && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 2, flexShrink: 0 }}>
-                    <Tooltip content="Rotate 90°" placement="left">
-                        <button onClick={e => {
-                            e.stopPropagation()
-                            rotatePage(page.id, ((page.rotation + 90) % 360) as 0 | 90 | 180 | 270)
-                        }} style={actionBtn}
-                            onMouseEnter={e => { e.currentTarget.style.background = 'var(--s5)' }}
-                            onMouseLeave={e => { e.currentTarget.style.background = 'var(--s4)' }}
-                        >
-                            <RotateCw size={11} />
-                        </button>
-                    </Tooltip>
-                    <Tooltip content="Duplicate" placement="left">
-                        <button onClick={e => { e.stopPropagation(); duplicatePage(page.id) }} style={actionBtn}
-                            onMouseEnter={e => { e.currentTarget.style.background = 'var(--s5)' }}
-                            onMouseLeave={e => { e.currentTarget.style.background = 'var(--s4)' }}
-                        >
-                            <Copy size={11} />
-                        </button>
-                    </Tooltip>
-                    <Tooltip content="Delete" placement="left">
-                        <button onClick={e => { e.stopPropagation(); removePage(page.id) }}
-                            style={{ ...actionBtn, color: '#ef4444' }}
-                            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.12)' }}
-                            onMouseLeave={e => { e.currentTarget.style.background = 'var(--s4)'; e.currentTarget.style.color = '#ef4444' }}
-                        >
-                            <Trash2 size={11} />
-                        </button>
-                    </Tooltip>
-                </div>
-            )}
+            {/* Hover actions — always mounted (reserves layout space) so the
+                row's height never changes on hover; only opacity toggles */}
+            <div style={{
+                display: 'flex', flexDirection: 'column', gap: 2, flexShrink: 0,
+                opacity: hovered ? 1 : 0,
+                pointerEvents: hovered ? 'auto' : 'none',
+                transition: 'opacity 110ms',
+            }}>
+                <Tooltip content="Rotate 90°" placement="left">
+                    <button onClick={e => {
+                        e.stopPropagation()
+                        rotatePage(page.id, ((page.rotation + 90) % 360) as 0 | 90 | 180 | 270)
+                    }} style={actionBtn}
+                        onMouseEnter={e => { e.currentTarget.style.background = 'var(--s5)' }}
+                        onMouseLeave={e => { e.currentTarget.style.background = 'var(--s4)' }}
+                    >
+                        <RotateCw size={11} />
+                    </button>
+                </Tooltip>
+                <Tooltip content="Duplicate" placement="left">
+                    <button onClick={e => { e.stopPropagation(); duplicatePage(page.id) }} style={actionBtn}
+                        onMouseEnter={e => { e.currentTarget.style.background = 'var(--s5)' }}
+                        onMouseLeave={e => { e.currentTarget.style.background = 'var(--s4)' }}
+                    >
+                        <Copy size={11} />
+                    </button>
+                </Tooltip>
+                <Tooltip content="Delete" placement="left">
+                    <button onClick={e => { e.stopPropagation(); removePage(page.id) }}
+                        style={{ ...actionBtn, color: '#ef4444' }}
+                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.12)' }}
+                        onMouseLeave={e => { e.currentTarget.style.background = 'var(--s4)'; e.currentTarget.style.color = '#ef4444' }}
+                    >
+                        <Trash2 size={11} />
+                    </button>
+                </Tooltip>
+            </div>
         </div>
     )
 })

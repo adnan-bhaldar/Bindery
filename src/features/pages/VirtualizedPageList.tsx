@@ -1,10 +1,9 @@
-import { memo, useRef, useCallback, useMemo, useEffect, useState } from 'react'
-import { useVirtualizer } from '@tanstack/react-virtual'
+import { memo, useCallback, useEffect, useMemo, useState } from 'react'
 import {
-    DndContext, closestCenter, PointerSensor,
+    DndContext, closestCenter, PointerSensor, DragOverlay,
     useSensor, useSensors, type DragEndEvent, type DragStartEvent,
 } from '@dnd-kit/core'
-import { restrictToVerticalAxis, restrictToParentElement } from '@dnd-kit/modifiers'
+import { restrictToVerticalAxis } from '@dnd-kit/modifiers'
 import {
     SortableContext, verticalListSortingStrategy,
     rectSortingStrategy, useSortable,
@@ -25,6 +24,20 @@ import {
 } from 'lucide-react'
 import type { Page } from '@/types'
 
+// NOTE: this list is intentionally NOT virtualized. It previously used
+// @tanstack/react-virtual, but virtualization and @dnd-kit/sortable's
+// reflow/reorder animations are two independent layout systems fighting to
+// position the same DOM nodes — that mismatch was the root cause behind a
+// whole family of bugs (CSS Grid track sizing, drag clamped to a single
+// row's bounds, dragged items disappearing behind sibling rows). For a
+// sidebar of scanned pages (realistically dozens to a few hundred, not tens
+// of thousands), plain rendering lets dnd-kit work exactly as documented,
+// and React handles this many simple thumbnail nodes without difficulty.
+// If a project ever needs to comfortably handle thousands of pages, this is
+// the file to revisit — but re-virtualizing should go hand in hand with
+// disabling dnd-kit's live reflow animation during drag, not just bolting
+// the virtualizer back on as before.
+
 // ─── Sort types ───────────────────────────────────────────────────────────────
 
 type SortKey = 'manual' | 'name' | 'size' | 'date'
@@ -32,8 +45,6 @@ type SortDir = 'asc' | 'desc'
 
 function sortPages(pages: Page[], key: SortKey, dir: SortDir): Page[] {
     if (key === 'manual') return pages
-
-    // Sort ALL pages — whichever ends up at index 0 becomes the new cover
     return [...pages].sort((a, b) => {
         let cmp = 0
         if (key === 'name') {
@@ -47,40 +58,45 @@ function sortPages(pages: Page[], key: SortKey, dir: SortDir): Page[] {
     })
 }
 
-// ─── Row heights ──────────────────────────────────────────────────────────────
-
-const LIST_ROW_H = 84
 const GRID_COLS = 2
-const GRID_CELL_H = 200  // thumbnail + label — generous headroom so a wider
-                          // sidebar (taller aspectRatio-driven thumbnail) never
-                          // exceeds the row height the virtualizer thinks it has
-const PADDING = 8
-const GAP = 4
+const GAP = 8
+const PADDING_PX = 8
 
 // ─── Sortable wrappers ────────────────────────────────────────────────────────
 
 const SortableListRow = memo(({ page, index, allPageIds, disabled }: {
     page: Page; index: number; allPageIds: string[]; disabled: boolean
 }) => {
-    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-        id: page.id,
-    })
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: page.id })
     return (
         <div
             ref={setNodeRef}
+            data-page-id={page.id}
             style={{
                 transform: CSS.Transform.toString(transform),
                 transition,
-                opacity: isDragging ? 0.4 : 1,
-                // Keep cursor normal when locked — but always spread listeners
-                // so onDragStart fires and shows the toast
-                cursor: disabled ? 'not-allowed' : undefined,
+                position: 'relative',
+                cursor: disabled ? 'not-allowed' : (isDragging ? 'grabbing' : 'grab'),
+                touchAction: 'none',
             }}
             data-drag-locked={disabled ? 'true' : undefined}
             {...attributes}
             {...listeners}
         >
-            <PageThumbnail page={page} index={index} allPageIds={allPageIds} />
+            {/* visibility:hidden (not display:none) keeps this row's exact
+                height reserved, so the dashed placeholder below lines up
+                perfectly without needing to hardcode a pixel height. */}
+            <div style={{ visibility: isDragging ? 'hidden' : 'visible' }}>
+                <PageThumbnail page={page} index={index} allPageIds={allPageIds} />
+            </div>
+            {isDragging && (
+                <div style={{
+                    position: 'absolute', inset: 0,
+                    borderRadius: 10,
+                    border: '1.5px dashed var(--accent-border)',
+                    background: 'var(--accent-dim)',
+                }} />
+            )}
         </div>
     )
 })
@@ -89,38 +105,34 @@ SortableListRow.displayName = 'SortableListRow'
 const SortableGridCell = memo(({ page, index, allPageIds, disabled }: {
     page: Page; index: number; allPageIds: string[]; disabled: boolean
 }) => {
-    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-        id: page.id,
-    })
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: page.id })
     return (
         <div
             ref={setNodeRef}
+            data-page-id={page.id}
             style={{
                 transform: CSS.Transform.toString(transform),
                 transition,
-                opacity: isDragging ? 0.4 : 1,
-                cursor: disabled ? 'not-allowed' : undefined,
-                // CSS Grid items default to min-width:auto / min-height:auto —
-                // their minimum track size is computed from their content's
-                // min-content size, walking all the way down through
-                // descendants, REGARDLESS of overflow:hidden on any wrapper
-                // in between (overflow:hidden only affects painting, not the
-                // grid track-sizing algorithm's intrinsic-size calculation).
-                // Since the rotated thumbnail's <img> is deliberately given a
-                // pre-rotation box larger than its own slot (see RotatedImage),
-                // without this override that oversized box's min-content
-                // contribution inflates this grid column, pushing into the
-                // next one. Resetting to 0 here tells Grid to ignore it and
-                // just honor the declared 1fr track size — the actual visual
-                // clipping is still correctly handled by the overflow:hidden
-                // wrappers further down.
+                position: 'relative',
+                cursor: disabled ? 'not-allowed' : (isDragging ? 'grabbing' : 'grab'),
                 minWidth: 0, minHeight: 0,
+                touchAction: 'none',
             }}
             data-drag-locked={disabled ? 'true' : undefined}
             {...attributes}
             {...listeners}
         >
-            <PageThumbnailGrid page={page} index={index} allPageIds={allPageIds} />
+            <div style={{ visibility: isDragging ? 'hidden' : 'visible' }}>
+                <PageThumbnailGrid page={page} index={index} allPageIds={allPageIds} />
+            </div>
+            {isDragging && (
+                <div style={{
+                    position: 'absolute', inset: 0,
+                    borderRadius: 10,
+                    border: '1.5px dashed var(--accent-border)',
+                    background: 'var(--accent-dim)',
+                }} />
+            )}
         </div>
     )
 })
@@ -128,16 +140,11 @@ SortableGridCell.displayName = 'SortableGridCell'
 
 // ─── Sort button ──────────────────────────────────────────────────────────────
 
-const SortBtn = memo(({
-    label, sortKey, currentKey, currentDir, onClick,
-}: {
-    label: string; sortKey: SortKey
-    currentKey: SortKey; currentDir: SortDir
-    onClick: (k: SortKey) => void
+const SortBtn = memo(({ label, sortKey, currentKey, currentDir, onClick }: {
+    label: string; sortKey: SortKey; currentKey: SortKey; currentDir: SortDir; onClick: (k: SortKey) => void
 }) => {
     const active = currentKey === sortKey
     const Icon = active ? (currentDir === 'asc' ? ChevronUp : ChevronDown) : null
-
     return (
         <button
             onClick={() => onClick(sortKey)}
@@ -246,66 +253,75 @@ export const VirtualizedPageList = memo(() => {
     const isSorted = sortKey !== 'manual'
     const dragDisabled = isSorted && !settings.allowDragWhenSorted
 
-    // Apply sort
     const pages = useMemo(() => sortPages(rawPages, sortKey, sortDir), [rawPages, sortKey, sortDir])
     const allPageIds = useMemo(() => pages.map(p => p.id), [pages])
 
-    const containerRef = useRef<HTMLDivElement>(null)
-
-    // Virtualizer — single row for list, paired rows for grid
-    const rowCount = layout === 'grid' ? Math.ceil(pages.length / GRID_COLS) : pages.length
-    const rowH = layout === 'grid' ? GRID_CELL_H + GAP : LIST_ROW_H + GAP
-
-    const virtualizer = useVirtualizer({
-        count: rowCount,
-        getScrollElement: () => containerRef.current,
-        estimateSize: () => rowH,
-        overscan: 6,
-        paddingStart: PADDING,
-        paddingEnd: PADDING + 52,
-    })
-
-    // Keep a ref so the drag-start handler can read the latest value without stale closure
-    const dragDisabledRef = useRef(dragDisabled)
-    dragDisabledRef.current = dragDisabled
-
-    // Custom sensor — shows toast and blocks drag when locked
-    // Uses a ref so the activator always reads the latest value
-    class BlockablePointerSensor extends PointerSensor {
-        static activators = [
-            {
-                eventName: 'onPointerDown' as const,
-                handler: ({ nativeEvent: event }: { nativeEvent: PointerEvent }) => {
-                    const el = event.target as HTMLElement
-                    if (el.closest('[data-drag-locked="true"]')) {
-                        // Show toast here — this is the only place that reliably fires
-                        toast.info('Drag is locked while sorted', {
-                            description: 'Switch to Manual sort or enable "Allow drag when sorted" in Settings → Appearance.',
-                            duration: 3500,
-                            id: 'drag-locked',
-                        })
-                        return false // block drag activation entirely
-                    }
-                    return true
-                },
-            },
-        ]
-    }
-
     const sensors = useSensors(
-        useSensor(BlockablePointerSensor, { activationConstraint: { distance: 6 } })
+        useSensor(
+            class BlockablePointerSensor extends PointerSensor {
+                static activators = [
+                    {
+                        eventName: 'onPointerDown' as const,
+                        handler: ({ nativeEvent: event }: { nativeEvent: PointerEvent }) => {
+                            const el = event.target as HTMLElement
+                            if (el.closest('[data-drag-locked="true"]')) {
+                                toast.info('Drag is locked while sorted', {
+                                    description: 'Switch to Manual sort or enable "Allow drag when sorted" in Settings → Appearance.',
+                                    duration: 3500,
+                                    id: 'drag-locked',
+                                })
+                                return false
+                            }
+                            return true
+                        },
+                    },
+                ]
+            },
+            { activationConstraint: { distance: 6 } }
+        )
     )
 
-    const handleDragStart = useCallback((_event: DragStartEvent) => {
-        // No-op — toast and blocking are handled in the sensor activator above
+    const [activeId, setActiveId] = useState<string | null>(null)
+    const [activeSize, setActiveSize] = useState<{ width: number; height: number } | null>(null)
+
+    // Without this, the cursor flickers back to the default arrow whenever
+    // the pointer passes over a gap between rows/cells mid-drag — pinning it
+    // to 'grabbing' for the whole page while active reads much more solid.
+    useEffect(() => {
+        if (!activeId) return
+        const prev = document.body.style.cursor
+        document.body.style.cursor = 'grabbing'
+        return () => { document.body.style.cursor = prev }
+    }, [activeId])
+
+    const handleDragStart = useCallback((event: DragStartEvent) => {
+        const id = String(event.active.id)
+        setActiveId(id)
+        // Measure the actual rendered element directly — dnd-kit's own
+        // rect.current.initial wasn't reliably populated in this setup,
+        // which was silently falling back to a fixed placeholder size and
+        // making the dragged item look enlarged/mismatched the whole time.
+        const escapedId = window.CSS.escape(id)
+        const el = document.querySelector(`[data-page-id="${escapedId}"]`) as HTMLElement | null
+        if (el) {
+            const rect = el.getBoundingClientRect()
+            setActiveSize({ width: rect.width, height: rect.height })
+        } else {
+            const rect = event.active.rect.current.initial
+            if (rect) setActiveSize({ width: rect.width, height: rect.height })
+        }
     }, [])
 
-    // cancelDrop runs after dragStart — returns true to cancel the drop when locked
-    const handleCancelDrop = useCallback(() => {
-        return dragDisabledRef.current
+    const handleCancelDrop = useCallback(() => dragDisabled, [dragDisabled])
+
+    const handleDragCancel = useCallback(() => {
+        setActiveId(null)
+        setActiveSize(null)
     }, [])
 
     const handleDragEnd = useCallback((event: DragEndEvent) => {
+        setActiveId(null)
+        setActiveSize(null)
         const { active, over } = event
         if (!over || active.id === over.id) return
         const oldIdx = pages.findIndex(p => p.id === active.id)
@@ -313,14 +329,12 @@ export const VirtualizedPageList = memo(() => {
         if (oldIdx === -1 || newIdx === -1) return
         const before = pages
         reorderPages(oldIdx, newIdx)
-        // Re-enforce cover on the reordered pages
         const reordered = usePagesStore.getState().pages
         if (!reordered[0]?.isCover) {
             setPages(reordered.map((p, i) => ({ ...p, isCover: i === 0 })))
         }
         const after = usePagesStore.getState().pages
         pushHistory('reorder-pages', `Moved page ${oldIdx + 1} → ${newIdx + 1}`, before, after)
-        // If dragging while a sort was active, revert to manual so the dragged order is preserved
         if (sortKey !== 'manual') setSortKey('manual')
     }, [pages, reorderPages, pushHistory, sortKey])
 
@@ -330,24 +344,21 @@ export const VirtualizedPageList = memo(() => {
             return
         }
         if (sortKey === key) {
-            // Toggle direction
-            const next = sortDir === 'asc' ? 'desc' : 'asc'
-            setSortDir(next)
+            setSortDir(sortDir === 'asc' ? 'desc' : 'asc')
         } else {
             setSortKey(key)
             setSortDir('asc')
         }
     }, [sortKey, sortDir])
 
-    // Apply sort to store order when user clicks a sort (makes it persistent for export)
-    // Always re-enforce isCover: true on the first page after sorting
+    // Side effect (calling setPages) belongs in useEffect, not useMemo.
     useEffect(() => {
         if (sortKey === 'manual') return
         const sorted = sortPages(rawPages, sortKey, sortDir)
         setPages(sorted.map((p, i) => ({ ...p, order: i, isCover: i === 0 })))
-    }, [sortKey, sortDir]) // eslint-disable-line
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [sortKey, sortDir])
 
-    // Kbd
     useEffect(() => {
         const h = (e: KeyboardEvent) => {
             const tag = (e.target as HTMLElement).tagName
@@ -363,17 +374,16 @@ export const VirtualizedPageList = memo(() => {
 
     if (pages.length === 0) return null
 
+    const activePage = activeId ? pages.find(p => p.id === activeId) : undefined
+    const activeIndex = activeId ? pages.findIndex(p => p.id === activeId) : -1
+
     return (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-
-            {/* ── Header ────────────────────────────────────────────────── */}
             <div style={{
                 padding: '7px 10px 6px', flexShrink: 0,
                 borderBottom: '1px solid var(--border)',
                 display: 'flex', flexDirection: 'column', gap: 6,
             }}>
-
-                {/* Top row: count + layout toggle + select-all */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <span style={{
                         fontSize: 10, fontWeight: 700, color: 'var(--tx-4)',
@@ -381,8 +391,6 @@ export const VirtualizedPageList = memo(() => {
                     }}>
                         {pages.length} {pages.length === 1 ? 'page' : 'pages'}
                     </span>
-
-                    {/* Layout toggle */}
                     <div style={{
                         display: 'flex', background: 'var(--s3)',
                         borderRadius: 7, padding: 2, gap: 1,
@@ -415,7 +423,6 @@ export const VirtualizedPageList = memo(() => {
                             ><LayoutGrid size={12} /></button>
                         </Tooltip>
                     </div>
-
                     <Tooltip content={count2 > 0 ? 'Deselect all' : 'Select all'} shortcut="⌘A" placement="bottom">
                         <button
                             onClick={() => count2 > 0 ? deselectAll() : selectAll(allPageIds)}
@@ -433,8 +440,6 @@ export const VirtualizedPageList = memo(() => {
                         </button>
                     </Tooltip>
                 </div>
-
-                {/* Sort row */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                     <ArrowUpDown size={10} color="var(--tx-4)" style={{ flexShrink: 0 }} />
                     <SortBtn label="Manual" sortKey="manual" currentKey={sortKey} currentDir={sortDir} onClick={handleSort} />
@@ -442,76 +447,73 @@ export const VirtualizedPageList = memo(() => {
                     <SortBtn label="Size" sortKey="size" currentKey={sortKey} currentDir={sortDir} onClick={handleSort} />
                     <SortBtn label="Date" sortKey="date" currentKey={sortKey} currentDir={sortDir} onClick={handleSort} />
                 </div>
-
             </div>
 
-            {/* ── Scrollable list ────────────────────────────────────────── */}
             <DndContext
                 sensors={sensors}
                 collisionDetection={closestCenter}
-                modifiers={layout === 'list' ? [restrictToVerticalAxis, restrictToParentElement] : [restrictToParentElement]}
+                modifiers={layout === 'list' ? [restrictToVerticalAxis] : []}
                 onDragStart={handleDragStart}
                 cancelDrop={handleCancelDrop}
                 onDragEnd={handleDragEnd}
+                onDragCancel={handleDragCancel}
             >
                 <SortableContext
                     items={allPageIds}
                     strategy={layout === 'grid' ? rectSortingStrategy : verticalListSortingStrategy}
                 >
-                    <div
-                        ref={containerRef}
-                        style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', position: 'relative' }}
-                    >
-                        <div style={{ height: virtualizer.getTotalSize(), position: 'relative' }}>
-
-                            {layout === 'list' && virtualizer.getVirtualItems().map(vRow => {
-                                const page = pages[vRow.index]
-                                if (!page) return null
-                                return (
-                                    <div key={vRow.key} style={{
-                                        position: 'absolute', top: 0,
-                                        left: PADDING, right: PADDING,
-                                        height: LIST_ROW_H,
-                                        transform: `translateY(${vRow.start}px)`,
-                                    }}>
-                                        <SortableListRow
-                                            page={page} index={vRow.index}
-                                            allPageIds={allPageIds} disabled={dragDisabled}
-                                        />
-                                    </div>
-                                )
-                            })}
-
-                            {layout === 'grid' && virtualizer.getVirtualItems().map(vRow => {
-                                const startIdx = vRow.index * GRID_COLS
-                                const rowPages = pages.slice(startIdx, startIdx + GRID_COLS)
-                                return (
-                                    <div key={vRow.key} style={{
-                                        position: 'absolute', top: 0,
-                                        left: PADDING, right: PADDING,
-                                        height: GRID_CELL_H,
-                                        transform: `translateY(${vRow.start}px)`,
-                                        display: 'grid',
-                                        gridTemplateColumns: `repeat(${GRID_COLS}, 1fr)`,
-                                        gap: GAP,
-                                        overflow: 'hidden', // safety net: even if content ever
-                                        // exceeds GRID_CELL_H, it clips instead of visually
-                                        // overlapping the next row/cell
-                                    }}>
-                                        {rowPages.map((page, ci) => (
-                                            <SortableGridCell
-                                                key={page.id}
-                                                page={page} index={startIdx + ci}
-                                                allPageIds={allPageIds} disabled={dragDisabled}
-                                            />
-                                        ))}
-                                    </div>
-                                )
-                            })}
-
-                        </div>
+                    <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: PADDING_PX }}>
+                        {layout === 'list' ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                {pages.map((page, i) => (
+                                    <SortableListRow
+                                        key={page.id}
+                                        page={page} index={i}
+                                        allPageIds={allPageIds} disabled={dragDisabled}
+                                    />
+                                ))}
+                            </div>
+                        ) : (
+                            <div style={{
+                                display: 'grid',
+                                gridTemplateColumns: `repeat(${GRID_COLS}, 1fr)`,
+                                gap: GAP,
+                            }}>
+                                {pages.map((page, i) => (
+                                    <SortableGridCell
+                                        key={page.id}
+                                        page={page} index={i}
+                                        allPageIds={allPageIds} disabled={dragDisabled}
+                                    />
+                                ))}
+                            </div>
+                        )}
+                        <div style={{ height: 52 }} />
                     </div>
                 </SortableContext>
+
+                <DragOverlay dropAnimation={{ duration: 180, easing: 'cubic-bezier(0.16, 1, 0.3, 1)' }}>
+                    {activePage ? (
+                        <div style={{
+                            // Fallback size covers the rare case where the
+                            // initial rect measurement isn't ready the exact
+                            // instant dragStart fires — without this, the
+                            // overlay would render nothing for a moment while
+                            // the original item is already hidden, making the
+                            // dragged page appear to vanish entirely.
+                            width: activeSize?.width ?? (layout === 'grid' ? 140 : 200),
+                            height: activeSize?.height ?? (layout === 'grid' ? 186 : 64),
+                            cursor: 'grabbing',
+                            pointerEvents: 'none',
+                            borderRadius: 10,
+                            filter: 'drop-shadow(0 16px 32px rgba(0,0,0,0.5)) drop-shadow(0 4px 10px rgba(0,0,0,0.3))',
+                        }}>
+                            {layout === 'grid'
+                                ? <PageThumbnailGrid page={activePage} index={activeIndex} allPageIds={allPageIds} />
+                                : <PageThumbnail page={activePage} index={activeIndex} allPageIds={allPageIds} />}
+                        </div>
+                    ) : null}
+                </DragOverlay>
             </DndContext>
 
             <BatchToolbar />
