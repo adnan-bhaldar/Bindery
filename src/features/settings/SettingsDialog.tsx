@@ -4,11 +4,13 @@ import {
     X, Search, Settings, Palette, Upload, Download,
     ScanText, Accessibility, Keyboard,
     Shield, Database, Info, RotateCcw, BookOpen,
-    HardDrive, Image as ImageIcon, FileArchive, Loader2, Trash2,
+    HardDrive, Image as ImageIcon, FileArchive, Trash2,
+    Sun, Moon, Check, ExternalLink,
 } from 'lucide-react'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { useThemeStore } from '@/stores/themeStore'
 import { Toggle } from '@/components/ui/Toggle'
+import { Spinner } from '@/components/ui/Spinner'
 import { useConfirm } from '@/components/ui/ConfirmDialog'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { OCR_LANGUAGE_LABELS } from '@/constants'
@@ -16,6 +18,17 @@ import { getStorageStats, clearDatabase, type StorageStats } from '@/db/schema'
 import { formatFileSize } from '@/lib/utils'
 import { toast } from 'sonner'
 import type { AppSettings } from '@/types'
+
+// lucide-react removed all brand/logo icons (GitHub, Twitter, etc.) from
+// v1.0 onward — this project is pinned to ^1.21.0, so `Github` no longer
+// exists as an export. A small inline SVG of the mark is the standard
+// substitute other apps use once a icon library drops brand glyphs.
+const GithubMark = memo(({ size = 16, color = 'currentColor' }: { size?: number; color?: string }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill={color} aria-hidden>
+        <path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.57.1.79-.25.79-.55 0-.27-.01-1.16-.02-2.1-3.2.7-3.87-1.36-3.87-1.36-.53-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.75 2.7 1.25 3.36.96.1-.74.4-1.25.73-1.54-2.56-.29-5.26-1.28-5.26-5.69 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11.06 11.06 0 0 1 5.79 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.24 2.76.11 3.05.75.81 1.19 1.83 1.19 3.09 0 4.42-2.7 5.39-5.27 5.68.41.36.78 1.07.78 2.15 0 1.55-.01 2.8-.01 3.18 0 .3.21.66.79.55A10.52 10.52 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z" />
+    </svg>
+))
+GithubMark.displayName = 'GithubMark'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -196,43 +209,67 @@ const ThemePreviewCard = memo(({ previewTheme, accent, active, onClick }: {
     const sidebar = isDark ? '#13131f' : '#eaeaf2'
     const card = '#ffffff'
     const tx = isDark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.30)'
-    const border = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)'
-    const shadow = isDark ? '0 8px 32px rgba(0,0,0,0.6)' : '0 8px 32px rgba(0,0,0,0.12)'
+    const border = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'
+    const shadow = isDark ? '0 10px 36px rgba(0,0,0,0.65)' : '0 10px 36px rgba(0,0,0,0.14)'
+    const Icon = isDark ? Moon : Sun
 
     return (
         <button
             onClick={onClick}
             style={{
-                flex: 1, border: 'none', background: 'transparent',
-                cursor: 'pointer', borderRadius: 14,
-                outline: active ? `2.5px solid ${accent}` : `2.5px solid transparent`,
-                outlineOffset: 3,
-                transition: 'outline-color 160ms, transform 160ms, box-shadow 160ms',
+                position: 'relative', flex: 1, cursor: 'pointer',
+                border: 'none', borderRadius: 18, padding: 14, marginTop: 8,
+                background: active
+                    ? `linear-gradient(180deg, ${accent}12, transparent 65%)`
+                    : 'var(--s2)',
+                outline: active ? `2px solid ${accent}` : '1.5px solid var(--border)',
+                outlineOffset: active ? 1 : -1.5,
+                boxShadow: active
+                    ? `0 14px 36px ${accent}2e, inset 0 1px 0 rgba(255,255,255,0.04)`
+                    : 'var(--sh-xs)',
                 transform: active ? 'translateY(-2px)' : 'none',
-                boxShadow: active ? `0 8px 24px ${accent}33` : 'none',
+                transition: 'all 220ms var(--ease-out)',
             }}
+            onMouseEnter={e => { if (!active) e.currentTarget.style.transform = 'translateY(-1px)' }}
+            onMouseLeave={e => { if (!active) e.currentTarget.style.transform = 'none' }}
         >
+            {/* Ambient glow — only for the active card, gives it a "lit up" feel */}
+            {active && (
+                <div style={{
+                    position: 'absolute', inset: -18, zIndex: 0, pointerEvents: 'none',
+                    background: `radial-gradient(ellipse 70% 60% at 50% 20%, ${accent}30, transparent 72%)`,
+                    filter: 'blur(4px)',
+                }} />
+            )}
+
             <div style={{
-                borderRadius: 12, overflow: 'hidden',
+                position: 'relative', zIndex: 1,
+                borderRadius: 13, overflow: 'hidden',
                 background: bg, border: `1px solid ${border}`,
                 boxShadow: shadow,
             }}>
+                {/* Glass shine — a soft diagonal highlight for a premium, glossy feel */}
                 <div style={{
-                    height: 22, background: nav,
+                    position: 'absolute', inset: 0, zIndex: 2, pointerEvents: 'none',
+                    background: `linear-gradient(115deg, rgba(255,255,255,${isDark ? 0.05 : 0.35}) 0%, transparent 30%)`,
+                }} />
+
+                <div style={{
+                    position: 'relative', height: 23, background: nav,
                     borderBottom: `1px solid ${border}`,
-                    display: 'flex', alignItems: 'center', gap: 5, padding: '0 8px',
+                    display: 'flex', alignItems: 'center', gap: 5, padding: '0 9px',
                 }}>
-                    <div style={{ width: 6, height: 6, borderRadius: '50%', background: accent, boxShadow: `0 0 6px ${accent}88` }} />
+                    <div style={{ width: 6, height: 6, borderRadius: '50%', background: accent, boxShadow: `0 0 6px ${accent}aa` }} />
                     <div style={{ flex: 1, height: 5, borderRadius: 3, background: isDark ? '#1e1e2e' : '#d8d8e4', margin: '0 4px' }} />
-                    <div style={{ height: 7, width: 24, borderRadius: 4, background: `linear-gradient(135deg,${accent},${accent}bb)` }} />
+                    <div style={{ height: 7, width: 26, borderRadius: 4, background: `linear-gradient(135deg,${accent},${accent}bb)` }} />
                 </div>
-                <div style={{ display: 'flex', height: 60 }}>
+                <div style={{ position: 'relative', display: 'flex', height: 64 }}>
                     <div style={{
-                        width: 30, background: sidebar,
+                        width: 32, background: sidebar,
                         borderRight: `1px solid ${border}`,
-                        padding: '5px 4px', display: 'flex', flexDirection: 'column', gap: 4,
+                        padding: '6px 5px', display: 'flex', flexDirection: 'column', gap: 4,
                     }}>
-                        <div style={{ height: 14, borderRadius: 3, background: `${accent}33`, border: `1px solid ${accent}44` }} />
+                        <div style={{ height: 15, borderRadius: 4, background: `${accent}38`, border: `1px solid ${accent}55` }} />
                         {[0.45, 0.35].map((op, i) => (
                             <div key={i} style={{ height: 5, borderRadius: 2, background: tx, opacity: op }} />
                         ))}
@@ -242,16 +279,16 @@ const ThemePreviewCard = memo(({ previewTheme, accent, active, onClick }: {
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                     }}>
                         <div style={{
-                            width: 30, height: 40,
+                            width: 32, height: 43,
                             background: card,
                             borderRadius: 2,
-                            boxShadow: isDark ? '0 4px 16px rgba(0,0,0,0.6)' : '0 4px 16px rgba(0,0,0,0.14)',
+                            boxShadow: isDark ? '0 6px 20px rgba(0,0,0,0.65)' : '0 6px 20px rgba(0,0,0,0.16)',
                         }} />
                     </div>
                     <div style={{
-                        width: 26, background: sidebar,
+                        width: 28, background: sidebar,
                         borderLeft: `1px solid ${border}`,
-                        padding: '5px 4px', display: 'flex', flexDirection: 'column', gap: 3,
+                        padding: '6px 5px', display: 'flex', flexDirection: 'column', gap: 3,
                     }}>
                         {[0.7, 0.5, 0.5, 0.4].map((w, i) => (
                             <div key={i} style={{ height: 3, width: `${w * 100}%`, borderRadius: 1, background: tx, opacity: 0.6 }} />
@@ -259,15 +296,32 @@ const ThemePreviewCard = memo(({ previewTheme, accent, active, onClick }: {
                     </div>
                 </div>
             </div>
-            <p style={{
-                marginTop: 10, fontSize: 12, fontWeight: active ? 700 : 500,
-                color: active ? accent : 'var(--tx-3)',
-                textAlign: 'center', fontFamily: 'var(--font-sans)',
-                letterSpacing: active ? '-0.2px' : '0',
-                transition: 'color 150ms',
+
+            <div style={{
+                position: 'relative', zIndex: 1,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                marginTop: 12,
             }}>
-                {previewTheme === 'dark' ? 'Dark' : 'Light'}
-            </p>
+                <Icon size={13} color={active ? accent : 'var(--tx-3)'} strokeWidth={2.25} />
+                <span style={{
+                    fontSize: 12.5, fontWeight: active ? 700 : 500,
+                    color: active ? accent : 'var(--tx-3)',
+                    fontFamily: 'var(--font-sans)',
+                    letterSpacing: active ? '-0.2px' : '0',
+                    transition: 'color 150ms',
+                }}>
+                    {previewTheme === 'dark' ? 'Dark' : 'Light'}
+                </span>
+                {active && (
+                    <div style={{
+                        width: 15, height: 15, borderRadius: '50%',
+                        background: accent, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        marginLeft: 2,
+                    }}>
+                        <Check size={9} color="#fff" strokeWidth={3} />
+                    </div>
+                )}
+            </div>
         </button>
     )
 })
@@ -596,7 +650,7 @@ const StorageSection = memo(() => {
             <Card title="Local Storage" icon={HardDrive} desc="Everything below lives in this browser's IndexedDB — nothing is stored remotely.">
                 {loading ? (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 0', color: 'var(--tx-3)' }}>
-                        <Loader2 size={14} className="spin" />
+                        <Spinner size={14} />
                         <span style={{ fontSize: 12 }}>Reading storage usage…</span>
                     </div>
                 ) : stats ? (
@@ -668,7 +722,7 @@ const StorageSection = memo(() => {
                     onMouseEnter={e => { if (!clearing) e.currentTarget.style.background = 'rgba(239,68,68,0.14)' }}
                     onMouseLeave={e => { if (!clearing) e.currentTarget.style.background = 'rgba(239,68,68,0.08)' }}
                 >
-                    {clearing ? <Loader2 size={13} className="spin" /> : <Trash2 size={13} />}
+                    {clearing ? <Spinner size={13} /> : <Trash2 size={13} />}
                     {clearing ? 'Clearing…' : 'Clear all data'}
                 </button>
             </Card>
@@ -699,6 +753,60 @@ const AboutSection = memo(() => (
                 </div>
             </div>
         </Card>
+
+        <Card title="Developer" icon={GithubMark}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                <div style={{
+                    width: 44, height: 44, borderRadius: 12,
+                    background: 'var(--s3)', border: '1px solid var(--border)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    flexShrink: 0, marginTop: 8,
+                }}>
+                    <GithubMark size={22} color="var(--tx-1)" />
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--tx-1)' }}>Adnan Bhaldar</p>
+                    <p style={{ fontSize: 11.5, color: 'var(--tx-3)', marginTop: 1 }}>@adnan-bhaldar</p>
+                </div>
+                <a
+                    href="https://github.com/adnan-bhaldar"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                        display: 'flex', alignItems: 'center', gap: 6,
+                        padding: '7px 12px', borderRadius: 9,
+                        background: 'var(--s3)', border: '1px solid var(--border)',
+                        color: 'var(--tx-1)', fontSize: 12, fontWeight: 500,
+                        fontFamily: 'var(--font-sans)', textDecoration: 'none',
+                        transition: 'background 110ms, border-color 110ms',
+                        flexShrink: 0,
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.background = 'var(--s4)'; e.currentTarget.style.borderColor = 'var(--border-hard)' }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'var(--s3)'; e.currentTarget.style.borderColor = 'var(--border)' }}
+                >
+                    Profile
+                    <ExternalLink size={12} />
+                </a>
+            </div>
+            <a
+                href="https://github.com/adnan-bhaldar/Bindery"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    marginTop: 12, paddingTop: 12,
+                    borderTop: '1px solid var(--border-soft)',
+                    textDecoration: 'none', color: 'var(--tx-3)',
+                    fontSize: 12, transition: 'color 110ms',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.color = 'var(--accent)' }}
+                onMouseLeave={e => { e.currentTarget.style.color = 'var(--tx-3)' }}
+            >
+                <span>View source on GitHub</span>
+                <ExternalLink size={12} />
+            </a>
+        </Card>
+
         <Card title="Built With" icon={ImageIcon}>
             {[
                 { label: 'Framework', value: 'React 19 + TypeScript' },
