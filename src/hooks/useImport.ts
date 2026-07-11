@@ -70,7 +70,7 @@ export function useImport(): UseImportReturn {
             const result = await importService.importFiles(
                 files,
                 projectId,
-                existingPages.length,
+                existingPages,
                 (p) => {
                     setProgress(p)
                     if (p.phase === 'done') {
@@ -80,6 +80,8 @@ export function useImport(): UseImportReturn {
                 },
                 settings.detectDuplicates,
                 settings.thumbnailSize,
+                settings.warnLowResolution,
+                settings.lowResolutionThreshold,
             )
 
             if (result.imported.length > 0) {
@@ -112,6 +114,17 @@ export function useImport(): UseImportReturn {
 
             if (result.duplicates.length > 0) {
                 toast.warning(`${result.duplicates.length} duplicate${result.duplicates.length !== 1 ? 's' : ''} skipped`)
+            }
+
+            if (result.lowResolution.length > 0) {
+                toast.warning(
+                    `${result.lowResolution.length} low-resolution image${result.lowResolution.length !== 1 ? 's' : ''}`,
+                    {
+                        description: result.lowResolution.length === 1
+                            ? `${result.lowResolution[0]} may look blurry at print size`
+                            : 'These may look blurry at print size — check Settings → Import to adjust the threshold',
+                    }
+                )
             }
 
             if (result.errors.length > 0) {

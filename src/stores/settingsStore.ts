@@ -9,18 +9,17 @@ export const DEFAULT_SETTINGS: AppSettings = {
     restorePreviousSession: true,
     autoSaveInterval: 30,
     maxRecoverySnapshots: 10,
-    showWelcomeScreen: true,
 
     // Appearance
     theme: 'system',
-    accentColor: 'blue',
-    customAccentColor: '#3b82f6',
     reducedMotion: false,
     compactMode: false,
 
     // Import
     autoGenerateThumbnails: true,
     thumbnailSize: 120,
+    sidebarLayout: 'list',
+    allowDragWhenSorted: false,
     detectDuplicates: true,
     warnLowResolution: true,
     lowResolutionThreshold: 72,
@@ -28,7 +27,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
     // Export
     defaultPresetId: 'preset-print',
     defaultFilename: 'bindery-export',
-    showExportPreview: true,
 
     // OCR
     ocrEnabled: true,
@@ -37,26 +35,10 @@ export const DEFAULT_SETTINGS: AppSettings = {
     skipOcrForLargeDocuments: true,
     ocrPageLimit: 100,
 
-    // Cover Page
-    useFirstPageAsCover: true,
-    enableCustomCover: false,
-    askBeforeReplacingCover: true,
-    autoUpdateCover: false,
-    showCoverBadge: true,
-
-    // Performance
-    maxConcurrentWorkers: 4,
-    enableImageCache: true,
-    cacheMaxSizeMb: 256,
-    virtualizationOverscan: 5,
-
     // Accessibility
     highContrast: false,
     focusRingAlwaysVisible: false,
     largeText: false,
-
-    // Privacy
-    enableTelemetry: false,
 }
 
 // ─── State & Actions ──────────────────────────────────────────────────────────
@@ -111,7 +93,16 @@ export const useSettingsStore = create<SettingsStore>()(
         }),
         {
             name: 'bindery:settings',
-            version: 1,
+            version: 2,
+            // v1 → v2: dropped accentColor/customAccentColor (moved out of
+            // settings entirely), showWelcomeScreen, showExportPreview, the
+            // whole Cover Page section (that picker was removed from the
+            // app), maxConcurrentWorkers, enableImageCache, cacheMaxSizeMb
+            // (no such worker pool / cache layer exists), and
+            // virtualizationOverscan (the page list is no longer
+            // virtualized). Any of these lingering in an old persisted
+            // blob are simply ignored by the AppSettings type going forward.
+            migrate: (persisted) => persisted as SettingsState,
         }
     )
 )

@@ -102,3 +102,36 @@ export async function getDatabaseSize(): Promise<number> {
     const estimate = await navigator.storage?.estimate()
     return estimate?.usage ?? 0
 }
+
+export interface StorageStats {
+    projectCount: number
+    pageCount: number
+    pagesBytes: number
+    thumbnailBytes: number
+    exportCount: number
+    totalUsageBytes: number // from the Storage API estimate, includes browser overhead
+    quotaBytes: number
+}
+
+export async function getStorageStats(): Promise<StorageStats> {
+    const [projectCount, pages, thumbnails, exportCount, estimate] = await Promise.all([
+        db.projects.count(),
+        db.pages.toArray(),
+        db.thumbnails.toArray(),
+        db.exports.count(),
+        navigator.storage?.estimate(),
+    ])
+
+    const pagesBytes = pages.reduce((sum, p) => sum + (p.imageBlob?.size ?? 0), 0)
+    const thumbnailBytes = thumbnails.reduce((sum, t) => sum + (t.blob?.size ?? 0), 0)
+
+    return {
+        projectCount,
+        pageCount: pages.length,
+        pagesBytes,
+        thumbnailBytes,
+        exportCount,
+        totalUsageBytes: estimate?.usage ?? (pagesBytes + thumbnailBytes),
+        quotaBytes: estimate?.quota ?? 0,
+    }
+}

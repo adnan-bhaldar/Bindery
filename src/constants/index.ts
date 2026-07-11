@@ -131,15 +131,6 @@ export const OCR_LANGUAGE_LABELS: Record<string, string> = {
 
 // ─── Accent Colors ────────────────────────────────────────────────────────────
 
-export const ACCENT_COLOR_VALUES: Record<string, string> = {
-    blue: '#3b82f6',
-    purple: '#8b5cf6',
-    green: '#22c55e',
-    orange: '#f97316',
-    red: '#ef4444',
-    pink: '#ec4899',
-}
-
 // ─── Error Messages ───────────────────────────────────────────────────────────
 
 export const ERROR_MESSAGES = {

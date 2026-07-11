@@ -1,19 +1,15 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { Theme, AccentColor } from '@/types'
+import type { Theme } from '@/types'
 
 interface ThemeState {
     theme: Theme
     resolvedTheme: 'light' | 'dark'
-    accentColor: AccentColor
-    customAccentColor: string
 }
 
 interface ThemeActions {
     setTheme: (theme: Theme) => void
     setResolvedTheme: (resolved: 'light' | 'dark') => void
-    setAccentColor: (color: AccentColor) => void
-    setCustomAccentColor: (hex: string) => void
 }
 
 type ThemeStore = ThemeState & ThemeActions
@@ -23,8 +19,6 @@ export const useThemeStore = create<ThemeStore>()(
         (set) => ({
             theme: 'dark',
             resolvedTheme: 'dark',
-            accentColor: 'blue',
-            customAccentColor: '#6366f1',
 
             setTheme: (theme) => {
                 // Immediately resolve non-system themes so there's zero async gap
@@ -38,8 +32,6 @@ export const useThemeStore = create<ThemeStore>()(
             },
 
             setResolvedTheme: (resolvedTheme) => set({ resolvedTheme }),
-            setAccentColor: (accentColor) => set({ accentColor }),
-            setCustomAccentColor: (customAccentColor) => set({ customAccentColor }),
         }),
         {
             name: 'bindery:theme',

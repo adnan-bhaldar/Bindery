@@ -1498,3 +1498,61 @@ html.theme-light {
   flex: 1;
   overflow: hidden;
 }
+
+/* ═══════════════════════════════════════════════════
+   ACCESSIBILITY / INTERFACE SETTINGS
+   Applied via useAccessibilitySettings() as data-attrs
+   on <html> — these previously had no effect at all.
+═══════════════════════════════════════════════════ */
+
+/* Reduced motion — mirrors the theme-switching technique above */
+html[data-reduced-motion="true"] *,
+html[data-reduced-motion="true"] *::before,
+html[data-reduced-motion="true"] *::after {
+  transition-duration: 0.01ms !important;
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+}
+
+/* Compact mode / large text — most spacing and font-sizing in this app is
+   hardcoded in px via inline styles rather than a shared spacing/type
+   token system, so a CSS-variable override alone can't reach them. `zoom`
+   (widely supported in Chromium/WebKit; Firefox 126+) scales the actual
+   rendered pixels of everything beneath it, which is the only way to make
+   these two settings have a real, visible, app-wide effect without a much
+   larger refactor of every component's inline styles. */
+html[data-compact="true"] body {
+  zoom: 0.92;
+}
+
+html[data-large-text="true"] body {
+  zoom: 1.15;
+}
+
+/* High contrast — boosts the actual CSS custom properties components read
+   from, so it applies consistently everywhere without touching each
+   component individually. */
+html[data-high-contrast="true"].theme-dark {
+  --tx-2: rgba(230, 230, 255, 0.88);
+  --tx-3: rgba(210, 210, 245, 0.68);
+  --tx-4: rgba(190, 190, 230, 0.48);
+  --border: rgba(180, 180, 230, 0.28);
+  --border-soft: rgba(180, 180, 230, 0.16);
+  --border-hard: rgba(180, 180, 230, 0.42);
+}
+
+html[data-high-contrast="true"].theme-light {
+  --tx-2: rgba(10, 10, 20, 0.82);
+  --tx-3: rgba(10, 10, 20, 0.62);
+  --tx-4: rgba(10, 10, 20, 0.42);
+  --border: rgba(10, 10, 30, 0.22);
+  --border-soft: rgba(10, 10, 30, 0.12);
+  --border-hard: rgba(10, 10, 30, 0.36);
+}
+
+/* Always-visible focus ring — overrides :focus-visible-only styling so
+   keyboard AND mouse focus both show a clear ring, for users who want it. */
+html[data-focus-ring-always="true"] *:focus {
+  outline: 2px solid var(--accent) !important;
+  outline-offset: 2px !important;
+}

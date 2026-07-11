@@ -169,26 +169,14 @@ export interface ExportProgress {
 
 export type Theme = 'light' | 'dark' | 'system'
 
-export type AccentColor =
-    | 'blue'
-    | 'purple'
-    | 'green'
-    | 'orange'
-    | 'red'
-    | 'pink'
-    | 'custom'
-
 export interface AppSettings {
     // General
     restorePreviousSession: boolean
     autoSaveInterval: number
     maxRecoverySnapshots: number
-    showWelcomeScreen: boolean
 
     // Appearance
     theme: Theme
-    accentColor: AccentColor
-    customAccentColor: string
     reducedMotion: boolean
     compactMode: boolean
 
@@ -204,7 +192,6 @@ export interface AppSettings {
     // Export
     defaultPresetId: string
     defaultFilename: string
-    showExportPreview: boolean
 
     // OCR
     ocrEnabled: boolean
@@ -213,26 +200,10 @@ export interface AppSettings {
     skipOcrForLargeDocuments: boolean
     ocrPageLimit: number
 
-    // Cover Page
-    useFirstPageAsCover: boolean
-    enableCustomCover: boolean
-    askBeforeReplacingCover: boolean
-    autoUpdateCover: boolean
-    showCoverBadge: boolean
-
-    // Performance
-    maxConcurrentWorkers: number
-    enableImageCache: boolean
-    cacheMaxSizeMb: number
-    virtualizationOverscan: number
-
     // Accessibility
     highContrast: boolean
     focusRingAlwaysVisible: boolean
     largeText: boolean
-
-    // Privacy
-    enableTelemetry: boolean
 }
 
 // ─── History ─────────────────────────────────────────────────────────────────

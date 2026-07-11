@@ -11,6 +11,7 @@ import { ExportDialog } from '@/features/export/ExportDialog'
 import { SettingsDialog } from '@/features/settings/SettingsDialog'
 import { OCRProgressPanel } from '@/features/ocr/OCRProgressPanel'
 import { useTheme } from '@/hooks/useTheme'
+import { useAccessibilitySettings } from '@/hooks/useAccessibilitySettings'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { useImport } from '@/hooks/useImport'
 import { useOCR } from '@/hooks/useOCR'
@@ -24,10 +25,12 @@ import { suppressNextDirtyFlag } from '@/stores/storeLinks'
 
 export const AppShell = memo(() => {
   useTheme()
+  useAccessibilitySettings()
 
   const [settingsOpen, setSettingsOpen] = useState(false)
   const { isImporting, progress: importProgress, importFiles, importFromPicker } = useImport()
   const { progress: ocrProgress, runOCR, cancelOCR } = useOCR()
+  const { settings } = useSettingsStore()
 
   const { setCurrentProject, markSaved } = useProjectStore(
     useShallow(s => ({ setCurrentProject: s.setCurrentProject, markSaved: s.markSaved }))
@@ -88,7 +91,7 @@ export const AppShell = memo(() => {
     // so by the time we get here we know there is unsaved work to persist.
     if (!currentProject || pages.length === 0) return
     try {
-      await projectService.saveRecoverySnapshot(currentProject.id, pages.length)
+      await projectService.saveRecoverySnapshot(currentProject.id, pages.length, settings.maxRecoverySnapshots)
       await projectService.saveProject(currentProject, pages)
       setCurrentProject({ ...currentProject, status: 'saved' })
       markSaved()
@@ -98,8 +101,6 @@ export const AppShell = memo(() => {
   }, [currentProject, pages, setCurrentProject, markSaved])
 
   useAutoSave(handleAutoSave)
-
-  const { settings } = useSettingsStore()
 
   const handleImportFiles = useCallback((files: File[]) => {
     const pagesBefore = usePagesStore.getState().pages.length

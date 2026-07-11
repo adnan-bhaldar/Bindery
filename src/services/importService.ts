@@ -1,6 +1,7 @@
 import { generateId, createTrackedObjectUrl } from '@/lib/utils'
 import { ACCEPTED_IMAGE_MIME_TYPES } from '@/constants'
 import { thumbnailService } from './thumbnailService'
+import { hashService } from './hashService'
 import { db } from '@/db/schema'
 import type { Page, ImageMetadata } from '@/types'
 
@@ -8,6 +9,7 @@ export interface ImportResult {
     imported: Page[]
     duplicates: string[]
     errors: Array<{ filename: string; reason: string }>
+    lowResolution: string[]
     total: number
 }
 
@@ -40,7 +42,7 @@ async function getImageDimensionsFast(blob: Blob): Promise<{ width: number; heig
 
 // Generate a REAL thumbnail immediately on main thread at small size
 // This is fast enough (< 200ms) and shows instantly
-async function generateInlineThumbnail(blob: Blob, size = 200): Promise<{ blob: Blob; url: string } | null> {
+async function generateInlineThumbnail(blob: Blob, size: number): Promise<{ blob: Blob; url: string } | null> {
     try {
         const bmp = await createImageBitmap(blob)
         const { width, height } = bmp
@@ -60,6 +62,22 @@ async function generateInlineThumbnail(blob: Blob, size = 200): Promise<{ blob: 
     }
 }
 
+// Approximates "effective print resolution" in DPI for a scanned/photographed
+// page, since we have no reliable physical-size metadata (EXIF DPI tags are
+// inconsistent/absent on most phone photos and screenshots). We assume the
+// image is destined for a standard Letter-ish page (8.5×11in) and take the
+// more conservative (smaller) of the two axis-based DPI estimates. This is a
+// heuristic, not a true measurement — but it's the same practical shortcut
+// most consumer scanning apps use, and it's good enough to flag genuinely
+// low-res sources (e.g. a 400×300px web image) without false-flagging normal
+// camera photos.
+function estimateEffectiveDpi(width: number, height: number): number {
+    if (!width || !height) return Infinity // unknown dimensions — don't warn
+    const longEdge = Math.max(width, height)
+    const shortEdge = Math.min(width, height)
+    return Math.min(longEdge / 11, shortEdge / 8.5)
+}
+
 class ImportService {
     private thumbCallbacks: Array<(pageId: string, url: string, blob: Blob) => void> = []
 
@@ -75,12 +93,15 @@ class ImportService {
     async importFiles(
         files: File[],
         projectId: string,
-        existingPageCount: number,
+        existingPages: Page[],
         onProgress?: ProgressCallback,
-        _detectDuplicates = true,
-        _thumbnailSize = 160
+        detectDuplicates = true,
+        thumbnailSize = 160,
+        warnLowResolution = true,
+        lowResolutionThreshold = 72,
     ): Promise<ImportResult> {
-        const result: ImportResult = { imported: [], duplicates: [], errors: [], total: files.length }
+        const result: ImportResult = { imported: [], duplicates: [], errors: [], lowResolution: [], total: files.length }
+        const existingPageCount = existingPages.length
 
         const validFiles: File[] = []
         for (const file of files) {
@@ -90,11 +111,28 @@ class ImportService {
         }
         if (validFiles.length === 0) return result
 
+        // Real hash-based duplicate detection: hash every existing page that
+        // doesn't already have one cached (older projects may predate this),
+        // then compare each new file's hash against that set.
+        const knownHashes = new Set<string>()
+        if (detectDuplicates) {
+            onProgress?.({ phase: 'hashing', current: 0, total: existingPageCount, currentFile: '' })
+            await Promise.all(existingPages.map(async (p) => {
+                if (p.metadata.hash) { knownHashes.add(p.metadata.hash); return }
+                try {
+                    const h = await hashService.hash(p.id, p.imageBlob)
+                    knownHashes.add(h)
+                } catch { /* if hashing an existing page fails, just skip comparing against it */ }
+            }))
+        }
+
         onProgress?.({ phase: 'thumbnails', current: 0, total: validFiles.length, currentFile: '' })
 
         // Process files — generate a real small thumbnail immediately (fast, synchronous-feeling)
         // Then upgrade to hi-res thumbnail in background via worker
         const pages: Page[] = []
+        const seenThisBatch = new Set<string>() // catches duplicates WITHIN the same import batch too
+        let importedCount = 0
         for (let i = 0; i < validFiles.length; i++) {
             const file = validFiles[i]
             onProgress?.({ phase: 'thumbnails', current: i + 1, total: validFiles.length, currentFile: file.name })
@@ -102,19 +140,39 @@ class ImportService {
             const imageBlob = new Blob([await file.arrayBuffer()], { type: file.type })
             const { width, height } = await getImageDimensionsFast(imageBlob)
 
-            // Generate a fast inline thumbnail at 200px — visible quality, fast generation
-            const thumb = await generateInlineThumbnail(imageBlob, 200)
+            let hash: string | undefined
+            if (detectDuplicates) {
+                try {
+                    hash = await hashService.hash(`import-${projectId}-${i}`, imageBlob)
+                } catch { /* if hashing fails, just import the file normally rather than blocking it */ }
+            }
+
+            if (hash && (knownHashes.has(hash) || seenThisBatch.has(hash))) {
+                result.duplicates.push(file.name)
+                continue
+            }
+            if (hash) { knownHashes.add(hash); seenThisBatch.add(hash) }
+
+            if (warnLowResolution && estimateEffectiveDpi(width, height) < lowResolutionThreshold) {
+                result.lowResolution.push(file.name)
+            }
+
+            // Inline thumbnail respects the user's configured thumbnail size —
+            // background hi-res upgrade uses a modest multiple of it, capped
+            // at a sensible ceiling so it stays fast on large batches.
+            const thumb = await generateInlineThumbnail(imageBlob, thumbnailSize)
 
             const metadata: ImageMetadata = {
                 filename: file.name, width, height,
                 fileSize: file.size, mimeType: file.type,
                 createdAt: file.lastModified || Date.now(),
+                hash,
             }
 
             pages.push({
                 id: generateId(),
                 projectId,
-                order: existingPageCount + i,
+                order: existingPageCount + importedCount,
                 rotation: 0,
                 imageBlob,
                 thumbnailBlob: thumb?.blob,
@@ -123,13 +181,14 @@ class ImportService {
                 metadata,
                 ocrText: undefined,
                 ocrStatus: 'idle',
-                isCover: existingPageCount === 0 && i === 0,
+                isCover: existingPageCount === 0 && importedCount === 0,
                 margin: 'medium',
                 customMargin: undefined,
                 imageFit: 'fit',
                 createdAt: Date.now(),
                 updatedAt: Date.now(),
             })
+            importedCount++
         }
 
         result.imported = pages
@@ -139,7 +198,8 @@ class ImportService {
         this.saveToDb(pages).catch(err => console.error('[ImportService] DB save failed:', err))
 
         // Upgrade thumbnails to hi-res in background via worker
-        this.upgradeThumbnailsBackground(pages, 300).catch(err =>
+        const hiResSize = Math.min(Math.round(thumbnailSize * 1.5), 600)
+        this.upgradeThumbnailsBackground(pages, hiResSize).catch(err =>
             console.warn('[ImportService] Background thumb upgrade failed:', err)
         )
 
