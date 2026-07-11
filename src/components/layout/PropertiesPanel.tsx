@@ -219,7 +219,7 @@ const MetaTab = memo(() => {
     { key: 'author', label: 'Author', placeholder: 'Your name' },
     { key: 'subject', label: 'Subject', placeholder: 'Document subject' },
     { key: 'keywords', label: 'Keywords', placeholder: 'tag, another tag…' },
-    { key: 'copyright', label: 'Copyright', placeholder: '© 2025' },
+    { key: 'copyright', label: 'Copyright', placeholder: `© ${new Date().getFullYear()}` },
   ]
 
   return (
