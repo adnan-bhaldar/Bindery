@@ -1,4 +1,4 @@
-import { memo, useState, useCallback, useEffect } from 'react'
+import { memo, useState, useCallback, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     X, Search, Settings, Palette, Upload, Download,
@@ -58,6 +58,67 @@ const SECTIONS: SettingsSection[] = [
     { id: 'storage', label: 'Storage', Icon: Database },
     { id: 'about', label: 'About', Icon: Info },
 ]
+
+// ─── Search index ─────────────────────────────────────────────────────────────
+// A flat list of every actual setting's label + description, per section.
+// Previously the search box only matched against the 10 broad section names
+// above — so searching for the name of an actual setting (e.g. "duplicate",
+// "resolution", "recovery") matched nothing and the whole list emptied out,
+// which is what made search look completely broken. This index is what lets
+// a search term match the real thing the user is looking for.
+const SEARCH_INDEX: Record<string, string[]> = {
+    general: [
+        'restore previous session', 'reopen last project on startup',
+        'auto save interval', 'how often to automatically save',
+        'recovery snapshots', 'number of recovery snapshots to keep',
+    ],
+    appearance: [
+        'theme', 'light', 'dark', 'follow system theme', 'auto-switch based on os',
+        'compact mode', 'denser layout', 'reduce motion', 'minimize animations',
+        'page list style', 'sidebar list grid', 'allow drag when sorted',
+        'thumbnail size', 'small medium large',
+    ],
+    import: [
+        'generate thumbnails automatically', 'detect duplicates', 'content hashing',
+        'warn on low resolution', 'low resolution threshold', 'dpi', 'blurry print size',
+    ],
+    export: [
+        'default filename', 'export pdf',
+    ],
+    ocr: [
+        'enable ocr', 'extract text', 'searchable pdf',
+        'run ocr automatically', 'ocr language',
+        'skip ocr for large documents', 'page limit',
+    ],
+    accessibility: [
+        'high contrast', 'stronger borders and text contrast',
+        'always show focus ring', 'keyboard focus indicator',
+        'large text', 'scale up interface',
+    ],
+    shortcuts: [
+        'import images', 'save project', 'save as', 'export pdf', 'undo', 'redo',
+        'select all', 'duplicate', 'delete', 'command palette',
+        'zoom in', 'zoom out', 'reset zoom', 'quick preview', 'fullscreen', 'navigate pages',
+    ],
+    privacy: [
+        'privacy', 'local', 'no analytics', 'no tracking', 'tesseract', 'pdf-lib',
+    ],
+    storage: [
+        'projects', 'pages images', 'thumbnails', 'export history',
+        'storage usage', 'clear all data', 'danger zone',
+    ],
+    about: [
+        'version', 'developer', 'adnan bhaldar', 'github', 'repository',
+        'react', 'typescript', 'dexie', 'vite',
+    ],
+}
+
+function sectionMatches(section: SettingsSection, query: string): boolean {
+    if (!query) return true
+    const q = query.toLowerCase()
+    if (section.label.toLowerCase().includes(q)) return true
+    return (SEARCH_INDEX[section.id] ?? []).some(entry => entry.includes(q))
+}
 
 // ─── Card primitives (the "modern cards" redesign) ────────────────────────────
 
@@ -218,7 +279,7 @@ const ThemePreviewCard = memo(({ previewTheme, accent, active, onClick }: {
             onClick={onClick}
             style={{
                 position: 'relative', flex: 1, cursor: 'pointer',
-                border: 'none', borderRadius: 18, padding: 14, marginTop: 8,
+                border: 'none', borderRadius: 18, padding: 14, marginTop: 10,
                 background: active
                     ? `linear-gradient(180deg, ${accent}12, transparent 65%)`
                     : 'var(--s2)',
@@ -255,44 +316,110 @@ const ThemePreviewCard = memo(({ previewTheme, accent, active, onClick }: {
                 }} />
 
                 <div style={{
-                    position: 'relative', height: 23, background: nav,
+                    position: 'relative', height: 25, background: nav,
                     borderBottom: `1px solid ${border}`,
-                    display: 'flex', alignItems: 'center', gap: 5, padding: '0 9px',
+                    display: 'flex', alignItems: 'center', gap: 6, padding: '0 8px',
                 }}>
-                    <div style={{ width: 6, height: 6, borderRadius: '50%', background: accent, boxShadow: `0 0 6px ${accent}aa` }} />
-                    <div style={{ flex: 1, height: 5, borderRadius: 3, background: isDark ? '#1e1e2e' : '#d8d8e4', margin: '0 4px' }} />
-                    <div style={{ height: 7, width: 26, borderRadius: 4, background: `linear-gradient(135deg,${accent},${accent}bb)` }} />
-                </div>
-                <div style={{ position: 'relative', display: 'flex', height: 64 }}>
+                    {/* Logo mark — mirrors the real topnav's gradient "B" square */}
                     <div style={{
-                        width: 32, background: sidebar,
+                        width: 12, height: 12, borderRadius: 4,
+                        background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                        flexShrink: 0,
+                    }} />
+                    <div style={{ width: 20, height: 4, borderRadius: 2, background: tx, opacity: 0.5, flexShrink: 0 }} />
+                    {/* Search pill */}
+                    <div style={{
+                        flex: 1, height: 11, borderRadius: 5, margin: '0 4px',
+                        background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)',
+                        border: `1px solid ${border}`,
+                    }} />
+                    <div style={{ width: 3, height: 3, borderRadius: '50%', background: tx, opacity: 0.4 }} />
+                    <div style={{ width: 3, height: 3, borderRadius: '50%', background: tx, opacity: 0.4 }} />
+                    {/* Export button */}
+                    <div style={{
+                        height: 10, width: 30, borderRadius: 4, flexShrink: 0,
+                        background: `linear-gradient(135deg,${accent},${accent}cc)`,
+                        boxShadow: `0 2px 6px ${accent}55`,
+                    }} />
+                </div>
+                <div style={{ position: 'relative', display: 'flex', height: 72 }}>
+                    {/* Sidebar — 2×2 grid of thumbnails, one "selected" */}
+                    <div style={{
+                        width: 40, background: sidebar,
                         borderRight: `1px solid ${border}`,
-                        padding: '6px 5px', display: 'flex', flexDirection: 'column', gap: 4,
+                        padding: '6px 5px', display: 'flex', flexDirection: 'column', gap: 3,
                     }}>
-                        <div style={{ height: 15, borderRadius: 4, background: `${accent}38`, border: `1px solid ${accent}55` }} />
-                        {[0.45, 0.35].map((op, i) => (
-                            <div key={i} style={{ height: 5, borderRadius: 2, background: tx, opacity: op }} />
-                        ))}
+                        <div style={{ height: 4, width: 16, borderRadius: 2, background: tx, opacity: 0.4, marginBottom: 1 }} />
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3 }}>
+                            {[
+                                isDark ? '#3a3a48' : '#d4d4de',
+                                isDark ? '#2e2e3a' : '#e0e0e8',
+                                isDark ? '#34343f' : '#dadae2',
+                                isDark ? '#2a2a35' : '#e4e4ec',
+                            ].map((tone, i) => (
+                                <div key={i} style={{
+                                    aspectRatio: '3/4', borderRadius: 3, background: tone,
+                                    outline: i === 0 ? `1.5px solid ${accent}` : `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}`,
+                                    outlineOffset: i === 0 ? 1 : 0,
+                                    boxShadow: i === 0 ? `0 0 0 2px ${accent}33` : 'none',
+                                }} />
+                            ))}
+                        </div>
                     </div>
+
+                    {/* Canvas — a "photo" page with realistic layered content, drop shadow, slight lift */}
                     <div style={{
                         flex: 1, background: bg,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        position: 'relative',
                     }}>
                         <div style={{
-                            width: 32, height: 43,
+                            width: 36, height: 48,
                             background: card,
-                            borderRadius: 2,
-                            boxShadow: isDark ? '0 6px 20px rgba(0,0,0,0.65)' : '0 6px 20px rgba(0,0,0,0.16)',
-                        }} />
+                            borderRadius: 2, overflow: 'hidden',
+                            boxShadow: isDark
+                                ? '0 8px 24px rgba(0,0,0,0.7), 0 2px 6px rgba(0,0,0,0.5)'
+                                : '0 8px 24px rgba(0,0,0,0.18), 0 2px 6px rgba(0,0,0,0.10)',
+                            display: 'flex', flexDirection: 'column',
+                        }}>
+                            <div style={{
+                                height: '55%',
+                                background: isDark
+                                    ? `linear-gradient(135deg, #2a2a38, #3a3a4a 60%, ${accent}22)`
+                                    : `linear-gradient(135deg, #e2e2ea, #ccccd8 60%, ${accent}18)`,
+                            }} />
+                            <div style={{ flex: 1, padding: '3px 4px', display: 'flex', flexDirection: 'column', gap: 2, justifyContent: 'center' }}>
+                                <div style={{ height: 2, width: '70%', borderRadius: 1, background: 'rgba(0,0,0,0.12)' }} />
+                                <div style={{ height: 2, width: '45%', borderRadius: 1, background: 'rgba(0,0,0,0.08)' }} />
+                            </div>
+                        </div>
                     </div>
+
+                    {/* Properties panel — Fit / Margin chip groups, like the real one */}
                     <div style={{
-                        width: 28, background: sidebar,
+                        width: 34, background: sidebar,
                         borderLeft: `1px solid ${border}`,
-                        padding: '6px 5px', display: 'flex', flexDirection: 'column', gap: 3,
+                        padding: '6px 5px', display: 'flex', flexDirection: 'column', gap: 6,
                     }}>
-                        {[0.7, 0.5, 0.5, 0.4].map((w, i) => (
-                            <div key={i} style={{ height: 3, width: `${w * 100}%`, borderRadius: 1, background: tx, opacity: 0.6 }} />
-                        ))}
+                        <div>
+                            <div style={{ height: 3, width: 18, borderRadius: 1.5, background: tx, opacity: 0.4, marginBottom: 3 }} />
+                            <div style={{ display: 'flex', gap: 2 }}>
+                                <div style={{ flex: 1, height: 8, borderRadius: 2, background: `${accent}30`, border: `1px solid ${accent}50` }} />
+                                <div style={{ flex: 1, height: 8, borderRadius: 2, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)' }} />
+                            </div>
+                        </div>
+                        <div>
+                            <div style={{ height: 3, width: 20, borderRadius: 1.5, background: tx, opacity: 0.4, marginBottom: 3 }} />
+                            <div style={{ display: 'flex', gap: 1.5 }}>
+                                {[0, 1, 2].map(i => (
+                                    <div key={i} style={{
+                                        flex: 1, height: 7, borderRadius: 2,
+                                        background: i === 1 ? `${accent}30` : (isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)'),
+                                        border: i === 1 ? `1px solid ${accent}50` : 'none',
+                                    }} />
+                                ))}
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -762,7 +889,7 @@ const AboutSection = memo(() => (
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     flexShrink: 0, marginTop: 8,
                 }}>
-                    <GithubMark size={22} color="var(--tx-1)" />
+                    <GithubMark size={20} color="var(--tx-1)" />
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                     <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--tx-1)' }}>Adnan Bhaldar</p>
@@ -857,9 +984,19 @@ export const SettingsDialog = memo(({ isOpen, onClose }: Props) => {
     const { resetSettings } = useSettingsStore()
     const confirm = useConfirm()
 
-    const filtered = SECTIONS.filter(s =>
-        !search || s.label.toLowerCase().includes(search.toLowerCase())
+    const filtered = useMemo(
+        () => SECTIONS.filter(s => sectionMatches(s, search)),
+        [search]
     )
+
+    // If the currently-active section gets filtered out by a search term,
+    // jump to the first remaining match instead of showing a blank panel
+    // for a section that's no longer even visible in the nav.
+    useEffect(() => {
+        if (filtered.length > 0 && !filtered.some(s => s.id === activeSection)) {
+            setActiveSection(filtered[0].id)
+        }
+    }, [filtered, activeSection])
 
     const ActivePanel = SECTION_COMPONENTS[activeSection] ?? GeneralSection
 
@@ -951,48 +1088,70 @@ export const SettingsDialog = memo(({ isOpen, onClose }: Props) => {
                                         <input
                                             value={search}
                                             onChange={e => setSearch(e.target.value)}
-                                            placeholder="Search…"
+                                            placeholder="Search settings…"
                                             style={{
                                                 flex: 1, background: 'transparent', border: 'none',
                                                 outline: 'none', fontSize: 12, color: 'var(--tx-1)',
-                                                fontFamily: 'var(--font-sans)',
+                                                fontFamily: 'var(--font-sans)', minWidth: 0,
                                             }}
                                         />
+                                        {search && (
+                                            <button
+                                                onClick={() => setSearch('')}
+                                                style={{
+                                                    border: 'none', background: 'transparent',
+                                                    color: 'var(--tx-4)', cursor: 'pointer',
+                                                    display: 'flex', alignItems: 'center', padding: 0,
+                                                    flexShrink: 0,
+                                                }}
+                                            >
+                                                <X size={12} />
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
 
                                 <div style={{ flex: 1, overflowY: 'auto', padding: '4px 8px 12px' }}>
-                                    {filtered.map(({ id, label, Icon }) => (
-                                        <button
-                                            key={id}
-                                            onClick={() => setActiveSection(id)}
-                                            style={{
-                                                width: '100%', display: 'flex', alignItems: 'center', gap: 9,
-                                                padding: '7px 10px', borderRadius: 8, border: 'none',
-                                                background: activeSection === id ? 'var(--accent-dim)' : 'transparent',
-                                                color: activeSection === id ? 'var(--accent)' : 'var(--tx-2)',
-                                                fontSize: 12, fontWeight: activeSection === id ? 600 : 400,
-                                                fontFamily: 'var(--font-sans)', cursor: 'pointer',
-                                                textAlign: 'left', transition: 'background 110ms, color 110ms',
-                                                marginBottom: 1,
-                                            }}
-                                            onMouseEnter={e => {
-                                                if (activeSection !== id) {
-                                                    e.currentTarget.style.background = 'var(--hover)'
-                                                    e.currentTarget.style.color = 'var(--tx-1)'
-                                                }
-                                            }}
-                                            onMouseLeave={e => {
-                                                if (activeSection !== id) {
-                                                    e.currentTarget.style.background = 'transparent'
-                                                    e.currentTarget.style.color = 'var(--tx-2)'
-                                                }
-                                            }}
-                                        >
-                                            <Icon size={14} />
-                                            {label}
-                                        </button>
-                                    ))}
+                                    {filtered.length === 0 ? (
+                                        <p style={{
+                                            fontSize: 11.5, color: 'var(--tx-4)',
+                                            textAlign: 'center', padding: '20px 10px',
+                                        }}>
+                                            No settings match "{search}"
+                                        </p>
+                                    ) : (
+                                        filtered.map(({ id, label, Icon }) => (
+                                            <button
+                                                key={id}
+                                                onClick={() => setActiveSection(id)}
+                                                style={{
+                                                    width: '100%', display: 'flex', alignItems: 'center', gap: 9,
+                                                    padding: '7px 10px', borderRadius: 8, border: 'none',
+                                                    background: activeSection === id ? 'var(--accent-dim)' : 'transparent',
+                                                    color: activeSection === id ? 'var(--accent)' : 'var(--tx-2)',
+                                                    fontSize: 12, fontWeight: activeSection === id ? 600 : 400,
+                                                    fontFamily: 'var(--font-sans)', cursor: 'pointer',
+                                                    textAlign: 'left', transition: 'background 110ms, color 110ms',
+                                                    marginBottom: 1,
+                                                }}
+                                                onMouseEnter={e => {
+                                                    if (activeSection !== id) {
+                                                        e.currentTarget.style.background = 'var(--hover)'
+                                                        e.currentTarget.style.color = 'var(--tx-1)'
+                                                    }
+                                                }}
+                                                onMouseLeave={e => {
+                                                    if (activeSection !== id) {
+                                                        e.currentTarget.style.background = 'transparent'
+                                                        e.currentTarget.style.color = 'var(--tx-2)'
+                                                    }
+                                                }}
+                                            >
+                                                <Icon size={14} />
+                                                {label}
+                                            </button>
+                                        ))
+                                    )}
                                 </div>
                             </div>
 
