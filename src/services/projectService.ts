@@ -1,6 +1,6 @@
 import { db } from '@/db/schema'
 import { generateId, formatRelativeTime } from '@/lib/utils'
-import type { Project, Page, ProjectMetadata } from '@/types'
+import type { Project, Page } from '@/types'
 import { STORAGE_KEYS } from '@/constants'
 
 // ─── Project service ──────────────────────────────────────────────────────────

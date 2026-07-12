@@ -21,6 +21,7 @@ interface TooltipState {
     y: number
     content: ReactNode
     placement: Placement
+    offset: number
 }
 
 interface TooltipContextValue {
@@ -105,7 +106,7 @@ const TooltipNode = memo(({ state }: { state: TooltipState }) => {
                 setPos({ x: state.x, y: state.y, actual: state.placement })
                 return
             }
-            const computed = computePosition(anchor, ref.current, state.placement, 8)
+            const computed = computePosition(anchor, ref.current, state.placement, state.offset)
             setPos(computed)
         })
     }, [state])
@@ -192,6 +193,7 @@ export const TooltipProvider = memo(({ children }: { children: ReactNode }) => {
         y: 0,
         content: null,
         placement: 'top',
+        offset: 8,
     })
 
     const anchorRef = useRef<HTMLElement | null>(null)
@@ -221,6 +223,7 @@ export const TooltipProvider = memo(({ children }: { children: ReactNode }) => {
                 y: ar.top,
                 content,
                 placement,
+                offset,
             })
         }, 400) // delay before showing
     }, [])

@@ -83,10 +83,9 @@ export interface ResolutionWarning {
     severity: 'low' | 'very-low'
 }
 
-// A4 at 150 DPI = 1240×1754px, at 96 DPI = 794×1123px
+// A4 at 150 DPI = 1240×1754px
 const A4_150DPI_W = 1240
 const A4_150DPI_H = 1754
-const A4_96DPI_W = 794
 
 export function detectLowResolution(pages: Page[], thresholdDpi = 150): ResolutionWarning[] {
     const warnings: ResolutionWarning[] = []
@@ -95,9 +94,13 @@ export function detectLowResolution(pages: Page[], thresholdDpi = 150): Resoluti
         const { width, height } = page.metadata
         if (!width || !height) continue
 
-        // Estimate DPI assuming the image maps to A4
+        // Estimate DPI assuming the image maps to A4 — check both axes and
+        // take the more conservative (lower) estimate, since a width-only
+        // check misses an image that's fine on one axis but genuinely
+        // low-res on the other (e.g. narrow-but-tall or wide-but-short).
         const scaleW = width / A4_150DPI_W
-        const estimatedDpi = Math.round(scaleW * 150)
+        const scaleH = height / A4_150DPI_H
+        const estimatedDpi = Math.round(Math.min(scaleW, scaleH) * 150)
 
         if (estimatedDpi < thresholdDpi) {
             warnings.push({

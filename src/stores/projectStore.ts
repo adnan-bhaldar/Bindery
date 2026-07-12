@@ -27,7 +27,7 @@ type ProjectStore = ProjectState & ProjectActions
 
 // ─── Store ────────────────────────────────────────────────────────────────────
 
-export const useProjectStore = create<ProjectStore>()((set, get) => ({
+export const useProjectStore = create<ProjectStore>()((set) => ({
     // ── Initial state ──────────────────────────────────────────────────────────
     currentProject: null,
     recentProjects: [],
