@@ -27,6 +27,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
     // Export
     defaultPresetId: 'preset-print',
     defaultFilename: 'Bindery',
+    useExactAutoPageSize: true,
 
     // OCR
     ocrEnabled: true,

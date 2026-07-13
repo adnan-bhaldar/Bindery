@@ -84,6 +84,7 @@ const SEARCH_INDEX: Record<string, string[]> = {
     ],
     export: [
         'default filename', 'export pdf',
+        'auto page size', 'exact fit', 'canvas', 'blank space',
     ],
     ocr: [
         'enable ocr', 'extract text', 'searchable pdf',
@@ -684,6 +685,19 @@ const ExportSection = memo(() => {
                         }}
                         onFocus={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.boxShadow = '0 0 0 3px var(--accent-dim)' }}
                         onBlur={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.boxShadow = 'none' }}
+                    />
+                </CardRow>
+            </Card>
+
+            <Card title="Auto Page Size" desc="Applies whenever a page's size is set to Auto.">
+                <CardRow
+                    label="Exact fit (no canvas)"
+                    desc="Page sized exactly to each image — the exported PDF matches the preview exactly, no blank space around it"
+                    last
+                >
+                    <Toggle
+                        checked={settings.useExactAutoPageSize}
+                        onChange={v => updateSetting('useExactAutoPageSize', v)}
                     />
                 </CardRow>
             </Card>

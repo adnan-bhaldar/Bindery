@@ -147,6 +147,11 @@ export interface ExportOptions {
     preset: ExportPreset
     filename: string
     metadata: ProjectMetadata
+    /** When pageSize is 'auto': true = page sized exactly to the image (no
+     * canvas/padding); false = padded onto a standard-size page oriented to
+     * match the image, same as before this became configurable. Defaults to
+     * true (no canvas) if omitted. */
+    useExactAutoPageSize?: boolean
 }
 
 export interface ExportProgress {
@@ -192,6 +197,7 @@ export interface AppSettings {
     // Export
     defaultPresetId: string
     defaultFilename: string
+    useExactAutoPageSize: boolean
 
     // OCR
     ocrEnabled: boolean

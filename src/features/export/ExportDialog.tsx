@@ -390,6 +390,7 @@ export const ExportDialog = memo(() => {
                     preset,
                     filename,
                     metadata,
+                    useExactAutoPageSize: settings.useExactAutoPageSize,
                 },
                 (p) => setProgress(p)
             )
@@ -425,7 +426,7 @@ export const ExportDialog = memo(() => {
                 error: err instanceof Error ? err.message : 'Unknown error',
             })
         }
-    }, [pages, preset, filename, currentProject, closeDialog, resetProgress, setProgress])
+    }, [pages, preset, filename, currentProject, settings, closeDialog, resetProgress, setProgress])
 
     const isExporting = progress.stage !== 'idle' && progress.stage !== 'done'
 

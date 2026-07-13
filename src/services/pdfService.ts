@@ -58,13 +58,33 @@ async function normaliseToPdfCompatible(
 function getPageSizePts(
     size: PageSize,
     imgW: number,
-    imgH: number
+    imgH: number,
+    exactAutoSize: boolean
 ): [number, number] {
     if (size === 'original') {
         // Treat image pixels as points (72dpi assumption)
         return [imgW * 0.75, imgH * 0.75]
     }
     if (size === 'auto') {
+        // BUG (fixed): this used to always substitute A4 dimensions here
+        // (just orientation-swapped to match the image) instead of actually
+        // sizing the page to the image — completely different from what the
+        // on-screen preview does for 'auto' (which sizes the page frame
+        // exactly to the image's own aspect ratio, via resolvePageAspect in
+        // PreviewCanvas.tsx). Since a real photo's aspect ratio essentially
+        // never exactly matches A4's, the mismatch meant the exported PDF
+        // showed visible blank page space ("canvas") around the image that
+        // never appeared in the preview.
+        //
+        // exactAutoSize (Settings → Export → "Auto page size") controls
+        // which behavior 'auto' actually uses:
+        //   true  (default) → identical to 'original': page sized exactly
+        //                      to the image, no canvas/padding at all.
+        //   false            → the old behavior: pad onto a standard-size
+        //                      page, oriented to match the image.
+        if (exactAutoSize) {
+            return [imgW * 0.75, imgH * 0.75]
+        }
         const a4 = PAGE_SIZES.a4
         return imgW > imgH ? [a4.height, a4.width] : [a4.width, a4.height]
     }
@@ -106,7 +126,7 @@ export class PDFService {
         onProgress?: ProgressCallback
     ): Promise<Uint8Array> {
         const pdfDoc = await PDFDocument.create()
-        const { preset, metadata } = options
+        const { preset, metadata, useExactAutoPageSize = true } = options
 
         // Document metadata
         pdfDoc.setTitle(metadata.title || 'Untitled')
@@ -175,7 +195,7 @@ export class PDFService {
             const effImgH = isRotated90 ? imgW : imgH
 
             // Page size — decided from the EFFECTIVE (post-rotation) aspect
-            let [pgW, pgH] = getPageSizePts(preset.pageSize, effImgW, effImgH)
+            let [pgW, pgH] = getPageSizePts(preset.pageSize, effImgW, effImgH, useExactAutoPageSize)
 
             // Orientation — same effective-dimension awareness
             const shouldLandscape =
