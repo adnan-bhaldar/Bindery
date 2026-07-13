@@ -1,11 +1,11 @@
-import { memo, useState, useCallback, useEffect, useMemo } from 'react'
+import { memo, useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     X, Search, Settings, Palette, Upload, Download,
     ScanText, Accessibility, Keyboard,
     Shield, Database, Info, RotateCcw, BookOpen,
     HardDrive, Image as ImageIcon, FileArchive, Trash2,
-    Sun, Moon, Check, ExternalLink,
+    Sun, Moon, Check, ExternalLink, ChevronDown,
 } from 'lucide-react'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { useThemeStore } from '@/stores/themeStore'
@@ -204,24 +204,98 @@ const SelectRow = memo(({ options, value, onChange }: {
     options: { value: string; label: string }[]
     value: string
     onChange: (v: string) => void
-}) => (
-    <select
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        style={{
-            padding: '6px 10px', borderRadius: 8,
-            background: 'var(--s3)', border: '1px solid var(--border)',
-            color: 'var(--tx-1)', fontSize: 12, fontFamily: 'var(--font-sans)',
-            cursor: 'pointer', outline: 'none',
-            transition: 'border-color 110ms',
-            minWidth: 140,
-        }}
-    >
-        {options.map(o => (
-            <option key={o.value} value={o.value}>{o.label}</option>
-        ))}
-    </select>
-))
+}) => {
+    const [open, setOpen] = useState(false)
+    const rootRef = useRef<HTMLDivElement>(null)
+    const current = options.find(o => o.value === value)
+
+    // Close on outside click and on Escape — standard custom-dropdown behavior
+    useEffect(() => {
+        if (!open) return
+        const onPointerDown = (e: PointerEvent) => {
+            if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false)
+        }
+        const onKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
+        window.addEventListener('pointerdown', onPointerDown)
+        window.addEventListener('keydown', onKeyDown)
+        return () => {
+            window.removeEventListener('pointerdown', onPointerDown)
+            window.removeEventListener('keydown', onKeyDown)
+        }
+    }, [open])
+
+    return (
+        <div ref={rootRef} style={{ position: 'relative' }}>
+            <button
+                onClick={() => setOpen(o => !o)}
+                style={{
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    padding: '6px 10px', borderRadius: 8,
+                    background: 'var(--s3)',
+                    border: `1px solid ${open ? 'var(--accent)' : 'var(--border)'}`,
+                    boxShadow: open ? '0 0 0 3px var(--accent-dim)' : 'none',
+                    color: 'var(--tx-1)', fontSize: 12, fontFamily: 'var(--font-sans)',
+                    cursor: 'pointer', outline: 'none',
+                    transition: 'border-color 130ms, box-shadow 130ms',
+                    minWidth: 140, justifyContent: 'space-between',
+                }}
+            >
+                <span>{current?.label ?? value}</span>
+                <ChevronDown
+                    size={13}
+                    color="var(--tx-3)"
+                    style={{ transition: 'transform 180ms var(--ease-out)', transform: open ? 'rotate(180deg)' : 'none' }}
+                />
+            </button>
+
+            <AnimatePresence>
+                {open && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -4, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -4, scale: 0.98 }}
+                        transition={{ duration: 0.14, ease: [0.16, 1, 0.3, 1] }}
+                        style={{
+                            position: 'absolute', top: 'calc(100% + 6px)', right: 0,
+                            minWidth: 160, zIndex: 50,
+                            background: 'var(--bg-card)',
+                            border: '1px solid var(--border-hard)',
+                            borderRadius: 12,
+                            boxShadow: 'var(--sh-md)',
+                            padding: 4,
+                            maxHeight: 220, overflowY: 'auto',
+                            transformOrigin: 'top right',
+                        }}
+                    >
+                        {options.map(o => {
+                            const active = o.value === value
+                            return (
+                                <button
+                                    key={o.value}
+                                    onClick={() => { onChange(o.value); setOpen(false) }}
+                                    style={{
+                                        width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                        gap: 10, padding: '7px 10px', borderRadius: 8, border: 'none',
+                                        background: active ? 'var(--accent-dim)' : 'transparent',
+                                        color: active ? 'var(--accent)' : 'var(--tx-1)',
+                                        fontSize: 12.5, fontWeight: active ? 600 : 400,
+                                        fontFamily: 'var(--font-sans)', cursor: 'pointer',
+                                        textAlign: 'left', transition: 'background 100ms',
+                                    }}
+                                    onMouseEnter={e => { if (!active) e.currentTarget.style.background = 'var(--hover)' }}
+                                    onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent' }}
+                                >
+                                    {o.label}
+                                    {active && <Check size={13} strokeWidth={2.75} />}
+                                </button>
+                            )
+                        })}
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
+    )
+})
 SelectRow.displayName = 'SelectRow'
 
 // ─── Section panels ───────────────────────────────────────────────────────────
@@ -594,12 +668,13 @@ const ExportSection = memo(() => {
             <Card title="Export Defaults" icon={Download}>
                 <CardRow
                     label="Default filename"
-                    desc="Used only when a project has no name of its own — a named project always exports as its own name"
+                    desc="Used as a prefix (combined with the current date/time) only when a project has no name of its own — a named project always exports as its own name"
                     last
                 >
                     <input
                         value={settings.defaultFilename}
                         onChange={e => updateSetting('defaultFilename', e.target.value)}
+                        placeholder="Bindery"
                         style={{
                             padding: '6px 10px', borderRadius: 8,
                             background: 'var(--s3)', border: '1px solid var(--border)',
@@ -887,7 +962,7 @@ const AboutSection = memo(() => (
                     width: 44, height: 44, borderRadius: 12,
                     background: 'var(--s3)', border: '1px solid var(--border)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    flexShrink: 0, marginTop: 8,
+                    flexShrink: 0, marginTop: 5,
                 }}>
                     <GithubMark size={20} color="var(--tx-1)" />
                 </div>

@@ -8,16 +8,15 @@ import {
 import { useExportStore, useActivePreset } from '@/stores/exportStore'
 import { usePagesStore, selectPageCount } from '@/stores/pagesStore'
 import { useProjectStore } from '@/stores/projectStore'
+import { useSettingsStore } from '@/stores/settingsStore'
 
 import { pdfService } from '@/services/pdfService'
 import { Toggle } from '@/components/ui/Toggle'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { formatFileSize } from '@/lib/utils'
-import type { ExportProgress, PageSize, PageOrientation, CompressionQuality, PageMargin } from '@/types'
+import type { ExportProgress, CompressionQuality } from '@/types'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-const DEFAULT_EXPORT_FILENAME = 'bindery-export'
 
 // Strips characters that are invalid in filenames across Windows/macOS/Linux
 // (\ / : * ? " < > |), trims, and collapses repeated whitespace — so a
@@ -30,15 +29,13 @@ function sanitizeFilename(name: string): string {
         .replace(/\s+/g, ' ')
 }
 
-const PAGE_SIZES: { value: PageSize; label: string }[] = [
-    { value: 'auto', label: 'Auto (match image)' },
-    { value: 'a4', label: 'A4 (210 × 297 mm)' },
-    { value: 'a3', label: 'A3 (297 × 420 mm)' },
-    { value: 'a5', label: 'A5 (148 × 210 mm)' },
-    { value: 'letter', label: 'Letter (8.5 × 11 in)' },
-    { value: 'legal', label: 'Legal (8.5 × 14 in)' },
-    { value: 'original', label: 'Original image size' },
-]
+// e.g. "2026-07-12_1430" — sortable, filesystem-safe, no colons (which
+// Windows disallows in filenames).
+function formatTimestampForFilename(): string {
+    const d = new Date()
+    const pad = (n: number) => String(n).padStart(2, '0')
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}`
+}
 
 const QUALITY_OPTIONS: { value: CompressionQuality; label: string; desc: string }[] = [
     { value: 'original', label: 'Original', desc: 'No compression' },
@@ -49,28 +46,6 @@ const QUALITY_OPTIONS: { value: CompressionQuality; label: string; desc: string 
 ]
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
-
-const Chip = memo(({ label, active, onClick }: {
-    label: string; active: boolean; onClick: () => void
-}) => (
-    <button
-        onClick={onClick}
-        style={{
-            padding: '5px 12px', borderRadius: 'var(--r-full)',
-            border: `1px solid ${active ? 'var(--accent-border)' : 'var(--border)'}`,
-            background: active ? 'var(--accent-dim)' : 'var(--s3)',
-            color: active ? 'var(--accent)' : 'var(--tx-2)',
-            fontSize: 11.5, fontWeight: active ? 600 : 400,
-            fontFamily: 'var(--font-sans)', cursor: 'pointer',
-            transition: 'all 110ms',
-        }}
-        onMouseEnter={e => { if (!active) { e.currentTarget.style.background = 'var(--s4)'; e.currentTarget.style.color = 'var(--tx-1)' } }}
-        onMouseLeave={e => { if (!active) { e.currentTarget.style.background = 'var(--s3)'; e.currentTarget.style.color = 'var(--tx-2)' } }}
-    >
-        {label}
-    </button>
-))
-Chip.displayName = 'Chip'
 
 const SLabel = memo(({ children }: { children: React.ReactNode }) => (
     <p style={{
@@ -149,10 +124,7 @@ const ExportSummary = memo(({ pageCount, estimatedSize, preset }: {
                 {[
                     { label: 'Pages', value: String(pageCount) },
                     { label: 'Est. size', value: formatFileSize(estimatedSize) },
-                    { label: 'Page size', value: preset.pageSize.toUpperCase() },
-                    { label: 'Orientation', value: preset.orientation.charAt(0).toUpperCase() + preset.orientation.slice(1) },
                     { label: 'Compression', value: preset.compression === 'original' ? 'None' : `${preset.compression}%` },
-                    { label: 'Margin', value: preset.margin === 'none' ? 'None' : preset.margin.charAt(0).toUpperCase() + preset.margin.slice(1) },
                     { label: 'OCR text', value: ocrDone > 0 ? `${ocrDone} pages` : 'None' },
                 ].map(({ label, value }) => (
                     <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -237,50 +209,6 @@ const ExportSettings = memo(({ filename, onFilenameChange }: {
                         </div>
                         {activePresetId === p.id && <CheckCircle2 size={14} color="var(--accent)" />}
                     </button>
-                ))}
-            </div>
-
-            {/* Page size */}
-            <SLabel>Page Size</SLabel>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-                {PAGE_SIZES.map(s => (
-                    <Chip
-                        key={s.value}
-                        label={s.label.split(' ')[0]}
-                        active={preset.pageSize === s.value}
-                        onClick={() => updatePreset(preset.id, { pageSize: s.value })}
-                    />
-                ))}
-            </div>
-
-            {/* Orientation */}
-            <SLabel>Orientation</SLabel>
-            <div style={{ display: 'flex', gap: 5 }}>
-                {(['auto', 'portrait', 'landscape'] as PageOrientation[]).map(o => (
-                    <Chip
-                        key={o}
-                        label={o.charAt(0).toUpperCase() + o.slice(1)}
-                        active={preset.orientation === o}
-                        onClick={() => updatePreset(preset.id, { orientation: o })}
-                    />
-                ))}
-            </div>
-
-            {/* Margin */}
-            <SLabel>Page Margin</SLabel>
-            <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
-                {([
-                    { value: 'none', label: 'None' },
-                    { value: 'small', label: 'Narrow' },
-                    { value: 'medium', label: 'Medium' },
-                    { value: 'large', label: 'Wide' },
-                ] as { value: PageMargin; label: string }[]).map(m => (
-                    <Chip
-                        key={m.value}
-                        label={m.label}
-                        active={preset.margin === m.value}
-                        onClick={() => updatePreset(preset.id, { margin: m.value })}
-                    />
                 ))}
             </div>
 
@@ -421,17 +349,21 @@ export const ExportDialog = memo(() => {
     const pages = usePagesStore((s) => s.pages)
     const pageCount = usePagesStore(selectPageCount)
     const { currentProject } = useProjectStore()
+    const { settings } = useSettingsStore()
 
     // Whenever the export dialog is opened, default the filename to the
     // current project's name (sanitized for filesystem safety) — falling
-    // back to a generic default when no real project name has been set
-    // (a fresh/untitled project). The field stays editable afterwards, so
-    // this is just the starting point for this export, not a locked value.
+    // back to the configured default prefix (Settings → Export) when no
+    // real project name has been set (a fresh/untitled project). This is
+    // deliberately just the clean base name — no timestamp baked in here.
+    // The date/time only ever gets appended once, at the actual moment of
+    // download (see handleExport below), so what you see and edit in this
+    // field always stays exactly what you typed.
     useEffect(() => {
         if (!isDialogOpen) return
         const hasRealName = !!currentProject?.name && currentProject.name !== 'Untitled Project'
         const derived = hasRealName ? sanitizeFilename(currentProject!.name) : ''
-        setFilename(derived || DEFAULT_EXPORT_FILENAME)
+        setFilename(derived || settings.defaultFilename || 'Bindery')
         // Only re-derive when the dialog transitions open, not on every
         // keystroke the user makes in the filename field afterwards.
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -462,12 +394,21 @@ export const ExportDialog = memo(() => {
                 (p) => setProgress(p)
             )
 
+            // The timestamp is appended ONLY here, at the actual moment of
+            // download, and ONLY when there's no real project name behind
+            // the filename — a named project should still export as exactly
+            // its own name, with nothing appended. The visible/editable
+            // filename field itself never shows this; it always stays
+            // whatever clean text is in it.
+            const hasRealName = !!currentProject?.name && currentProject.name !== 'Untitled Project'
+            const downloadName = hasRealName ? filename : `${filename}-${formatTimestampForFilename()}`
+
             // Trigger download
             const blob = new Blob([bytes as unknown as ArrayBuffer], { type: 'application/pdf' })
             const url = URL.createObjectURL(blob)
             const a = document.createElement('a')
             a.href = url
-            a.download = `${filename}.pdf`
+            a.download = `${downloadName}.pdf`
             a.click()
             URL.revokeObjectURL(url)
 
