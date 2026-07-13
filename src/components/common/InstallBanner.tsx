@@ -48,9 +48,14 @@ export const InstallBanner = memo(() => {
             {visible && (
                 <motion.div
                     initial={{ opacity: 0, y: 16 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 16 }}
-                    transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1], delay: 2 }}
+                    animate={{
+                        opacity: 1, y: 0,
+                        transition: { duration: 0.22, ease: [0.16, 1, 0.3, 1], delay: 2 },
+                    }}
+                    exit={{
+                        opacity: 0, y: 16,
+                        transition: { duration: 0.18, ease: [0.16, 1, 0.3, 1] }, // no delay — dismiss should feel instant
+                    }}
                     style={{
                         position: 'fixed',
                         bottom: 24, left: 24,
