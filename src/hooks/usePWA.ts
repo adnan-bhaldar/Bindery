@@ -5,22 +5,56 @@ interface BeforeInstallPromptEvent extends Event {
     userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
 }
 
-export function usePWA() {
-    const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null)
-    const [isInstalled, setIsInstalled] = useState(false)
-    const [swRegistered, setSwRegistered] = useState(false)
+// ─── Module-level singleton state ──────────────────────────────────────────────
+// The 'beforeinstallprompt' event fires exactly ONCE per page load. Previously
+// this hook captured it into its own local useState — which meant every
+// separate component calling usePWA() got its own independent, isolated copy
+// of that state. Whichever component happened to be mounted when the event
+// fired (InstallBanner, mounted at app startup) captured it correctly; any
+// OTHER component calling the hook later (e.g. the Settings "App" section)
+// got a blank slate that could never receive the event, since it had already
+// fired and wasn't coming again. That's why Settings could report "not
+// available" in the same session the banner had legitimately appeared.
+//
+// Moving the actual captured event and installed-state to module scope, with
+// a simple subscriber list, means every component sees the exact same real
+// state regardless of mount order — there's only one source of truth.
 
-    // Register service worker
-    useEffect(() => {
-        if (!('serviceWorker' in navigator)) return
+let capturedPrompt: BeforeInstallPromptEvent | null = null
+let cachedIsInstalled = false
+let swRegistered = false
+const subscribers = new Set<() => void>()
 
+function notifyAll() {
+    subscribers.forEach(fn => fn())
+}
+
+let globalListenersAttached = false
+function ensureGlobalListeners() {
+    if (globalListenersAttached || typeof window === 'undefined') return
+    globalListenersAttached = true
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault()
+        capturedPrompt = e as BeforeInstallPromptEvent
+        notifyAll()
+    })
+
+    const mq = window.matchMedia('(display-mode: standalone)')
+    cachedIsInstalled = mq.matches
+    mq.addEventListener('change', (e) => {
+        cachedIsInstalled = e.matches
+        notifyAll()
+    })
+
+    if ('serviceWorker' in navigator) {
         navigator.serviceWorker
             .register('/sw.js', { scope: '/' })
             .then((reg) => {
-                setSwRegistered(true)
+                swRegistered = true
+                notifyAll()
                 console.log('[PWA] Service worker registered:', reg.scope)
 
-                // Check for updates
                 reg.addEventListener('updatefound', () => {
                     const newWorker = reg.installing
                     newWorker?.addEventListener('statechange', () => {
@@ -33,38 +67,41 @@ export function usePWA() {
             .catch(err => {
                 console.warn('[PWA] Service worker registration failed:', err)
             })
-    }, [])
+    }
+}
 
-    // Capture install prompt
-    useEffect(() => {
-        const handler = (e: Event) => {
-            e.preventDefault()
-            setInstallPrompt(e as BeforeInstallPromptEvent)
-        }
-        window.addEventListener('beforeinstallprompt', handler)
-        return () => window.removeEventListener('beforeinstallprompt', handler)
-    }, [])
+export function usePWA() {
+    ensureGlobalListeners()
 
-    // Detect if already installed
+    // A tiny piece of local state purely to force a re-render whenever the
+    // shared module-level state changes — the actual values read below
+    // (capturedPrompt, cachedIsInstalled, swRegistered) always come straight
+    // from the shared singletons above, never from this.
+    const [, setTick] = useState(0)
+
     useEffect(() => {
-        const mq = window.matchMedia('(display-mode: standalone)')
-        setIsInstalled(mq.matches)
-        const handler = (e: MediaQueryListEvent) => setIsInstalled(e.matches)
-        mq.addEventListener('change', handler)
-        return () => mq.removeEventListener('change', handler)
+        const rerender = () => setTick(t => t + 1)
+        subscribers.add(rerender)
+        return () => { subscribers.delete(rerender) }
     }, [])
 
     const install = async (): Promise<boolean> => {
-        if (!installPrompt) return false
-        await installPrompt.prompt()
-        const { outcome } = await installPrompt.userChoice
+        if (!capturedPrompt) return false
+        await capturedPrompt.prompt()
+        const { outcome } = await capturedPrompt.userChoice
         if (outcome === 'accepted') {
-            setInstallPrompt(null)
-            setIsInstalled(true)
+            capturedPrompt = null
+            cachedIsInstalled = true
+            notifyAll()
             return true
         }
         return false
     }
 
-    return { canInstall: !!installPrompt && !isInstalled, isInstalled, swRegistered, install }
+    return {
+        canInstall: !!capturedPrompt && !cachedIsInstalled,
+        isInstalled: cachedIsInstalled,
+        swRegistered,
+        install,
+    }
 }
