@@ -215,7 +215,7 @@ const MetaTab = memo(() => {
   }
 
   const fields: { key: keyof NonNullable<typeof metadata>; label: string; placeholder: string }[] = [
-    { key: 'title', label: 'Title', placeholder: 'Untitled Document' },
+    { key: 'title', label: 'Title', placeholder: 'Bindery' },
     { key: 'author', label: 'Author', placeholder: 'Your name' },
     { key: 'subject', label: 'Subject', placeholder: 'Document subject' },
     { key: 'keywords', label: 'Keywords', placeholder: 'tag, another tag…' },

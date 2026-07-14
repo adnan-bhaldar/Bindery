@@ -129,14 +129,29 @@ export class PDFService {
         const { preset, metadata, useExactAutoPageSize = true } = options
 
         // Document metadata
-        pdfDoc.setTitle(metadata.title || 'Untitled')
-        pdfDoc.setAuthor(metadata.author || '')
+        // Title: use the provided title if set, otherwise fall back to
+        // "Bindery" (previously fell back to the generic "Untitled").
+        pdfDoc.setTitle(metadata.title?.trim() || 'Bindery')
+
+        // Author: previously fell back to an empty string, leaving the
+        // field genuinely blank in the exported PDF's properties instead of
+        // attributing it to anything.
+        pdfDoc.setAuthor(metadata.author?.trim() || 'Your Name')
+
         pdfDoc.setSubject(metadata.subject || '')
         pdfDoc.setKeywords(
             metadata.keywords ? metadata.keywords.split(',').map(k => k.trim()) : []
         )
         pdfDoc.setCreator('Bindery')
-        pdfDoc.setProducer('Bindery PDF Engine · pdf-lib')
+
+        // Producer: previously a static string with no year at all. Now
+        // computes the current year at runtime, and respects a
+        // user-provided Copyright field (from the sidebar Info tab) if one
+        // was actually entered, falling back to a plain "© {year}" when it
+        // was left blank.
+        const copyrightLine = metadata.copyright?.trim() || `© ${new Date().getFullYear()}`
+        pdfDoc.setProducer(`Bindery PDF Engine · ${copyrightLine}`)
+
         pdfDoc.setCreationDate(new Date())
         pdfDoc.setModificationDate(new Date())
 
