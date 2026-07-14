@@ -88,6 +88,7 @@ const SEARCH_INDEX: Record<string, string[]> = {
     export: [
         'default filename', 'export pdf',
         'auto page size', 'exact fit', 'canvas', 'blank space',
+        'custom document title', 'title', 'locked title',
     ],
     ocr: [
         'enable ocr', 'extract text', 'searchable pdf',
@@ -705,6 +706,19 @@ const ExportSection = memo(() => {
                     <Toggle
                         checked={settings.useExactAutoPageSize}
                         onChange={v => updateSetting('useExactAutoPageSize', v)}
+                    />
+                </CardRow>
+            </Card>
+
+            <Card title="Document Title" desc="Controls the sidebar Info tab's Title field.">
+                <CardRow
+                    label="Allow custom document title"
+                    desc="When off, the exported PDF's title always matches the project name — the sidebar's Title field stays locked to it"
+                    last
+                >
+                    <Toggle
+                        checked={settings.allowCustomDocumentTitle}
+                        onChange={v => updateSetting('allowCustomDocumentTitle', v)}
                     />
                 </CardRow>
             </Card>

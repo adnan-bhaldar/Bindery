@@ -198,6 +198,7 @@ export interface AppSettings {
     defaultPresetId: string
     defaultFilename: string
     useExactAutoPageSize: boolean
+    allowCustomDocumentTitle: boolean
 
     // OCR
     ocrEnabled: boolean

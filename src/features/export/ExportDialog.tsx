@@ -378,9 +378,21 @@ export const ExportDialog = memo(() => {
 
         try {
             const pagesForExport = pages
-            const metadata = currentProject?.metadata ?? {
-                title: filename, author: '', subject: '', keywords: '',
+            const rawMetadata = currentProject?.metadata ?? {
+                title: '', author: '', subject: '', keywords: '',
                 creator: 'Bindery', producer: 'Bindery PDF Engine', copyright: '',
+            }
+            // Title priority: an explicitly-set Title in the sidebar Info
+            // tab always wins if present. Otherwise, fall back to the
+            // project's own name (when it has a real one) — previously this
+            // fell straight through to pdfService's generic "Bindery"
+            // fallback even when the project itself was clearly named.
+            const hasRealProjectName = !!currentProject?.name && currentProject.name !== 'Untitled Project'
+            const metadata = {
+                ...rawMetadata,
+                title: rawMetadata.title?.trim()
+                    ? rawMetadata.title
+                    : (hasRealProjectName ? currentProject!.name : rawMetadata.title),
             }
 
             const bytes = await pdfService.generate(
