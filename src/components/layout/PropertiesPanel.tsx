@@ -1,5 +1,5 @@
-import { memo, useCallback, useState } from 'react'
-import { SlidersHorizontal, Download, FileText, Copy, Pencil } from 'lucide-react'
+import { memo, useCallback } from 'react'
+import { SlidersHorizontal, Download, FileText, Copy } from 'lucide-react'
 import { useUIStore } from '@/stores/uiStore'
 import { useSelectedIdsArray } from '@/stores/selectionStore'
 import { useShallow } from 'zustand/react/shallow'
@@ -7,7 +7,7 @@ import { usePagesStore } from '@/stores/pagesStore'
 import { useExportStore, useActivePreset } from '@/stores/exportStore'
 import { useProjectStore } from '@/stores/projectStore'
 import { useSettingsStore } from '@/stores/settingsStore'
-import { useConfirm } from '@/components/ui/ConfirmDialog'
+import { toast } from 'sonner'
 import { SmartScanPanel } from '@/features/smart/SmartScanPanel'
 import { cn } from '@/lib/utils'
 import type { PropertiesPanelTab, ImageFit, PageMargin, PageSize, PageOrientation, CompressionQuality } from '@/types'
@@ -202,28 +202,8 @@ ExportTab.displayName = 'ExportTab'
 /* ── Metadata tab ───────────────────────────────────────────────────── */
 const MetaTab = memo(() => {
   const { currentProject, updateMetadata } = useProjectStore()
-  const { settings, updateSetting } = useSettingsStore()
-  const confirm = useConfirm()
+  const { settings } = useSettingsStore()
   const metadata = currentProject?.metadata
-  const [editingTitle, setEditingTitle] = useState(false)
-
-  const handleRequestCustomTitle = useCallback(async () => {
-    if (settings.allowCustomDocumentTitle) {
-      setEditingTitle(true)
-      return
-    }
-    const ok = await confirm({
-      title: 'Custom titles are off',
-      message: 'By default, the document title always matches the project name. Turn on "Allow custom document title" in Settings → Export to set a different title here.',
-      confirmLabel: 'Enable & Edit',
-      cancelLabel: 'Cancel',
-      variant: 'info',
-    })
-    if (ok) {
-      updateSetting('allowCustomDocumentTitle', true)
-      setEditingTitle(true)
-    }
-  }, [settings.allowCustomDocumentTitle, confirm, updateSetting])
 
   if (!currentProject) {
     return (
@@ -238,14 +218,21 @@ const MetaTab = memo(() => {
   }
 
   const hasRealProjectName = !!currentProject.name && currentProject.name !== 'Untitled Project'
-  // The title field is showing the project's own name as its real value
-  // (not a placeholder) whenever no explicit title has been typed — see the
-  // displayValue logic below. It's editable only when BOTH the user has
-  // explicitly turned on "Allow custom document title" in Settings AND
-  // opted in for this field via the Custom button — either one being off
-  // keeps the field locked to the project name.
+  // The title field shows the project's own name as its real value (not a
+  // placeholder) whenever no explicit title has been typed. Whether it's
+  // actually editable is controlled ENTIRELY by Settings → Export → "Allow
+  // custom document title" — there's no in-panel way to change that toggle
+  // anymore, so this is just a straight read of the current setting value.
   const showingProjectNameFallback = !metadata?.title && hasRealProjectName
-  const titleIsReadOnly = showingProjectNameFallback && !(settings.allowCustomDocumentTitle && editingTitle)
+  const titleIsReadOnly = showingProjectNameFallback && !settings.allowCustomDocumentTitle
+
+  const handleLockedTitleClick = useCallback(() => {
+    if (!titleIsReadOnly) return
+    toast.info('Matches the project name.', {
+      description: 'Custom titles are off in Settings → Export.',
+      duration: 2500,
+    })
+  }, [titleIsReadOnly])
 
   const fields: { key: keyof NonNullable<typeof metadata>; label: string; placeholder: string }[] = [
     { key: 'title', label: 'Title', placeholder: hasRealProjectName ? currentProject.name : 'Untitled Document' },
@@ -261,46 +248,20 @@ const MetaTab = memo(() => {
         const displayValue = key === 'title' && showingProjectNameFallback
           ? currentProject.name
           : metadata?.[key] ?? ''
+        const isLockedTitle = key === 'title' && titleIsReadOnly
 
         return (
           <div key={key} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-              <p className="section-label">{label}</p>
-              {key === 'title' && showingProjectNameFallback && (
-                <button
-                  type="button"
-                  onClick={handleRequestCustomTitle}
-                  title="Set a custom title"
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 4,
-                    background: 'transparent', border: 'none', cursor: 'pointer',
-                    color: 'var(--tx-4)', fontSize: 10, fontFamily: 'var(--font-sans)',
-                    padding: '2px 4px', borderRadius: 5,
-                    transition: 'color 110ms, background 110ms',
-                  }}
-                  onMouseEnter={e => { e.currentTarget.style.color = 'var(--tx-1)'; e.currentTarget.style.background = 'var(--hover)' }}
-                  onMouseLeave={e => { e.currentTarget.style.color = 'var(--tx-4)'; e.currentTarget.style.background = 'transparent' }}
-                >
-                  <Pencil size={9} />
-                  Custom
-                </button>
-              )}
-            </div>
+            <p className="section-label">{label}</p>
             <input
               className="panel-input"
               placeholder={placeholder}
               value={displayValue}
-              readOnly={key === 'title' && titleIsReadOnly}
+              readOnly={isLockedTitle}
               onChange={e => updateMetadata({ [key]: e.target.value })}
-              style={key === 'title' && titleIsReadOnly ? { color: 'var(--tx-3)', cursor: 'default' } : undefined}
+              onClick={isLockedTitle ? handleLockedTitleClick : undefined}
+              style={isLockedTitle ? { color: 'var(--tx-3)', cursor: 'default' } : undefined}
             />
-            {key === 'title' && showingProjectNameFallback && (
-              <p style={{ fontSize: 10, color: 'var(--tx-4)', lineHeight: 1.4 }}>
-                {settings.allowCustomDocumentTitle
-                  ? 'Matches the project name — rename the project to change this, or use Custom to set a different title.'
-                  : 'Matches the project name. Custom titles are off in Settings → Export.'}
-              </p>
-            )}
           </div>
         )
       })}
