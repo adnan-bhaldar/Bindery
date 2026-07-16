@@ -15,8 +15,10 @@ interface Props {
      * near the viewport. Matters a lot when many full-resolution images are
      * rendered at once (e.g. Grid/Continuous preview views), since decoding
      * is the expensive part, not fetching (these are already-local blob
-     * URLs). Defaults to 'lazy'; pass 'eager' for anything above-the-fold
-     * that should decode immediately (e.g. the single-page preview canvas). */
+     * URLs). Defaults to 'eager' — every other usage of this component
+     * (sidebar thumbnails, single-page canvas, cover panel) should decode
+     * immediately as before; pass 'lazy' explicitly only where there could
+     * be many off-screen instances at once. */
     loading?: 'lazy' | 'eager'
 }
 
@@ -38,7 +40,7 @@ interface Props {
  * percentage/transform math traps.
  */
 export const RotatedImage = memo(({
-    src, alt, rotation, objectFit = 'contain', onLoad, style, imgStyle, transitionMs = 280, loading = 'lazy',
+    src, alt, rotation, objectFit = 'contain', onLoad, style, imgStyle, transitionMs = 280, loading = 'eager',
 }: Props) => {
     const containerRef = useRef<HTMLDivElement>(null)
     const [size, setSize] = useState({ w: 0, h: 0 })

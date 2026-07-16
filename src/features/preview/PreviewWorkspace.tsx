@@ -1,56 +1,27 @@
-import { memo, useEffect, useState } from 'react'
+import { memo, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { usePreview } from '@/hooks/usePreview'
+import { useActivePreset } from '@/stores/exportStore'
+import { resolvePageAspect } from '@/lib/pageLayout'
 import { PreviewCanvas } from './PreviewCanvas'
 import { PreviewToolbar } from './PreviewToolbar'
-import { RotatedImage } from '@/components/common/RotatedImage'
-
-// ─── Full-resolution image helper ──────────────────────────────────────────────
-// GridView and ContinuousView previously rendered page.thumbnailUrl — the
-// small, compressed thumbnail generated for the sidebar (80–160px,
-// depending on Settings → Appearance → Thumbnail size) — stretched up to
-// fill much larger cards in the main preview area. That's exactly what
-// caused the blur: a thumbnail sized for a sidebar row was never meant to
-// be displayed at several hundred pixels wide. This renders the actual
-// full-resolution imageBlob instead (the same source PreviewCanvas already
-// uses correctly for the single-page view), with its own object URL
-// lifecycle managed per-item so each card cleans up after itself.
-const FullResImage = memo(({ blob, alt, rotation, transitionMs }: {
-    blob: Blob; alt: string; rotation: number; transitionMs?: number
-}) => {
-    const [url, setUrl] = useState<string | null>(null)
-
-    useEffect(() => {
-        const objectUrl = URL.createObjectURL(blob)
-        setUrl(objectUrl)
-        return () => URL.revokeObjectURL(objectUrl)
-    }, [blob])
-
-    if (!url) {
-        return <div className="skeleton" style={{ width: '100%', height: '100%', borderRadius: 0 }} />
-    }
-
-    return (
-        <RotatedImage
-            src={url}
-            alt={alt}
-            rotation={rotation}
-            transitionMs={transitionMs}
-            loading="lazy" // defers decode cost for cards off-screen — matters
-        // a lot here since these are now full-resolution images, not tiny
-        // thumbnails, and Continuous view can have many of them at once
-        />
-    )
-})
-FullResImage.displayName = 'FullResImage'
+import { PageFramePreview } from './PageFramePreview'
+import type { Page } from '@/types'
 
 // ─── Grid view ────────────────────────────────────────────────────────────────
+// Each cell's own aspect ratio is now computed from the SAME page-size/
+// orientation/rotation logic PreviewCanvas uses (resolvePageAspect), instead
+// of a fixed 3:4 box every card was squeezed into regardless of its actual
+// page shape. PageFramePreview renders the page-size/margin/fit-aware
+// content inside it, matching what Single view (and the real export) shows.
 
 const GridView = memo(({ pages, currentIndex, onSelect }: {
-    pages: { id: string; imageBlob: Blob; rotation: number }[]
+    pages: Page[]
     currentIndex: number
     onSelect: (i: number) => void
 }) => {
+    const preset = useActivePreset()
+
     return (
         <div style={{
             flex: 1, overflowY: 'auto', padding: 24,
@@ -61,6 +32,10 @@ const GridView = memo(({ pages, currentIndex, onSelect }: {
         }}>
             {pages.map((page, i) => {
                 const isActive = i === currentIndex
+                const aspect = resolvePageAspect(
+                    preset.pageSize, preset.orientation,
+                    page.metadata.width, page.metadata.height, page.rotation
+                )
                 return (
                     <motion.div
                         key={page.id}
@@ -74,27 +49,18 @@ const GridView = memo(({ pages, currentIndex, onSelect }: {
                         }}
                     >
                         <div style={{
-                            aspectRatio: '3/4',
+                            aspectRatio: `${aspect.w} / ${aspect.h}`,
                             borderRadius: 8,
                             overflow: 'hidden',
                             border: isActive ? '2px solid var(--accent)' : '2px solid var(--border)',
-                            background: '#fff',
+                            background: 'var(--canvas-bg)',
                             boxShadow: isActive
                                 ? '0 0 0 3px var(--accent-dim), var(--sh-md)'
                                 : 'var(--sh-sm)',
                             transition: 'border-color 110ms, box-shadow 110ms',
                             position: 'relative',
                         }}>
-                            {page.imageBlob ? (
-                                <FullResImage
-                                    blob={page.imageBlob}
-                                    alt={`Page ${i + 1}`}
-                                    rotation={page.rotation}
-                                    transitionMs={300}
-                                />
-                            ) : (
-                                <div className="skeleton" style={{ width: '100%', height: '100%', borderRadius: 0 }} />
-                            )}
+                            <PageFramePreview page={page} loading="lazy" />
                         </div>
                         <p style={{
                             fontSize: 10.5, textAlign: 'center',
@@ -112,11 +78,17 @@ const GridView = memo(({ pages, currentIndex, onSelect }: {
 GridView.displayName = 'GridView'
 
 // ─── Continuous view ──────────────────────────────────────────────────────────
+// Same idea: the wrapper's aspect ratio previously came from the raw image's
+// own metadata dimensions only (rotation-aware, but with no idea what page
+// size/orientation preset was active). Now uses the full resolvePageAspect,
+// so a page set to A4/Letter/etc. actually shows as that shape here too.
 
 const ContinuousView = memo(({ pages, zoom }: {
-    pages: { id: string; imageBlob: Blob; rotation: number; metadata: { width: number; height: number } }[]
+    pages: Page[]
     zoom: number
 }) => {
+    const preset = useActivePreset()
+
     return (
         <div style={{
             flex: 1, overflowY: 'auto',
@@ -125,17 +97,10 @@ const ContinuousView = memo(({ pages, zoom }: {
             alignItems: 'center', gap: 24,
         }}>
             {pages.map((page, i) => {
-                const isRotated90 = page.rotation === 90 || page.rotation === 270
-                const { width: metaW, height: metaH } = page.metadata
-
-                // The wrapper's own aspect ratio must reflect the ROTATED
-                // shape (swap width/height for 90/270°) — this is what
-                // actually determines the auto-computed height in this
-                // "natural document flow" layout, same role that cardW/cardH
-                // plays in the single-page PreviewCanvas.
-                const aspectRatio = metaW && metaH
-                    ? isRotated90 ? `${metaH} / ${metaW}` : `${metaW} / ${metaH}`
-                    : '3 / 4' // fallback while metadata hasn't loaded yet
+                const aspect = resolvePageAspect(
+                    preset.pageSize, preset.orientation,
+                    page.metadata.width, page.metadata.height, page.rotation
+                )
 
                 return (
                     <motion.div
@@ -151,19 +116,11 @@ const ContinuousView = memo(({ pages, zoom }: {
                             transformOrigin: 'top center',
                             transition: 'transform 200ms var(--ease-out)',
                             width: '100%', maxWidth: 600,
-                            aspectRatio,
-                            background: '#fff',
+                            aspectRatio: `${aspect.w} / ${aspect.h}`,
+                            background: 'var(--canvas-bg)',
                         }}
                     >
-                        {page.imageBlob ? (
-                            <FullResImage
-                                blob={page.imageBlob}
-                                alt={`Page ${i + 1}`}
-                                rotation={page.rotation}
-                            />
-                        ) : (
-                            <div className="skeleton" style={{ width: '100%', height: '100%' }} />
-                        )}
+                        <PageFramePreview page={page} loading="lazy" />
                         {/* Page number label */}
                         <div style={{
                             position: 'absolute', bottom: -24, left: '50%',

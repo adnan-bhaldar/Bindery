@@ -1,7 +1,8 @@
 import { memo, useRef, useEffect, useState, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useActivePreset } from '@/stores/exportStore'
-import { PAGE_SIZES, MARGIN_SIZES } from '@/constants'
+import { MARGIN_SIZES } from '@/constants'
+import { resolvePageAspect } from '@/lib/pageLayout'
 import type { Page } from '@/types'
 import { clamp } from '@/lib/utils'
 
@@ -14,30 +15,6 @@ interface Props {
 interface PanState {
     x: number; y: number; isDragging: boolean
     startX: number; startY: number; originX: number; originY: number
-}
-
-function resolvePageAspect(pageSize: string, orientation: string, imgW: number, imgH: number, rotation: number) {
-    if (!imgW || !imgH) return { w: 210, h: 297 }
-
-    // Swap effective dimensions when image is rotated 90/270
-    const isRotated90 = rotation === 90 || rotation === 270
-    const effW = isRotated90 ? imgH : imgW
-    const effH = isRotated90 ? imgW : imgH
-
-    if (pageSize === 'auto' || pageSize === 'original') {
-        return { w: effW, h: effH }
-    }
-
-    const sizes = PAGE_SIZES as Record<string, { width: number; height: number }>
-    const def = sizes[pageSize] ?? PAGE_SIZES.a4
-    let { width: w, height: h } = def
-
-    const isLandscape =
-        orientation === 'landscape' ||
-        (orientation === 'auto' && effW > effH)
-
-    if (isLandscape && w < h) [w, h] = [h, w]
-    return { w, h }
 }
 
 export const PreviewCanvas = memo(({ page, zoom, onZoomChange }: Props) => {
