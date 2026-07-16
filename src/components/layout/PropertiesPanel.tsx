@@ -218,21 +218,23 @@ const MetaTab = memo(() => {
   }
 
   const hasRealProjectName = !!currentProject.name && currentProject.name !== 'Untitled Project'
-  // The title field shows the project's own name as its real value (not a
-  // placeholder) whenever no explicit title has been typed. Whether it's
-  // actually editable is controlled ENTIRELY by Settings → Export → "Allow
-  // custom document title" — there's no in-panel way to change that toggle
-  // anymore, so this is just a straight read of the current setting value.
-  const showingProjectNameFallback = !metadata?.title && hasRealProjectName
-  const titleIsReadOnly = showingProjectNameFallback && !settings.allowCustomDocumentTitle
+  // Whenever there's a real project name and the toggle is off, the title
+  // is ALWAYS forced to match it — read-only, and overriding any custom
+  // text that might already be stored from when the toggle was previously
+  // on. This is deliberately NOT conditioned on whether metadata.title
+  // happens to currently be empty — that was the actual bug: gating on
+  // "is it empty" meant a title typed while the toggle was on stayed
+  // editable forever afterward, since turning the toggle back off never
+  // re-checked anything once the field held real text.
+  const titleLockedToProjectName = hasRealProjectName && !settings.allowCustomDocumentTitle
 
   const handleLockedTitleClick = useCallback(() => {
-    if (!titleIsReadOnly) return
+    if (!titleLockedToProjectName) return
     toast.info('Matches the project name.', {
       description: 'Custom titles are off in Settings → Export.',
       duration: 2500,
     })
-  }, [titleIsReadOnly])
+  }, [titleLockedToProjectName])
 
   const fields: { key: keyof NonNullable<typeof metadata>; label: string; placeholder: string }[] = [
     { key: 'title', label: 'Title', placeholder: hasRealProjectName ? currentProject.name : 'Untitled Document' },
@@ -245,10 +247,11 @@ const MetaTab = memo(() => {
   return (
     <div style={{ padding: '14px 14px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
       {fields.map(({ key, label, placeholder }) => {
-        const displayValue = key === 'title' && showingProjectNameFallback
-          ? currentProject.name
+        const isTitle = key === 'title'
+        const displayValue = isTitle
+          ? (titleLockedToProjectName ? currentProject.name : (metadata?.title || (hasRealProjectName ? currentProject.name : '')))
           : metadata?.[key] ?? ''
-        const isLockedTitle = key === 'title' && titleIsReadOnly
+        const isLockedTitle = isTitle && titleLockedToProjectName
 
         return (
           <div key={key} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>

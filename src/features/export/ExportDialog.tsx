@@ -382,17 +382,21 @@ export const ExportDialog = memo(() => {
                 title: '', author: '', subject: '', keywords: '',
                 creator: 'Bindery', producer: 'Bindery PDF Engine', copyright: '',
             }
-            // Title priority: an explicitly-set Title in the sidebar Info
-            // tab always wins if present. Otherwise, fall back to the
-            // project's own name (when it has a real one) — previously this
-            // fell straight through to pdfService's generic "Bindery"
-            // fallback even when the project itself was clearly named.
+            // Title priority: when "Allow custom document title" is off,
+            // the project's own name always wins outright — this matches
+            // the sidebar Info panel's behavior exactly, including
+            // discarding any custom title that might still be stored from
+            // when the toggle was previously on. Only when the toggle is on
+            // does an explicitly-set Title in the sidebar take priority
+            // over the project name.
             const hasRealProjectName = !!currentProject?.name && currentProject.name !== 'Untitled Project'
             const metadata = {
                 ...rawMetadata,
-                title: rawMetadata.title?.trim()
-                    ? rawMetadata.title
-                    : (hasRealProjectName ? currentProject!.name : rawMetadata.title),
+                title: (!settings.allowCustomDocumentTitle && hasRealProjectName)
+                    ? currentProject!.name
+                    : (rawMetadata.title?.trim()
+                        ? rawMetadata.title
+                        : (hasRealProjectName ? currentProject!.name : rawMetadata.title)),
             }
 
             const bytes = await pdfService.generate(
