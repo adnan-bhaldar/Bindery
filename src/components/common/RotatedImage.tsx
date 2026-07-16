@@ -11,6 +11,13 @@ interface Props {
     /** Merged onto the <img> itself, after the computed rotation-safe sizing */
     imgStyle?: React.CSSProperties
     transitionMs?: number
+    /** Native browser lazy-loading — defers decode cost until the image is
+     * near the viewport. Matters a lot when many full-resolution images are
+     * rendered at once (e.g. Grid/Continuous preview views), since decoding
+     * is the expensive part, not fetching (these are already-local blob
+     * URLs). Defaults to 'lazy'; pass 'eager' for anything above-the-fold
+     * that should decode immediately (e.g. the single-page preview canvas). */
+    loading?: 'lazy' | 'eager'
 }
 
 /**
@@ -31,7 +38,7 @@ interface Props {
  * percentage/transform math traps.
  */
 export const RotatedImage = memo(({
-    src, alt, rotation, objectFit = 'contain', onLoad, style, imgStyle, transitionMs = 280,
+    src, alt, rotation, objectFit = 'contain', onLoad, style, imgStyle, transitionMs = 280, loading = 'lazy',
 }: Props) => {
     const containerRef = useRef<HTMLDivElement>(null)
     const [size, setSize] = useState({ w: 0, h: 0 })
@@ -74,6 +81,7 @@ export const RotatedImage = memo(({
                     src={src}
                     alt={alt}
                     draggable={false}
+                    loading={loading}
                     onLoad={e => onLoad?.({ w: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight })}
                     style={{
                         width: boxW, height: boxH,

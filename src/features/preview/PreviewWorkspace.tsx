@@ -1,14 +1,53 @@
-import { memo, useEffect } from 'react'
+import { memo, useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { usePreview } from '@/hooks/usePreview'
 import { PreviewCanvas } from './PreviewCanvas'
 import { PreviewToolbar } from './PreviewToolbar'
 import { RotatedImage } from '@/components/common/RotatedImage'
 
+// ─── Full-resolution image helper ──────────────────────────────────────────────
+// GridView and ContinuousView previously rendered page.thumbnailUrl — the
+// small, compressed thumbnail generated for the sidebar (80–160px,
+// depending on Settings → Appearance → Thumbnail size) — stretched up to
+// fill much larger cards in the main preview area. That's exactly what
+// caused the blur: a thumbnail sized for a sidebar row was never meant to
+// be displayed at several hundred pixels wide. This renders the actual
+// full-resolution imageBlob instead (the same source PreviewCanvas already
+// uses correctly for the single-page view), with its own object URL
+// lifecycle managed per-item so each card cleans up after itself.
+const FullResImage = memo(({ blob, alt, rotation, transitionMs }: {
+    blob: Blob; alt: string; rotation: number; transitionMs?: number
+}) => {
+    const [url, setUrl] = useState<string | null>(null)
+
+    useEffect(() => {
+        const objectUrl = URL.createObjectURL(blob)
+        setUrl(objectUrl)
+        return () => URL.revokeObjectURL(objectUrl)
+    }, [blob])
+
+    if (!url) {
+        return <div className="skeleton" style={{ width: '100%', height: '100%', borderRadius: 0 }} />
+    }
+
+    return (
+        <RotatedImage
+            src={url}
+            alt={alt}
+            rotation={rotation}
+            transitionMs={transitionMs}
+            loading="lazy" // defers decode cost for cards off-screen — matters
+        // a lot here since these are now full-resolution images, not tiny
+        // thumbnails, and Continuous view can have many of them at once
+        />
+    )
+})
+FullResImage.displayName = 'FullResImage'
+
 // ─── Grid view ────────────────────────────────────────────────────────────────
 
 const GridView = memo(({ pages, currentIndex, onSelect }: {
-    pages: { id: string; thumbnailUrl?: string; rotation: number }[]
+    pages: { id: string; imageBlob: Blob; rotation: number }[]
     currentIndex: number
     onSelect: (i: number) => void
 }) => {
@@ -46,9 +85,9 @@ const GridView = memo(({ pages, currentIndex, onSelect }: {
                             transition: 'border-color 110ms, box-shadow 110ms',
                             position: 'relative',
                         }}>
-                            {page.thumbnailUrl ? (
-                                <RotatedImage
-                                    src={page.thumbnailUrl}
+                            {page.imageBlob ? (
+                                <FullResImage
+                                    blob={page.imageBlob}
                                     alt={`Page ${i + 1}`}
                                     rotation={page.rotation}
                                     transitionMs={300}
@@ -75,7 +114,7 @@ GridView.displayName = 'GridView'
 // ─── Continuous view ──────────────────────────────────────────────────────────
 
 const ContinuousView = memo(({ pages, zoom }: {
-    pages: { id: string; thumbnailUrl?: string; rotation: number; metadata: { width: number; height: number } }[]
+    pages: { id: string; imageBlob: Blob; rotation: number; metadata: { width: number; height: number } }[]
     zoom: number
 }) => {
     return (
@@ -86,7 +125,6 @@ const ContinuousView = memo(({ pages, zoom }: {
             alignItems: 'center', gap: 24,
         }}>
             {pages.map((page, i) => {
-                const url = page.thumbnailUrl
                 const isRotated90 = page.rotation === 90 || page.rotation === 270
                 const { width: metaW, height: metaH } = page.metadata
 
@@ -97,7 +135,7 @@ const ContinuousView = memo(({ pages, zoom }: {
                 // plays in the single-page PreviewCanvas.
                 const aspectRatio = metaW && metaH
                     ? isRotated90 ? `${metaH} / ${metaW}` : `${metaW} / ${metaH}`
-                    : '3 / 4' // fallback while metadata/thumbnail hasn't loaded yet
+                    : '3 / 4' // fallback while metadata hasn't loaded yet
 
                 return (
                     <motion.div
@@ -117,9 +155,9 @@ const ContinuousView = memo(({ pages, zoom }: {
                             background: '#fff',
                         }}
                     >
-                        {url ? (
-                            <RotatedImage
-                                src={url}
+                        {page.imageBlob ? (
+                            <FullResImage
+                                blob={page.imageBlob}
                                 alt={`Page ${i + 1}`}
                                 rotation={page.rotation}
                             />
