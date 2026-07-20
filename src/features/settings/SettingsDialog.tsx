@@ -89,6 +89,7 @@ const SEARCH_INDEX: Record<string, string[]> = {
         'default filename', 'export pdf',
         'auto page size', 'exact fit', 'canvas', 'blank space',
         'custom document title', 'title', 'locked title',
+        'default author name', 'author',
     ],
     ocr: [
         'enable ocr', 'extract text', 'searchable pdf',
@@ -719,6 +720,19 @@ const ExportSection = memo(() => {
                     <Toggle
                         checked={settings.allowCustomDocumentTitle}
                         onChange={v => updateSetting('allowCustomDocumentTitle', v)}
+                    />
+                </CardRow>
+            </Card>
+
+            <Card title="Document Author">
+                <CardRow
+                    label="Default author name"
+                    desc="When off, leaving the Author field blank keeps it genuinely empty in the exported PDF instead of filling in a default name"
+                    last
+                >
+                    <Toggle
+                        checked={settings.useDefaultAuthorName}
+                        onChange={v => updateSetting('useDefaultAuthorName', v)}
                     />
                 </CardRow>
             </Card>

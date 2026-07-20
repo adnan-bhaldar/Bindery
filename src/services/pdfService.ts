@@ -126,17 +126,18 @@ export class PDFService {
         onProgress?: ProgressCallback
     ): Promise<Uint8Array> {
         const pdfDoc = await PDFDocument.create()
-        const { preset, metadata, useExactAutoPageSize = true } = options
+        const { preset, metadata, useExactAutoPageSize = true, useDefaultAuthorName = true } = options
 
         // Document metadata
         // Title: use the provided title if set, otherwise fall back to
         // "Bindery" (previously fell back to the generic "Untitled").
         pdfDoc.setTitle(metadata.title?.trim() || 'Bindery')
 
-        // Author: previously fell back to an empty string, leaving the
-        // field genuinely blank in the exported PDF's properties instead of
-        // attributing it to anything.
-        pdfDoc.setAuthor(metadata.author?.trim() || 'Your Name')
+        // Author: previously always fell back to a default name when left
+        // blank. Now configurable via Settings → Export → "Default author
+        // name" — off means the Author field is left genuinely empty in
+        // the exported PDF instead of getting a default filled in.
+        pdfDoc.setAuthor(metadata.author?.trim() || (useDefaultAuthorName ? 'Bindery' : ''))
 
         pdfDoc.setSubject(metadata.subject || '')
         pdfDoc.setKeywords(

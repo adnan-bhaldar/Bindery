@@ -407,6 +407,7 @@ export const ExportDialog = memo(() => {
                     filename,
                     metadata,
                     useExactAutoPageSize: settings.useExactAutoPageSize,
+                    useDefaultAuthorName: settings.useDefaultAuthorName,
                 },
                 (p) => setProgress(p)
             )

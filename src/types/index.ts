@@ -152,6 +152,10 @@ export interface ExportOptions {
      * match the image, same as before this became configurable. Defaults to
      * true (no canvas) if omitted. */
     useExactAutoPageSize?: boolean
+    /** When the Author field is left empty: true = fall back to a default
+     * author name; false = leave it genuinely blank in the exported PDF.
+     * Defaults to true if omitted. */
+    useDefaultAuthorName?: boolean
 }
 
 export interface ExportProgress {
@@ -199,6 +203,7 @@ export interface AppSettings {
     defaultFilename: string
     useExactAutoPageSize: boolean
     allowCustomDocumentTitle: boolean
+    useDefaultAuthorName: boolean
 
     // OCR
     ocrEnabled: boolean

@@ -29,6 +29,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
     defaultFilename: 'Bindery',
     useExactAutoPageSize: true,
     allowCustomDocumentTitle: false,
+    useDefaultAuthorName: true,
 
     // OCR
     ocrEnabled: true,
