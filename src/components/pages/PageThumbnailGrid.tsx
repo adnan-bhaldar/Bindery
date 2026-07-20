@@ -1,9 +1,7 @@
 import { memo, useState } from 'react'
-import { RotateCw, Trash2, Copy, Crown } from 'lucide-react'
-import { usePagesStore } from '@/stores/pagesStore'
+import { Crown } from 'lucide-react'
 import { useSelectionStore } from '@/stores/selectionStore'
 import { useUIStore } from '@/stores/uiStore'
-import { Tooltip } from '@/components/ui/Tooltip'
 import { RotatedImage } from '@/components/common/RotatedImage'
 import { usePageContextMenu } from '@/hooks/usePageContextMenu'
 import type { Page } from '@/types'
@@ -16,7 +14,6 @@ interface Props {
 
 export const PageThumbnailGrid = memo(({ page, index, allPageIds }: Props) => {
     const [hovered, setHovered] = useState(false)
-    const { removePage, rotatePage, duplicatePage } = usePagesStore()
     const isSelected = useSelectionStore(s => s.selectedIds.has(page.id))
     const anchorId = useSelectionStore(s => s.anchorId)
     const { selectOnly, toggle, selectRange, setAnchor } = useSelectionStore()
@@ -85,59 +82,6 @@ export const PageThumbnailGrid = memo(({ page, index, allPageIds }: Props) => {
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                     }}>
                         <Crown size={8} color="#f59e0b" />
-                    </div>
-                )}
-
-                {/* Hover actions */}
-                {hovered && (
-                    <div style={{
-                        position: 'absolute', top: 3, right: 3,
-                        display: 'flex', flexDirection: 'column', gap: 2,
-                    }}>
-                        {[
-                            {
-                                tip: 'Rotate', icon: <RotateCw size={10} />,
-                                onClick: (e: React.MouseEvent) => {
-                                    e.stopPropagation()
-                                    rotatePage(page.id, ((page.rotation + 90) % 360) as 0 | 90 | 180 | 270)
-                                },
-                                danger: false,
-                            },
-                            {
-                                tip: 'Duplicate', icon: <Copy size={10} />,
-                                onClick: (e: React.MouseEvent) => { e.stopPropagation(); duplicatePage(page.id) },
-                                danger: false,
-                            },
-                            {
-                                tip: 'Delete', icon: <Trash2 size={10} />,
-                                onClick: (e: React.MouseEvent) => { e.stopPropagation(); removePage(page.id) },
-                                danger: true,
-                            },
-                        ].map(({ tip, icon, onClick, danger }) => (
-                            <Tooltip key={tip} content={tip} placement="left">
-                                <button
-                                    onClick={onClick}
-                                    style={{
-                                        width: 20, height: 20, borderRadius: 5, border: 'none',
-                                        background: danger ? 'rgba(239,68,68,0.85)' : 'rgba(0,0,0,0.70)',
-                                        backdropFilter: 'blur(4px)',
-                                        color: '#fff', cursor: 'pointer',
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                        transition: 'background 110ms',
-                                    }}
-                                    onMouseEnter={e => {
-                                        e.currentTarget.style.background = danger
-                                            ? 'rgba(239,68,68,1)' : 'rgba(0,0,0,0.92)'
-                                    }}
-                                    onMouseLeave={e => {
-                                        e.currentTarget.style.background = danger
-                                            ? 'rgba(239,68,68,0.85)' : 'rgba(0,0,0,0.70)'
-                                    }}
-                                >
-                                    {icon}
-                                </button>
-                            </Tooltip>
-                        ))}
                     </div>
                 )}
 

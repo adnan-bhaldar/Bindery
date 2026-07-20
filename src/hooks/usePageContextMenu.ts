@@ -1,5 +1,5 @@
 import { createElement, useCallback } from 'react'
-import { RotateCw, Copy, Trash2, RefreshCw } from 'lucide-react'
+import { RotateCw, RotateCcw, Copy, Trash2, RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
 import { useContextMenu, type ContextMenuItem } from '@/components/common/ContextMenu'
 import { usePagesStore } from '@/stores/pagesStore'
@@ -41,10 +41,16 @@ export function usePageContextMenu() {
 
         const items: ContextMenuItem[] = [
             {
-                id: 'rotate',
-                label: 'Rotate 90°',
+                id: 'rotate-cw',
+                label: 'Rotate Right 90°',
                 icon: createElement(RotateCw, { size: 14 }),
                 action: () => rotatePage(page.id, ((page.rotation + 90) % 360) as 0 | 90 | 180 | 270),
+            },
+            {
+                id: 'rotate-ccw',
+                label: 'Rotate Left 90°',
+                icon: createElement(RotateCcw, { size: 14 }),
+                action: () => rotatePage(page.id, ((page.rotation - 90 + 360) % 360) as 0 | 90 | 180 | 270),
             },
             {
                 id: 'duplicate',

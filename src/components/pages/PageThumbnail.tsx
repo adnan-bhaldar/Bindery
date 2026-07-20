@@ -1,6 +1,5 @@
 import { memo, useState } from 'react'
-import { RotateCw, Trash2, Copy, Crown } from 'lucide-react'
-import { usePagesStore } from '@/stores/pagesStore'
+import { Crown } from 'lucide-react'
 import { useSelectionStore } from '@/stores/selectionStore'
 import { useUIStore } from '@/stores/uiStore'
 import { Tooltip } from '@/components/ui/Tooltip'
@@ -16,7 +15,6 @@ interface Props {
 
 export const PageThumbnail = memo(({ page, index, allPageIds }: Props) => {
     const [hovered, setHovered] = useState(false)
-    const { removePage, rotatePage, duplicatePage } = usePagesStore()
     const isSelected = useSelectionStore(s => s.selectedIds.has(page.id))
     const anchorId = useSelectionStore(s => s.anchorId)
     const { selectOnly, toggle, selectRange, setAnchor } = useSelectionStore()
@@ -46,6 +44,10 @@ export const PageThumbnail = memo(({ page, index, allPageIds }: Props) => {
             style={{
                 display: 'flex', alignItems: 'center', gap: 10,
                 padding: '5px 8px', borderRadius: 9, cursor: 'pointer',
+                minHeight: 74, // keeps every row the same height regardless of
+                // whether that page's thumbnail is portrait (64px) or
+                // landscape (38px) — without this, rows visibly vary in
+                // height page to page, which looks inconsistent/jumpy
                 background: isSelected ? 'var(--accent-dim)' : hovered ? 'var(--hover)' : 'transparent',
                 border: `1px solid ${isSelected ? 'var(--accent-border)' : 'transparent'}`,
                 transition: 'background 110ms, border-color 110ms',
@@ -133,53 +135,7 @@ export const PageThumbnail = memo(({ page, index, allPageIds }: Props) => {
                 </p>
             </div>
 
-            {/* Hover actions — always mounted (reserves layout space) so the
-                row's height never changes on hover; only opacity toggles */}
-            <div style={{
-                display: 'flex', flexDirection: 'column', gap: 2, flexShrink: 0,
-                opacity: hovered ? 1 : 0,
-                pointerEvents: hovered ? 'auto' : 'none',
-                transition: 'opacity 110ms',
-            }}>
-                <Tooltip content="Rotate 90°" placement="left">
-                    <button onClick={e => {
-                        e.stopPropagation()
-                        rotatePage(page.id, ((page.rotation + 90) % 360) as 0 | 90 | 180 | 270)
-                    }} style={actionBtn}
-                        onMouseEnter={e => { e.currentTarget.style.background = 'var(--s5)' }}
-                        onMouseLeave={e => { e.currentTarget.style.background = 'var(--s4)' }}
-                    >
-                        <RotateCw size={11} />
-                    </button>
-                </Tooltip>
-                <Tooltip content="Duplicate" placement="left">
-                    <button onClick={e => { e.stopPropagation(); duplicatePage(page.id) }} style={actionBtn}
-                        onMouseEnter={e => { e.currentTarget.style.background = 'var(--s5)' }}
-                        onMouseLeave={e => { e.currentTarget.style.background = 'var(--s4)' }}
-                    >
-                        <Copy size={11} />
-                    </button>
-                </Tooltip>
-                <Tooltip content="Delete" placement="left">
-                    <button onClick={e => { e.stopPropagation(); removePage(page.id) }}
-                        style={{ ...actionBtn, color: '#ef4444' }}
-                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.12)' }}
-                        onMouseLeave={e => { e.currentTarget.style.background = 'var(--s4)'; e.currentTarget.style.color = '#ef4444' }}
-                    >
-                        <Trash2 size={11} />
-                    </button>
-                </Tooltip>
-            </div>
         </div>
     )
 })
 PageThumbnail.displayName = 'PageThumbnail'
-
-const actionBtn: React.CSSProperties = {
-    width: 22, height: 22,
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    borderRadius: 6, border: 'none',
-    background: 'var(--s4)', color: 'var(--tx-2)',
-    cursor: 'pointer', transition: 'background 110ms, color 110ms',
-    flexShrink: 0,
-}
