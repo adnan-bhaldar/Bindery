@@ -1,4 +1,5 @@
 import { memo, useRef, useState, useEffect } from 'react'
+import { useUnwrappedRotation } from '@/hooks/useUnwrappedRotation'
 
 interface Props {
     src: string
@@ -44,6 +45,10 @@ export const RotatedImage = memo(({
 }: Props) => {
     const containerRef = useRef<HTMLDivElement>(null)
     const [size, setSize] = useState({ w: 0, h: 0 })
+    // Used ONLY for the CSS transform below — every other use of `rotation`
+    // in this component (the isRotated90 dimension-swap check) must keep
+    // using the real wrapped 0/90/180/270 value.
+    const displayRotation = useUnwrappedRotation(rotation)
 
     useEffect(() => {
         const el = containerRef.current
@@ -90,7 +95,7 @@ export const RotatedImage = memo(({
                         maxWidth: 'none', maxHeight: 'none',
                         flexShrink: 0, flexGrow: 0,
                         objectFit, display: 'block',
-                        transform: `rotate(${rotation}deg)`,
+                        transform: `rotate(${displayRotation}deg)`,
                         transformOrigin: 'center',
                         transition: `transform ${transitionMs}ms var(--ease-out), width 200ms, height 200ms`,
                         ...imgStyle,

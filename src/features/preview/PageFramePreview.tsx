@@ -2,6 +2,7 @@ import { memo, useRef, useEffect, useState } from 'react'
 import { useActivePreset } from '@/stores/exportStore'
 import { MARGIN_SIZES } from '@/constants'
 import { resolvePageAspect } from '@/lib/pageLayout'
+import { useUnwrappedRotation } from '@/hooks/useUnwrappedRotation'
 import type { Page } from '@/types'
 
 interface Props {
@@ -38,6 +39,8 @@ export const PageFramePreview = memo(({ page, loading = 'lazy' }: Props) => {
     const hasMargin = marginPts.top > 0
     const isAutoSize = preset.pageSize === 'auto' || preset.pageSize === 'original'
     const isRotated90 = page.rotation === 90 || page.rotation === 270
+    // Used ONLY for the CSS transform in the two <img> blocks below.
+    const displayRotation = useUnwrappedRotation(page.rotation)
 
     // Object URL for the full-resolution image
     useEffect(() => {
@@ -124,7 +127,7 @@ export const PageFramePreview = memo(({ page, loading = 'lazy' }: Props) => {
                             height: isRotated90 ? cardW : cardH,
                             maxWidth: 'none', maxHeight: 'none',
                             objectFit: 'contain', display: 'block',
-                            transform: `rotate(${page.rotation}deg)`,
+                            transform: `rotate(${displayRotation}deg)`,
                             transformOrigin: 'center',
                         }}
                     />
@@ -165,7 +168,7 @@ export const PageFramePreview = memo(({ page, loading = 'lazy' }: Props) => {
                                 height: isRotated90 ? frameW : frameH,
                                 maxWidth: 'none', maxHeight: 'none',
                                 objectFit: imgObjectFit, display: 'block',
-                                transform: `rotate(${page.rotation}deg)`,
+                                transform: `rotate(${displayRotation}deg)`,
                                 transformOrigin: 'center',
                             }}
                         />

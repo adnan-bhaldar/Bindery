@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useActivePreset } from '@/stores/exportStore'
 import { MARGIN_SIZES } from '@/constants'
 import { resolvePageAspect } from '@/lib/pageLayout'
+import { useUnwrappedRotation } from '@/hooks/useUnwrappedRotation'
 import type { Page } from '@/types'
 import { clamp } from '@/lib/utils'
 
@@ -34,6 +35,10 @@ export const PreviewCanvas = memo(({ page, zoom, onZoomChange }: Props) => {
     const hasMargin = marginPts.top > 0
     const isAutoSize = preset.pageSize === 'auto' || preset.pageSize === 'original'
     const isRotated90 = page.rotation === 90 || page.rotation === 270
+    // Used ONLY for the CSS transform in the two <img> blocks below — every
+    // other use of rotation in this file must keep using the real wrapped
+    // value (isRotated90 above, the dimension-swap logic, etc.).
+    const displayRotation = useUnwrappedRotation(page.rotation)
 
     // Object URL
     useEffect(() => {
@@ -189,7 +194,7 @@ export const PreviewCanvas = memo(({ page, zoom, onZoomChange }: Props) => {
                                             height: isRotated90 ? layout.cardW : layout.cardH,
                                             maxWidth: 'none', maxHeight: 'none',
                                             objectFit: 'contain', display: 'block',
-                                            transform: `rotate(${page.rotation}deg)`,
+                                            transform: `rotate(${displayRotation}deg)`,
                                             transformOrigin: 'center',
                                             transition: 'transform 300ms var(--ease-out), width 200ms, height 200ms',
                                         }}
@@ -246,7 +251,7 @@ export const PreviewCanvas = memo(({ page, zoom, onZoomChange }: Props) => {
                                                 height: isRotated90 ? frameW : frameH,
                                                 maxWidth: 'none', maxHeight: 'none',
                                                 objectFit: imgObjectFit, display: 'block',
-                                                transform: `rotate(${page.rotation}deg)`,
+                                                transform: `rotate(${displayRotation}deg)`,
                                                 transformOrigin: 'center',
                                                 transition: 'transform 300ms var(--ease-out)',
                                             }}
