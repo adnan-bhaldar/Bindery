@@ -5,6 +5,7 @@ import { useSelectionStore } from '@/stores/selectionStore'
 import { useUIStore } from '@/stores/uiStore'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { RotatedImage } from '@/components/common/RotatedImage'
+import { usePageContextMenu } from '@/hooks/usePageContextMenu'
 import type { Page } from '@/types'
 
 interface Props {
@@ -20,6 +21,7 @@ export const PageThumbnailGrid = memo(({ page, index, allPageIds }: Props) => {
     const anchorId = useSelectionStore(s => s.anchorId)
     const { selectOnly, toggle, selectRange, setAnchor } = useSelectionStore()
     const setPreviewPage = useUIStore(s => s.setCurrentPreviewPageId)
+    const { openPageContextMenu } = usePageContextMenu()
 
     const handleClick = (e: React.MouseEvent) => {
         if (e.shiftKey && anchorId) selectRange(allPageIds, anchorId, page.id)
@@ -31,6 +33,7 @@ export const PageThumbnailGrid = memo(({ page, index, allPageIds }: Props) => {
     return (
         <div
             onClick={handleClick}
+            onContextMenu={e => openPageContextMenu(e, page)}
             onMouseEnter={() => setHovered(true)}
             onMouseLeave={() => setHovered(false)}
             style={{

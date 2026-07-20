@@ -5,6 +5,16 @@ import { hashService } from './hashService'
 import { db } from '@/db/schema'
 import type { Page, ImageMetadata } from '@/types'
 
+// Thumbnails were previously generated purely in CSS-pixel terms — a
+// 160px-target thumbnail, say, was rendered at exactly 160 actual pixels.
+// On any Retina/HiDPI display (devicePixelRatio > 1, which is most modern
+// laptops and phones), that same thumbnail needs roughly 2-3x that many
+// actual pixels to look crisp at the same on-screen CSS size — it never
+// had that many, so it was permanently soft regardless of how/when it
+// decoded. Capped at 3x so a 5x-DPR device doesn't generate needlessly
+// enormous thumbnails.
+const DPR = typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1, 3) : 1
+
 export interface ImportResult {
     imported: Page[]
     duplicates: string[]
@@ -52,9 +62,14 @@ async function generateInlineThumbnail(blob: Blob, size: number): Promise<{ blob
         const canvas = new OffscreenCanvas(w, h)
         const ctx = canvas.getContext('2d')
         if (!ctx) { bmp.close(); return null }
+        // Same high-quality resize as the background worker — this is what
+        // actually shows until that hi-res upgrade lands, so it's worth
+        // being crisp too, not just fast.
+        ctx.imageSmoothingEnabled = true
+        ctx.imageSmoothingQuality = 'high'
         ctx.drawImage(bmp, 0, 0, w, h)
         bmp.close()
-        const thumbBlob = await canvas.convertToBlob({ type: 'image/webp', quality: 0.75 })
+        const thumbBlob = await canvas.convertToBlob({ type: 'image/webp', quality: 0.85 })
         const url = createTrackedObjectUrl(thumbBlob)
         return { blob: thumbBlob, url }
     } catch {
@@ -160,7 +175,7 @@ class ImportService {
             // Inline thumbnail respects the user's configured thumbnail size —
             // background hi-res upgrade uses a modest multiple of it, capped
             // at a sensible ceiling so it stays fast on large batches.
-            const thumb = await generateInlineThumbnail(imageBlob, thumbnailSize)
+            const thumb = await generateInlineThumbnail(imageBlob, Math.round(thumbnailSize * DPR))
 
             const metadata: ImageMetadata = {
                 filename: file.name, width, height,
@@ -198,7 +213,7 @@ class ImportService {
         this.saveToDb(pages).catch(err => console.error('[ImportService] DB save failed:', err))
 
         // Upgrade thumbnails to hi-res in background via worker
-        const hiResSize = Math.min(Math.round(thumbnailSize * 1.5), 600)
+        const hiResSize = Math.min(Math.round(thumbnailSize * 2 * DPR), 1200)
         this.upgradeThumbnailsBackground(pages, hiResSize).catch(err =>
             console.warn('[ImportService] Background thumb upgrade failed:', err)
         )
@@ -241,6 +256,26 @@ class ImportService {
             )
             await new Promise(r => setTimeout(r, 16)) // yield one frame between batches
         }
+    }
+
+    /**
+     * Regenerates a single page's thumbnail on demand, at the current
+     * (DPR-aware) resolution — for pages imported before that fix existed,
+     * whose thumbnails are stuck at the old, too-low-for-this-display
+     * resolution and will stay blurry forever otherwise, since generation
+     * only happens at import time.
+     */
+    async regenerateThumbnail(page: Page, thumbnailSize: number): Promise<{ blob: Blob; url: string } | null> {
+        const hiResSize = Math.min(Math.round(thumbnailSize * 2 * DPR), 1200)
+        const result = await thumbnailService.generate({
+            id: `regen-${page.id}-${Date.now()}`,
+            blob: page.imageBlob,
+            size: hiResSize,
+        })
+        if (result.error || !result.blob.size) return null
+        const url = createTrackedObjectUrl(result.blob)
+        await db.thumbnails.put({ pageId: page.id, blob: result.blob, updatedAt: Date.now() })
+        return { blob: result.blob, url }
     }
 }
 

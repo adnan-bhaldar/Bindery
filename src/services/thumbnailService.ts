@@ -9,6 +9,28 @@ class ThumbnailService {
         resolve: (r: ThumbnailResponse) => void
         reject: (e: Error) => void
     }> = []
+    // Tracks requests currently dispatched to a worker, awaiting a response —
+    // keyed by request id.
+    //
+    // BUG (fixed): the previous version tracked in-flight requests by simply
+    // leaving them in `this.queue` until a response came back. But
+    // processQueue() actually calls `this.queue.shift()` the moment a
+    // request is dispatched to a worker — BEFORE that worker has responded
+    // — so the request was already gone from `queue` by the time
+    // handleResponse() went looking for it there. That lookup could never
+    // succeed, so resolve/reject were never called for ANY request, ever —
+    // every generate() call hung forever regardless of whether the worker
+    // actually succeeded or failed. This separate map is populated at
+    // dispatch time and is what handleResponse() actually consults.
+    private inFlight = new Map<string, {
+        resolve: (r: ThumbnailResponse) => void
+        reject: (e: Error) => void
+    }>()
+    // Which request id each worker index is currently processing — lets a
+    // fatal worker.onerror (the worker crashing entirely, not a caught
+    // in-generation error) reject the correct dangling promise instead of
+    // just freeing the slot and leaving that promise hanging too.
+    private workerAssignment = new Map<number, string>()
     private busy = new Set<number>()
     private readonly POOL_SIZE = 4
 
@@ -27,6 +49,15 @@ class ThumbnailService {
             }
             worker.onerror = (e) => {
                 console.error(`[ThumbnailWorker ${i}] error:`, e)
+                const reqId = this.workerAssignment.get(i)
+                if (reqId) {
+                    const pending = this.inFlight.get(reqId)
+                    if (pending) {
+                        this.inFlight.delete(reqId)
+                        pending.reject(new Error(e.message || 'Thumbnail worker crashed'))
+                    }
+                    this.workerAssignment.delete(i)
+                }
                 this.busy.delete(i)
                 this.processQueue()
             }
@@ -35,17 +66,16 @@ class ThumbnailService {
     }
 
     private handleResponse(workerIdx: number, response: ThumbnailResponse) {
-        // Find the pending promise for this response
-        const idx = this.queue.findIndex(q => q.req.id === response.id)
-        if (idx !== -1) {
-            const { resolve, reject } = this.queue[idx]
-            this.queue.splice(idx, 1)
+        const pending = this.inFlight.get(response.id)
+        if (pending) {
+            this.inFlight.delete(response.id)
             if (response.error) {
-                reject(new Error(response.error))
+                pending.reject(new Error(response.error))
             } else {
-                resolve(response)
+                pending.resolve(response)
             }
         }
+        this.workerAssignment.delete(workerIdx)
         this.busy.delete(workerIdx)
         this.processQueue()
     }
@@ -56,12 +86,11 @@ class ThumbnailService {
         // Find idle worker
         for (let i = 0; i < this.POOL_SIZE; i++) {
             if (!this.busy.has(i) && this.queue.length > 0) {
-                const item = this.queue[0] // peek — don't shift yet
-                // Mark worker busy before dispatching
+                const item = this.queue.shift()! // now genuinely in-flight
                 this.busy.add(i)
+                this.workerAssignment.set(i, item.req.id)
+                this.inFlight.set(item.req.id, { resolve: item.resolve, reject: item.reject })
                 this.workers[i].postMessage(item.req)
-                // Remove from queue (it's now in-flight)
-                this.queue.shift()
                 if (this.queue.length === 0) break
             }
         }
@@ -77,6 +106,10 @@ class ThumbnailService {
     terminate() {
         this.workers.forEach(w => w.terminate())
         this.workers = []
+        this.inFlight.clear()
+        this.workerAssignment.clear()
+        this.busy.clear()
+        this.queue = []
     }
 }
 

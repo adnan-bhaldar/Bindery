@@ -55,6 +55,27 @@ const MenuNode = memo(({ state, onClose }: { state: ContextMenuState; onClose: (
         })
     }, [state])
 
+    // Close on outside click or Escape — deliberately checks whether the
+    // mousedown target is actually inside the menu first. Without that
+    // check (previously done unconditionally in the Provider, with no
+    // access to the menu's own DOM node), a mousedown on a menu item
+    // closed the menu — and started unmounting it — before the
+    // subsequent click event could ever fire that item's action. The menu
+    // would visually flash but nothing would actually happen.
+    useEffect(() => {
+        if (!state.visible) return
+        const onDown = (e: MouseEvent) => {
+            if (ref.current && !ref.current.contains(e.target as Node)) onClose()
+        }
+        const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+        window.addEventListener('mousedown', onDown)
+        window.addEventListener('keydown', onKey)
+        return () => {
+            window.removeEventListener('mousedown', onDown)
+            window.removeEventListener('keydown', onKey)
+        }
+    }, [state.visible, onClose])
+
     if (!state.visible) return null
 
     return createPortal(
@@ -134,19 +155,6 @@ export const ContextMenuProvider = memo(({ children }: { children: ReactNode }) 
     const close = useCallback(() => {
         setState(s => ({ ...s, visible: false }))
     }, [])
-
-    // Close on outside click or Escape
-    useEffect(() => {
-        if (!state.visible) return
-        const onDown = () => close()
-        const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close() }
-        window.addEventListener('mousedown', onDown)
-        window.addEventListener('keydown', onKey)
-        return () => {
-            window.removeEventListener('mousedown', onDown)
-            window.removeEventListener('keydown', onKey)
-        }
-    }, [state.visible, close])
 
     return (
         <ContextMenuContext.Provider value={{ open, close }}>
