@@ -22,6 +22,7 @@ import { usePagesStore } from '@/stores/pagesStore'
 import { projectService } from '@/services/projectService'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { suppressNextDirtyFlag } from '@/stores/storeLinks'
+import { SmallScreenNotice } from '@/components/common/SmallScreenNotice'
 
 export const AppShell = memo(() => {
   useTheme()
@@ -125,6 +126,8 @@ export const AppShell = memo(() => {
       height: '100%', overflow: 'hidden',
       background: 'var(--bg-app)',
     }}>
+      <SmallScreenNotice />
+
       <TopNav
         onImport={importFromPicker}
         onSettings={() => setSettingsOpen(true)}
