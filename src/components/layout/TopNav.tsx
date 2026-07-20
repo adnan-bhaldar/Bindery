@@ -1,6 +1,6 @@
 import { memo, useState, useRef } from 'react'
 import {
-  BookOpen, ChevronDown, Undo2, Redo2, Download,
+  ChevronDown, Undo2, Redo2, Download,
   Save, FolderOpen, Plus, PanelLeft, PanelRight,
   Settings, Sun, Moon, ScanText,
 } from 'lucide-react'
@@ -49,7 +49,11 @@ export const TopNav = memo(({ onImport, onSettings, onRunOCR, onSave, onOpenFile
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div className="nav-logo-mark">
-            <BookOpen size={13} color="#fff" strokeWidth={2.5} />
+            <img
+              src="/public/icons/favicon.svg"
+              alt=""
+              style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 'inherit' }}
+            />
           </div>
           <span className="nav-logo-text">{APP_NAME}</span>
         </div>

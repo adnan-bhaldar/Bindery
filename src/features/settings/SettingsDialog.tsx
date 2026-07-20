@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
     X, Search, Settings, Palette, Upload, Download,
     ScanText, Accessibility, Keyboard,
-    Shield, Database, Info, RotateCcw, BookOpen,
+    Shield, Database, Info, RotateCcw,
     HardDrive, Image as ImageIcon, FileArchive, Trash2,
     Sun, Moon, Check, ExternalLink, ChevronDown,
     Smartphone, WifiOff, CheckCircle2,
@@ -1089,8 +1089,13 @@ const AboutSection = memo(() => (
                     background: 'var(--gradient-accent)',
                     boxShadow: '0 4px 20px var(--accent-glow)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    overflow: 'hidden',
                 }}>
-                    <BookOpen size={26} color="#fff" strokeWidth={2} />
+                    <img
+                        src="/public/icons/favicon.svg"
+                        alt=""
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
                 </div>
                 <div>
                     <p style={{ fontSize: 16, fontWeight: 700, color: 'var(--tx-1)', letterSpacing: '-0.4px' }}>
