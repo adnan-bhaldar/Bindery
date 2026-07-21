@@ -50,7 +50,7 @@ export const TopNav = memo(({ onImport, onSettings, onRunOCR, onSave, onOpenFile
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div className="nav-logo-mark">
             <img
-              src="/public/icons/favicon.svg"
+              src="/icons/favicon.svg"
               alt=""
               style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 'inherit' }}
             />

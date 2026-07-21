@@ -5,7 +5,6 @@ import { useDropzone } from 'react-dropzone'
 import { useUIStore } from '@/stores/uiStore'
 import { usePagesStore, selectPageCount } from '@/stores/pagesStore'
 import { PreviewWorkspace } from '@/features/preview/PreviewWorkspace'
-import { BatchEditToolbar } from '@/features/batch/BatchEditToolbar'
 import { ACCEPTED_IMAGE_TYPES } from '@/constants'
 
 interface Props {
@@ -37,8 +36,6 @@ export const Workspace = memo(({ onImport, isImporting, onDrop }: Props) => {
         ? <EmptyState onImport={onImport} />
         : <PreviewWorkspace />
       }
-
-      <BatchEditToolbar />
     </main>
   )
 })

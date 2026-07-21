@@ -18,7 +18,7 @@ import { PageThumbnail } from '@/components/pages/PageThumbnail'
 import { PageThumbnailGrid } from '@/components/pages/PageThumbnailGrid'
 import { Tooltip } from '@/components/ui/Tooltip'
 import {
-    RotateCw, Copy, Trash2, X,
+    RotateCw, RotateCcw, Copy, Trash2, X,
     LayoutList, LayoutGrid,
     ArrowUpDown, ChevronUp, ChevronDown,
 } from 'lucide-react'
@@ -180,56 +180,91 @@ const BatchToolbar = memo(() => {
     if (count === 0) return null
 
     const btn: React.CSSProperties = {
-        width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center',
-        borderRadius: 7, border: 'none', background: 'var(--s4)',
-        color: 'var(--tx-2)', cursor: 'pointer', transition: 'background 110ms',
+        width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        borderRadius: 10, border: 'none', background: 'var(--s3)',
+        color: 'var(--tx-2)', cursor: 'pointer',
+        transition: 'background 130ms, transform 130ms, color 130ms',
     }
 
+    const divider = (
+        <div style={{ width: 1, height: 18, background: 'var(--border-hard)', margin: '0 2px', flexShrink: 0 }} />
+    )
+
     return (
-        <div style={{
-            position: 'sticky', bottom: 0, padding: '7px 10px',
-            background: 'var(--bg-overlay)', borderTop: '1px solid var(--border)',
-            display: 'flex', alignItems: 'center', gap: 4,
-            backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
-            flexShrink: 0, zIndex: 10,
-        }}>
-            <span style={{
-                fontSize: 10.5, fontWeight: 700, color: 'var(--accent)',
-                background: 'var(--accent-dim)', border: '1px solid var(--accent-border)',
-                borderRadius: 99, padding: '1px 7px', fontFamily: 'var(--font-mono)',
-            }}>{count}</span>
-            <span style={{ fontSize: 11, color: 'var(--tx-3)', flex: 1, marginLeft: 2 }}>
-                {count === 1 ? 'page' : 'pages'}
-            </span>
-            <Tooltip content="Rotate CW" placement="top">
-                <button style={btn}
-                    onClick={() => ids.forEach(id => {
-                        const p = pages.find(pg => pg.id === id)
-                        if (p) rotatePages([id], ((p.rotation + 90) % 360) as 0 | 90 | 180 | 270)
-                    })}
-                    onMouseEnter={e => { e.currentTarget.style.background = 'var(--s5)' }}
-                    onMouseLeave={e => { e.currentTarget.style.background = 'var(--s4)' }}
-                ><RotateCw size={12} /></button>
-            </Tooltip>
-            <Tooltip content="Duplicate" shortcut="⌘D" placement="top">
-                <button style={btn} onClick={() => duplicatePages(ids)}
-                    onMouseEnter={e => { e.currentTarget.style.background = 'var(--s5)' }}
-                    onMouseLeave={e => { e.currentTarget.style.background = 'var(--s4)' }}
-                ><Copy size={12} /></button>
-            </Tooltip>
-            <Tooltip content="Delete" shortcut="⌫" placement="top">
-                <button style={{ ...btn, color: '#ef4444' }}
-                    onClick={() => { removePages(ids); deselectAll() }}
-                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.12)' }}
-                    onMouseLeave={e => { e.currentTarget.style.background = 'var(--s4)'; e.currentTarget.style.color = '#ef4444' }}
-                ><Trash2 size={12} /></button>
-            </Tooltip>
-            <Tooltip content="Deselect" shortcut="Esc" placement="top">
-                <button style={btn} onClick={deselectAll}
-                    onMouseEnter={e => { e.currentTarget.style.background = 'var(--s5)' }}
-                    onMouseLeave={e => { e.currentTarget.style.background = 'var(--s4)' }}
-                ><X size={12} /></button>
-            </Tooltip>
+        <div style={{ position: 'sticky', bottom: 0, padding: '0 10px 10px', flexShrink: 0, zIndex: 10 }}>
+            <div style={{
+                position: 'relative',
+                display: 'flex', alignItems: 'center', gap: 3,
+                padding: '7px 8px',
+                borderRadius: 16,
+                background: 'var(--bg-overlay)',
+                border: '1px solid var(--border-hard)',
+                boxShadow: 'var(--sh-md), 0 0 0 1px rgba(0,0,0,0.02)',
+                backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)',
+                overflow: 'hidden',
+            }}>
+                {/* Subtle glass shine, matching the premium card language elsewhere */}
+                <div style={{
+                    position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
+                    background: 'linear-gradient(120deg, rgba(255,255,255,0.04) 0%, transparent 40%)',
+                }} />
+
+                <span style={{
+                    position: 'relative', zIndex: 1,
+                    fontSize: 10.5, fontWeight: 700, color: 'var(--accent)',
+                    background: 'var(--accent-dim)', border: '1px solid var(--accent-border)',
+                    borderRadius: 99, padding: '2px 8px', fontFamily: 'var(--font-mono)',
+                    flexShrink: 0,
+                }}>{count}</span>
+                <span style={{ position: 'relative', zIndex: 1, fontSize: 11, color: 'var(--tx-3)', flex: 1, marginLeft: 3, whiteSpace: 'nowrap' }}>
+                    {/* {count === 1 ? 'page' : 'pages'} */}
+                </span>
+
+                <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 3 }}>
+                    <Tooltip content="Rotate Right" placement="top">
+                        <button style={btn}
+                            onClick={() => ids.forEach(id => {
+                                const p = pages.find(pg => pg.id === id)
+                                if (p) rotatePages([id], ((p.rotation + 90) % 360) as 0 | 90 | 180 | 270)
+                            })}
+                            onMouseEnter={e => { e.currentTarget.style.background = 'var(--s5)'; e.currentTarget.style.transform = 'translateY(-1px)' }}
+                            onMouseLeave={e => { e.currentTarget.style.background = 'var(--s3)'; e.currentTarget.style.transform = 'none' }}
+                        ><RotateCw size={13} /></button>
+                    </Tooltip>
+                    <Tooltip content="Rotate Left" placement="top">
+                        <button style={btn}
+                            onClick={() => ids.forEach(id => {
+                                const p = pages.find(pg => pg.id === id)
+                                if (p) rotatePages([id], ((p.rotation - 90 + 360) % 360) as 0 | 90 | 180 | 270)
+                            })}
+                            onMouseEnter={e => { e.currentTarget.style.background = 'var(--s5)'; e.currentTarget.style.transform = 'translateY(-1px)' }}
+                            onMouseLeave={e => { e.currentTarget.style.background = 'var(--s3)'; e.currentTarget.style.transform = 'none' }}
+                        ><RotateCcw size={13} /></button>
+                    </Tooltip>
+                    <Tooltip content="Duplicate" shortcut="⌘D" placement="top">
+                        <button style={btn} onClick={() => duplicatePages(ids)}
+                            onMouseEnter={e => { e.currentTarget.style.background = 'var(--s5)'; e.currentTarget.style.transform = 'translateY(-1px)' }}
+                            onMouseLeave={e => { e.currentTarget.style.background = 'var(--s3)'; e.currentTarget.style.transform = 'none' }}
+                        ><Copy size={13} /></button>
+                    </Tooltip>
+
+                    {divider}
+
+                    <Tooltip content="Delete" shortcut="⌫" placement="top">
+                        <button style={{ ...btn, color: '#ef4444' }}
+                            onClick={() => { removePages(ids); deselectAll() }}
+                            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.14)'; e.currentTarget.style.transform = 'translateY(-1px)' }}
+                            onMouseLeave={e => { e.currentTarget.style.background = 'var(--s3)'; e.currentTarget.style.color = '#ef4444'; e.currentTarget.style.transform = 'none' }}
+                        ><Trash2 size={13} /></button>
+                    </Tooltip>
+                    <Tooltip content="Deselect" shortcut="Esc" placement="top">
+                        <button style={btn} onClick={deselectAll}
+                            onMouseEnter={e => { e.currentTarget.style.background = 'var(--s5)'; e.currentTarget.style.transform = 'translateY(-1px)' }}
+                            onMouseLeave={e => { e.currentTarget.style.background = 'var(--s3)'; e.currentTarget.style.transform = 'none' }}
+                        ><X size={13} /></button>
+                    </Tooltip>
+                </div>
+            </div>
         </div>
     )
 })

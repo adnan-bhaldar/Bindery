@@ -1092,7 +1092,7 @@ const AboutSection = memo(() => (
                     overflow: 'hidden',
                 }}>
                     <img
-                        src="/public/icons/favicon.svg"
+                        src="/icons/favicon.svg"
                         alt=""
                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     />
