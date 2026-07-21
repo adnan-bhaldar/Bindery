@@ -216,9 +216,9 @@ const BatchToolbar = memo(() => {
                     borderRadius: 99, padding: '2px 8px', fontFamily: 'var(--font-mono)',
                     flexShrink: 0,
                 }}>{count}</span>
-                <span style={{ position: 'relative', zIndex: 1, fontSize: 11, color: 'var(--tx-3)', flex: 1, marginLeft: 3, whiteSpace: 'nowrap' }}>
-                    {/* {count === 1 ? 'page' : 'pages'} */}
-                </span>
+                {/* <span style={{ position: 'relative', zIndex: 1, fontSize: 11, color: 'var(--tx-3)', flex: 1, marginLeft: 3, whiteSpace: 'nowrap' }}>
+                    {count === 1 ? 'page' : 'pages'}
+                </span> */}
 
                 <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 3 }}>
                     <Tooltip content="Rotate Right" placement="top">
