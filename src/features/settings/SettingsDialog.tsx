@@ -1116,7 +1116,7 @@ const AboutSection = memo(() => (
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     flexShrink: 0, marginTop: 5,
                 }}>
-                    <GithubMark size={20} color="var(--tx-1)" />
+                    <GithubMark size={25} color="var(--tx-1)" />
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                     <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--tx-1)' }}>Adnan Bhaldar</p>
