@@ -63,6 +63,21 @@ export const RecoveryDialog = memo(() => {
 
     const handleDismiss = useCallback(() => setVisible(false), [])
 
+    useEffect(() => {
+        if (!visible) return
+        const onKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Enter') {
+                e.preventDefault()
+                if (!restoring) void handleRestore(snapshots[0])
+            } else if (e.key === 'Escape') {
+                e.preventDefault()
+                handleDismiss()
+            }
+        }
+        window.addEventListener('keydown', onKeyDown)
+        return () => window.removeEventListener('keydown', onKeyDown)
+    }, [visible, restoring, snapshots, handleRestore, handleDismiss])
+
     if (snapshots.length === 0) return null
 
     const latest = snapshots[0]
