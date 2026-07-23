@@ -323,7 +323,7 @@ const GeneralSection = memo(() => {
                 <CardRow label="Auto save interval" desc="How often to automatically save your project">
                     <SegRow
                         value={String(settings.autoSaveInterval)}
-                        options={[{ value: '15', label: '15s' }, { value: '30', label: '30s' }, { value: '60', label: '1m' }, { value: '300', label: '5m' }]}
+                        options={[{ value: '10', label: '10s' }, { value: '15', label: '15s' }, { value: '30', label: '30s' }, { value: '60', label: '1m' }, { value: '300', label: '5m' }]}
                         onChange={v => updateSetting('autoSaveInterval', Number(v))}
                     />
                 </CardRow>

@@ -2,6 +2,7 @@ import { useCallback, useState, useEffect } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { toast } from 'sonner'
 import { importService, type ImportProgress } from '@/services/importService'
+import { projectService } from '@/services/projectService'
 import { usePagesStore } from '@/stores/pagesStore'
 import { useProjectStore } from '@/stores/projectStore'
 import { useSettingsStore } from '@/stores/settingsStore'
@@ -41,7 +42,7 @@ export function useImport(): UseImportReturn {
         const { currentProject, setCurrentProject: set } = useProjectStore.getState()
         if (currentProject) return currentProject.id
         const id = generateId()
-        set({
+        const project = {
             id,
             name: 'Untitled Project',
             status: 'new' as const,
@@ -53,7 +54,12 @@ export function useImport(): UseImportReturn {
             createdAt: Date.now(),
             updatedAt: Date.now(),
             lastOpenedAt: Date.now(),
-        })
+        }
+        set(project)
+        // Fire-and-forget: register it as the tracked project right away so
+        // refreshing before the first autosave tick still has a project (and
+        // soon a snapshot) to recover.
+        projectService.persistProject(project).catch(() => {})
         return id
     }, [])
 

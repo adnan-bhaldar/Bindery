@@ -7,7 +7,7 @@ import type { AppSettings } from '@/types'
 export const DEFAULT_SETTINGS: AppSettings = {
     // General
     restorePreviousSession: true,
-    autoSaveInterval: 30,
+    autoSaveInterval: 10,
     maxRecoverySnapshots: 10,
 
     // Appearance

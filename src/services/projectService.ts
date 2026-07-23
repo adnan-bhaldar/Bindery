@@ -29,7 +29,19 @@ class ProjectService {
         }
 
         await db.projects.add(project)
+        localStorage.setItem(STORAGE_KEYS.LAST_PROJECT_ID, project.id)
         return project
+    }
+
+    // Registers a project that was constructed elsewhere (e.g. useImport's
+    // ensureProject, which creates a project object in local state the moment
+    // the user drops in their first images, before any explicit "New Project"
+    // action). Without this, such projects aren't written to IndexedDB or
+    // tracked as the active project until the first autosave tick — so a
+    // refresh shortly after import would find nothing to recover.
+    async persistProject(project: Project): Promise<void> {
+        await db.projects.put(project)
+        localStorage.setItem(STORAGE_KEYS.LAST_PROJECT_ID, project.id)
     }
 
     // ── Save ────────────────────────────────────────────────────────────────────
@@ -90,6 +102,7 @@ class ProjectService {
 
         // Update lastOpenedAt
         await db.projects.update(projectId, { lastOpenedAt: Date.now() })
+        localStorage.setItem(STORAGE_KEYS.LAST_PROJECT_ID, projectId)
 
         return { project: { ...project, lastOpenedAt: Date.now() }, pages: hydratedPages }
     }
@@ -242,6 +255,7 @@ class ProjectService {
             lastOpenedAt: Date.now(),
         }
 
+        localStorage.setItem(STORAGE_KEYS.LAST_PROJECT_ID, project.id)
         return { project, pages }
     }
 }

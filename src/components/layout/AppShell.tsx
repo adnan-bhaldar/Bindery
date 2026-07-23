@@ -47,6 +47,9 @@ export const AppShell = memo(() => {
       return
     }
     try {
+      if (pages.length > 0) {
+        await projectService.saveRecoverySnapshot(currentProject.id, pages.length, settings.maxRecoverySnapshots)
+      }
       await projectService.saveProject(currentProject, pages)
       setCurrentProject({ ...currentProject, status: 'saved' })
       markSaved()
@@ -54,7 +57,7 @@ export const AppShell = memo(() => {
     } catch {
       toast.error('Failed to save project')
     }
-  }, [currentProject, pages, setCurrentProject, markSaved])
+  }, [currentProject, pages, setCurrentProject, markSaved, settings.maxRecoverySnapshots])
 
   // ── Open file handler ────────────────────────────────────────────────────────
   const handleOpenFile = useCallback(() => {
