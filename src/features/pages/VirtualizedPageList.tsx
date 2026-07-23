@@ -191,7 +191,10 @@ const BatchToolbar = memo(() => {
     )
 
     return (
-        <div style={{ position: 'sticky', bottom: 0, padding: '0 10px 10px', flexShrink: 0, zIndex: 10 }}>
+        <div style={{
+            position: 'absolute', left: 0, right: 0, bottom: 0,
+            padding: '0 10px 10px', zIndex: 10,
+        }}>
             <div style={{
                 position: 'relative',
                 display: 'flex', alignItems: 'center', gap: 3,
@@ -199,16 +202,9 @@ const BatchToolbar = memo(() => {
                 borderRadius: 16,
                 background: 'var(--bg-overlay)',
                 border: '1px solid var(--border-hard)',
-                boxShadow: 'var(--sh-md), 0 0 0 1px rgba(0,0,0,0.02)',
-                backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)',
+                boxShadow: 'var(--sh-md)',
                 overflow: 'hidden',
             }}>
-                {/* Subtle glass shine, matching the premium card language elsewhere */}
-                <div style={{
-                    position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
-                    background: 'linear-gradient(120deg, rgba(255,255,255,0.04) 0%, transparent 40%)',
-                }} />
-
                 <span style={{
                     position: 'relative', zIndex: 1,
                     fontSize: 10.5, fontWeight: 700, color: 'var(--accent)',
@@ -413,7 +409,7 @@ export const VirtualizedPageList = memo(() => {
     const activeIndex = activeId ? pages.findIndex(p => p.id === activeId) : -1
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', position: 'relative' }}>
             <div style={{
                 padding: '7px 10px 6px', flexShrink: 0,
                 borderBottom: '1px solid var(--border)',
