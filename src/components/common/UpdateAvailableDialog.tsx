@@ -9,8 +9,7 @@ export const UpdateAvailableDialog = memo(() => {
     const [reloading, setReloading] = useState(false)
     
 
-    // const visible = updateAvailable && !dismissed
-    const visible = true
+    const visible = updateAvailable && !dismissed
 
     const handleReload = useCallback(() => {
         setReloading(true)
