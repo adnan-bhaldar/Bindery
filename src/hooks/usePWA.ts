@@ -89,8 +89,15 @@ function ensureGlobalListeners() {
 
                 // Catch updates deployed while the tab is already open —
                 // the browser only checks for a new sw.js on navigation by
-                // default, so poll periodically too.
-                setInterval(() => { reg.update().catch(() => { }) }, 60_000)
+                // default, so poll periodically too, and also the moment the
+                // tab regains focus (the most common way people notice a
+                // stale tab — switching back after time away).
+                const checkForUpdate = () => { reg.update().catch(() => { }) }
+                setInterval(checkForUpdate, 15_000)
+                document.addEventListener('visibilitychange', () => {
+                    if (document.visibilityState === 'visible') checkForUpdate()
+                })
+                window.addEventListener('focus', checkForUpdate)
             })
             .catch(err => {
                 console.warn('[PWA] Service worker registration failed:', err)
