@@ -143,12 +143,14 @@ export function usePWA() {
             if (!waitingWorker) return
             reloadTriggered = true
             waitingWorker.postMessage({ type: 'SKIP_WAITING' })
-            // controllerchange should fire once the new worker takes over and
-            // trigger the reload — but it's not 100% reliable across browsers/
-            // dev setups, so force it after a short grace period regardless.
+            // controllerchange fires once the new worker takes over, but
+            // isn't 100% reliable across browsers — fall back quickly rather
+            // than waiting long, since HTML is fetched network-first and
+            // assets are content-hashed per build, so reloading doesn't
+            // depend on the new worker having fully taken control yet.
             setTimeout(() => {
                 if (reloadTriggered) window.location.reload()
-            }, 2000)
+            }, 300)
         },
     }
 }
