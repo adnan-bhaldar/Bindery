@@ -128,6 +128,11 @@ class ProjectService {
 
     // ── Recent projects ─────────────────────────────────────────────────────────
 
+    async getProject(projectId: string): Promise<Project | null> {
+        const project = await db.projects.get(projectId)
+        return project ?? null
+    }
+
     async getRecentProjects(limit = 10): Promise<Project[]> {
         return db.projects
             .orderBy('lastOpenedAt')

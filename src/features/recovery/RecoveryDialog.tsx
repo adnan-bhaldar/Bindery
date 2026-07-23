@@ -12,6 +12,7 @@ import { suppressNextDirtyFlag } from '@/stores/storeLinks'
 
 export const RecoveryDialog = memo(() => {
     const [snapshots, setSnapshots] = useState<RecoverySnapshot[]>([])
+    const [projectName, setProjectName] = useState<string | null>(null)
     const [visible, setVisible] = useState(false)
     const [restoring, setRestoring] = useState(false)
 
@@ -28,6 +29,8 @@ export const RecoveryDialog = memo(() => {
 
             const snaps = await projectService.getRecoverySnapshots(lastId)
             if (snaps.length > 0) {
+                const project = await projectService.getProject(lastId)
+                setProjectName(project?.name ?? null)
                 setSnapshots(snaps)
                 setVisible(true)
             }
@@ -137,7 +140,17 @@ export const RecoveryDialog = memo(() => {
                             }}>
                                 <Clock size={16} color="var(--tx-3)" strokeWidth={1.5} />
                                 <div style={{ flex: 1 }}>
-                                    <p style={{ fontSize: 12.5, fontWeight: 500, color: 'var(--tx-1)' }}>
+                                    {projectName && (
+                                        <p style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--tx-1)' }}>
+                                            {projectName}
+                                        </p>
+                                    )}
+                                    <p style={{
+                                        fontSize: projectName ? 11 : 12.5,
+                                        fontWeight: projectName ? 400 : 500,
+                                        color: projectName ? 'var(--tx-3)' : 'var(--tx-1)',
+                                        marginTop: projectName ? 1 : 0,
+                                    }}>
                                         {latest.description}
                                     </p>
                                     <p style={{ fontSize: 11, color: 'var(--tx-3)', marginTop: 2 }}>
