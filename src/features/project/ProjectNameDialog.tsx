@@ -1,5 +1,6 @@
 import { useShallow } from 'zustand/react/shallow'
 import { memo, useState, useRef, useEffect, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Check, FolderOpen, Plus, Clock, Trash2 } from 'lucide-react'
 import { useProjectStore } from '@/stores/projectStore'
@@ -80,7 +81,7 @@ export const ProjectDropdown = memo(({ anchor, onClose }: Props) => {
     toast.success('Removed from recents')
   }, [])
 
-  return (
+  return createPortal(
     <AnimatePresence>
       {anchor && (
         <>
@@ -293,7 +294,8 @@ export const ProjectDropdown = memo(({ anchor, onClose }: Props) => {
           </motion.div>
         </>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   )
 })
 ProjectDropdown.displayName = 'ProjectDropdown'
