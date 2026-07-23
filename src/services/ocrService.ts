@@ -21,6 +21,7 @@ class OCRService {
     private busy = new Set<number>()
     private queue: PendingJob[] = []
     private pending = new Map<string, PendingJob>() // id → job
+    private runningOn = new Map<number, string>() // worker index → job id currently running on it
     private readonly POOL_SIZE = 2 // OCR is heavy — limit concurrency
 
     constructor() {
@@ -59,12 +60,27 @@ class OCRService {
                             job.onComplete(data as OCRResponse)
                         }
                     }
+                    this.runningOn.delete(i)
                     this.busy.delete(i)
                     this.processQueue()
                 }
             }
 
             worker.onerror = () => {
+                // The worker crashed outright (e.g. failed to load its wasm/
+                // trained-data, often from a blocked or unreachable CDN) —
+                // no 'result' message will ever arrive for whatever job it
+                // was running, so without this it hangs forever on "Running
+                // OCR...". Fail that specific job and recycle the slot.
+                const jobId = this.runningOn.get(i)
+                if (jobId) {
+                    const job = this.pending.get(jobId)
+                    if (job) {
+                        this.pending.delete(jobId)
+                        job.onError(new Error('OCR worker failed to load or crashed'))
+                    }
+                    this.runningOn.delete(i)
+                }
                 this.busy.delete(i)
                 this.processQueue()
             }
@@ -80,6 +96,7 @@ class OCRService {
             if (!this.busy.has(i) && this.queue.length > 0) {
                 const job = this.queue.shift()!
                 this.busy.add(i)
+                this.runningOn.set(i, job.req.id)
                 this.pending.set(job.req.id, job)
                 this.workers[i].postMessage(job.req)
                 if (this.queue.length === 0) break
@@ -87,13 +104,50 @@ class OCRService {
         }
     }
 
+    private replaceWorker(i: number) {
+        this.workers[i].terminate()
+        const worker = new Worker(
+            new URL('../workers/ocr.worker.ts', import.meta.url),
+            { type: 'module' }
+        )
+        worker.onmessage = this.workers[i].onmessage
+        worker.onerror = this.workers[i].onerror
+        this.workers[i] = worker
+    }
+
     recognize(req: OCRRequest, onProgress?: OCRProgressCallback): Promise<OCRResponse> {
         return new Promise((resolve, reject) => {
+            let settled = false
+            const timeoutId = setTimeout(() => {
+                if (settled) return
+                settled = true
+                this.pending.delete(req.id)
+                for (const [idx, jobId] of this.runningOn) {
+                    if (jobId === req.id) {
+                        this.runningOn.delete(idx)
+                        this.busy.delete(idx)
+                        this.replaceWorker(idx) // it's silently wedged — don't reuse it as-is
+                        this.processQueue()
+                    }
+                }
+                reject(new Error('OCR timed out'))
+            }, 45_000)
+
             const job: PendingJob = {
                 req,
                 onProgress,
-                onComplete: resolve,
-                onError: reject,
+                onComplete: (r) => {
+                    if (settled) return
+                    settled = true
+                    clearTimeout(timeoutId)
+                    resolve(r)
+                },
+                onError: (e) => {
+                    if (settled) return
+                    settled = true
+                    clearTimeout(timeoutId)
+                    reject(e)
+                },
             }
             this.queue.push(job)
             this.processQueue()
@@ -103,6 +157,7 @@ class OCRService {
     cancelAll() {
         this.queue.length = 0
         this.pending.clear()
+        this.runningOn.clear()
     }
 
     terminate() {

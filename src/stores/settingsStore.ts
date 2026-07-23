@@ -34,7 +34,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
     // OCR
     ocrEnabled: true,
     ocrLanguage: 'eng',
-    autoRunOcr: true,
+    autoRunOcr: false,
     skipOcrForLargeDocuments: true,
     ocrPageLimit: 100,
 
@@ -96,27 +96,14 @@ export const useSettingsStore = create<SettingsStore>()(
         }),
         {
             name: 'bindery:settings',
-            version: 3,
-            // v1 → v2: dropped accentColor/customAccentColor (moved out of
-            // settings entirely), showWelcomeScreen, showExportPreview, the
-            // whole Cover Page section (that picker was removed from the
-            // app), maxConcurrentWorkers, enableImageCache, cacheMaxSizeMb
-            // (no such worker pool / cache layer exists), and
-            // virtualizationOverscan (the page list is no longer
-            // virtualized).
-            // v2 → v3: defaultFilename's default changed from 'bindery-export'
-            // to 'Bindery' (it's now just a prefix — the date/time gets
-            // appended at export time instead of being baked into the saved
-            // setting). Persisted state overrides the in-code default on
-            // reload, so anyone who already had the old default saved would
-            // otherwise be stuck seeing 'bindery-export' forever even after
-            // this update — this migration corrects exactly that case
-            // without touching a value the user deliberately customized to
-            // something else.
+            version: 1,
             migrate: (persisted) => {
                 const state = persisted as SettingsState
                 if (state?.settings?.defaultFilename === 'bindery-export') {
                     state.settings.defaultFilename = 'Bindery'
+                }
+                if (state?.settings?.autoRunOcr === true) {
+                    state.settings.autoRunOcr = false
                 }
                 return state
             },
