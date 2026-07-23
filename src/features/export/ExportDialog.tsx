@@ -267,7 +267,24 @@ ExportSettings.displayName = 'ExportSettings'
 const ExportProgressView = memo(({ progress }: { progress: ExportProgress }) => {
     const stages = ['preparing', 'processing', 'generating', 'done']
     const stageIdx = stages.indexOf(progress.stage)
-    const pct = progress.total > 0 ? Math.round((progress.current / progress.total) * 100) : 0
+
+    // Each stage owns a slice of the bar's total width, so the bar's motion
+    // reflects overall export progress — not just page count within
+    // 'processing' — and stays in sync with which stage dot is lit instead
+    // of racing to 100% while only 2 of 4 dots have lit up.
+    const STAGE_RANGE: Record<string, [number, number]> = {
+        preparing: [0, 10],
+        processing: [10, 80],
+        generating: [80, 95],
+        done: [100, 100],
+        error: [0, 0],
+        idle: [0, 0],
+    }
+    const [rangeStart, rangeEnd] = STAGE_RANGE[progress.stage] ?? [0, 0]
+    const stageLocalPct = progress.total > 0 ? progress.current / progress.total : 0
+    const pct = progress.stage === 'done'
+        ? 100
+        : Math.round(rangeStart + stageLocalPct * (rangeEnd - rangeStart))
 
     return (
         <div style={{
@@ -303,29 +320,27 @@ const ExportProgressView = memo(({ progress }: { progress: ExportProgress }) => 
             </div>
 
             {/* Progress bar */}
-            {progress.stage !== 'done' && (
-                <div style={{ width: 320 }}>
-                    <div style={{ height: 6, borderRadius: 99, background: 'var(--s4)', overflow: 'hidden' }}>
-                        <motion.div
-                            animate={{ width: `${pct}%` }}
-                            transition={{ duration: 0.3, ease: 'easeOut' }}
-                            style={{ height: '100%', borderRadius: 99, background: 'var(--gradient-accent)' }}
-                        />
-                    </div>
-                    {/* Stage dots */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
-                        {['Prepare', 'Process', 'Generate', 'Done'].map((s, i) => (
-                            <span key={s} style={{
-                                fontSize: 10, color: i <= stageIdx ? 'var(--accent)' : 'var(--tx-4)',
-                                fontWeight: i === stageIdx ? 600 : 400,
-                                transition: 'color 200ms',
-                            }}>
-                                {s}
-                            </span>
-                        ))}
-                    </div>
+            <div style={{ width: 320 }}>
+                <div style={{ height: 6, borderRadius: 99, background: 'var(--s4)', overflow: 'hidden' }}>
+                    <motion.div
+                        animate={{ width: `${pct}%` }}
+                        transition={{ duration: 0.3, ease: 'easeOut' }}
+                        style={{ height: '100%', borderRadius: 99, background: 'var(--gradient-accent)' }}
+                    />
                 </div>
-            )}
+                {/* Stage dots */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
+                    {['Prepare', 'Process', 'Generate', 'Done'].map((s, i) => (
+                        <span key={s} style={{
+                            fontSize: 10, color: i <= stageIdx ? 'var(--accent)' : 'var(--tx-4)',
+                            fontWeight: i === stageIdx ? 600 : 400,
+                            transition: 'color 200ms',
+                        }}>
+                            {s}
+                        </span>
+                    ))}
+                </div>
+            </div>
         </div>
     )
 })
@@ -435,7 +450,7 @@ export const ExportDialog = memo(() => {
             setTimeout(() => {
                 closeDialog()
                 resetProgress()
-            }, 1800)
+            }, 300)
         } catch (err) {
             setProgress({
                 stage: 'error', current: 0, total: 0,
