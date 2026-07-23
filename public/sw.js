@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bindery-v1'
+const CACHE_NAME = 'bindery-__BUILD_ID__'
 const STATIC_ASSETS = [
     '/',
     '/index.html',

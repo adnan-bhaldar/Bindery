@@ -982,13 +982,13 @@ const StorageSection = memo(() => {
         try {
             await clearDatabase()
             toast.success('All local data cleared')
-            await load()
+            window.location.reload()
         } catch (err) {
             toast.error('Failed to clear data', { description: err instanceof Error ? err.message : undefined })
         } finally {
             setClearing(false)
         }
-    }, [confirm, load])
+    }, [confirm])
 
     const usagePct = stats && stats.quotaBytes > 0
         ? Math.min(100, (stats.totalUsageBytes / stats.quotaBytes) * 100)
