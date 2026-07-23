@@ -23,10 +23,19 @@ interface BeforeInstallPromptEvent extends Event {
 let capturedPrompt: BeforeInstallPromptEvent | null = null
 let cachedIsInstalled = false
 let swRegistered = false
+let updateAvailable = false
+let waitingWorker: ServiceWorker | null = null
+let reloadTriggered = false
 const subscribers = new Set<() => void>()
 
 function notifyAll() {
     subscribers.forEach(fn => fn())
+}
+
+function handleWaitingWorker(worker: ServiceWorker) {
+    waitingWorker = worker
+    updateAvailable = true
+    notifyAll()
 }
 
 let globalListenersAttached = false
@@ -48,6 +57,13 @@ function ensureGlobalListeners() {
     })
 
     if ('serviceWorker' in navigator) {
+        // Reload once the new worker actually takes control — triggered by
+        // reloadForUpdate() below, never on first install.
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+            if (!reloadTriggered) return
+            window.location.reload()
+        })
+
         navigator.serviceWorker
             .register('/sw.js', { scope: '/' })
             .then((reg) => {
@@ -55,14 +71,26 @@ function ensureGlobalListeners() {
                 notifyAll()
                 console.log('[PWA] Service worker registered:', reg.scope)
 
+                // A new worker may already be sitting in "waiting" if the
+                // update installed while this tab was open but idle.
+                if (reg.waiting && navigator.serviceWorker.controller) {
+                    handleWaitingWorker(reg.waiting)
+                }
+
                 reg.addEventListener('updatefound', () => {
                     const newWorker = reg.installing
                     newWorker?.addEventListener('statechange', () => {
                         if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
                             console.log('[PWA] New version available')
+                            handleWaitingWorker(newWorker)
                         }
                     })
                 })
+
+                // Catch updates deployed while the tab is already open —
+                // the browser only checks for a new sw.js on navigation by
+                // default, so poll periodically too.
+                setInterval(() => { reg.update().catch(() => { }) }, 60_000)
             })
             .catch(err => {
                 console.warn('[PWA] Service worker registration failed:', err)
@@ -102,6 +130,18 @@ export function usePWA() {
         canInstall: !!capturedPrompt && !cachedIsInstalled,
         isInstalled: cachedIsInstalled,
         swRegistered,
+        updateAvailable,
         install,
+        reloadForUpdate: () => {
+            if (!waitingWorker) return
+            reloadTriggered = true
+            waitingWorker.postMessage({ type: 'SKIP_WAITING' })
+            // controllerchange should fire once the new worker takes over and
+            // trigger the reload — but it's not 100% reliable across browsers/
+            // dev setups, so force it after a short grace period regardless.
+            setTimeout(() => {
+                if (reloadTriggered) window.location.reload()
+            }, 2000)
+        },
     }
 }

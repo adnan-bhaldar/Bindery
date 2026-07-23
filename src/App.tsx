@@ -6,6 +6,7 @@ import { ContextMenuProvider } from '@/components/common/ContextMenu'
 import { ConfirmProvider } from '@/components/ui/ConfirmDialog'
 import { RecoveryDialog } from '@/features/recovery/RecoveryDialog'
 import { InstallBanner } from '@/components/common/InstallBanner'
+import { UpdateAvailableDialog } from '@/components/common/UpdateAvailableDialog'
 
 export const App = memo(() => (
   <ErrorBoundary>
@@ -15,6 +16,7 @@ export const App = memo(() => (
           <AppShell />
           <RecoveryDialog />
           <InstallBanner />
+          <UpdateAvailableDialog />
         </ContextMenuProvider>
       </ConfirmProvider>
     </TooltipProvider>
