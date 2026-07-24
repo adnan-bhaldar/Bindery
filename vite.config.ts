@@ -34,7 +34,6 @@ export default defineConfig({
     alias: { '@': path.resolve(__dirname, './src') },
   },
   worker: { format: 'es' },
-  optimizeDeps: { exclude: ['tesseract.js'] },
   build: {
     target: 'esnext',
     rollupOptions: {

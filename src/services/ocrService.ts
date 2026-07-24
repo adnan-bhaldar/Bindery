@@ -1,4 +1,20 @@
-import type { OCRRequest, OCRResponse } from '@/workers/ocr.worker'
+import Tesseract from 'tesseract.js'
+import type { Worker as TesseractWorker } from 'tesseract.js'
+
+export interface OCRRequest {
+    id: string
+    pageId: string
+    blob: Blob
+    language: string
+}
+
+export interface OCRResponse {
+    id: string
+    pageId: string
+    text: string
+    confidence: number
+    language: string
+}
 
 export interface OCRJobProgress {
     pageId: string
@@ -16,77 +32,49 @@ interface PendingJob {
     onError: (e: Error) => void
 }
 
+// Tesseract.js's createWorker() already spins up its own dedicated Web Worker
+// internally to run the wasm engine off the main thread — it IS the worker.
+// The previous version of this service wrapped that inside a second, custom
+// Worker (src/workers/ocr.worker.ts), so every OCR job ran inside a worker
+// nested inside another worker. That extra layer bought nothing (Tesseract
+// was already off-main-thread), added real overhead, and made the whole
+// thing fragile — module-worker path resolution and environment detection
+// inside a Vite-bundled nested worker is exactly the kind of thing that
+// causes slow, sometimes-failing behavior instead of a clean error. Calling
+// Tesseract directly from here removes that nesting entirely.
 class OCRService {
-    private workers: Worker[] = []
+    private slots: (TesseractWorker | null)[] = []
+    private slotLang: (string | null)[] = []
     private busy = new Set<number>()
     private queue: PendingJob[] = []
-    private pending = new Map<string, PendingJob>() // id → job
-    private runningOn = new Map<number, string>() // worker index → job id currently running on it
+    private pending = new Map<string, PendingJob>() // job id → job
+    private runningOn = new Map<number, string>() // slot index → job id currently running on it
     private readonly POOL_SIZE = 2 // OCR is heavy — limit concurrency
 
     constructor() {
-        this.initPool()
+        this.slots = new Array(this.POOL_SIZE).fill(null)
+        this.slotLang = new Array(this.POOL_SIZE).fill(null)
     }
 
-    private initPool() {
-        for (let i = 0; i < this.POOL_SIZE; i++) {
-            const worker = new Worker(
-                new URL('../workers/ocr.worker.ts', import.meta.url),
-                { type: 'module' }
-            )
+    private async ensureWorker(i: number, lang: string): Promise<TesseractWorker> {
+        if (this.slots[i] && this.slotLang[i] === lang) return this.slots[i]!
 
-            worker.onmessage = (e: MessageEvent) => {
-                const data = e.data
-
-                if (data.type === 'progress') {
-                    // Find which job this worker is running
-                    for (const [, job] of this.pending) {
-                        job.onProgress?.({
-                            pageId: job.req.pageId,
-                            progress: data.progress,
-                            status: data.status,
-                        })
-                    }
-                    return
-                }
-
-                if (data.type === 'result') {
-                    const job = this.pending.get(data.id)
-                    if (job) {
-                        this.pending.delete(data.id)
-                        if (data.error) {
-                            job.onError(new Error(data.error))
-                        } else {
-                            job.onComplete(data as OCRResponse)
-                        }
-                    }
-                    this.runningOn.delete(i)
-                    this.busy.delete(i)
-                    this.processQueue()
-                }
-            }
-
-            worker.onerror = () => {
-                // The worker crashed outright (e.g. failed to load its wasm/
-                // trained-data, often from a blocked or unreachable CDN) —
-                // no 'result' message will ever arrive for whatever job it
-                // was running, so without this it hangs forever on "Running
-                // OCR...". Fail that specific job and recycle the slot.
-                const jobId = this.runningOn.get(i)
-                if (jobId) {
-                    const job = this.pending.get(jobId)
-                    if (job) {
-                        this.pending.delete(jobId)
-                        job.onError(new Error('OCR worker failed to load or crashed'))
-                    }
-                    this.runningOn.delete(i)
-                }
-                this.busy.delete(i)
-                this.processQueue()
-            }
-
-            this.workers.push(worker)
+        if (this.slots[i]) {
+            await this.slots[i]!.terminate().catch(() => { })
+            this.slots[i] = null
         }
+
+        const worker = await Tesseract.createWorker(lang, 1, {
+            logger: (m: { status: string; progress: number }) => {
+                const jobId = this.runningOn.get(i)
+                const job = jobId ? this.pending.get(jobId) : undefined
+                job?.onProgress?.({ pageId: job.req.pageId, progress: m.progress, status: m.status })
+            },
+        })
+
+        this.slots[i] = worker
+        this.slotLang[i] = lang
+        return worker
     }
 
     private processQueue() {
@@ -98,26 +86,59 @@ class OCRService {
                 this.busy.add(i)
                 this.runningOn.set(i, job.req.id)
                 this.pending.set(job.req.id, job)
-                this.workers[i].postMessage(job.req)
+                void this.runJob(i, job)
                 if (this.queue.length === 0) break
             }
         }
     }
 
-    private replaceWorker(i: number) {
-        this.workers[i].terminate()
-        const worker = new Worker(
-            new URL('../workers/ocr.worker.ts', import.meta.url),
-            { type: 'module' }
-        )
-        worker.onmessage = this.workers[i].onmessage
-        worker.onerror = this.workers[i].onerror
-        this.workers[i] = worker
+    private async runJob(i: number, job: PendingJob) {
+        const lang = job.req.language === 'auto' ? 'eng' : job.req.language
+        let url: string | null = null
+        try {
+            const worker = await this.ensureWorker(i, lang)
+            url = URL.createObjectURL(job.req.blob)
+            const result = await worker.recognize(url)
+            job.onComplete({
+                id: job.req.id,
+                pageId: job.req.pageId,
+                text: result.data.text,
+                confidence: result.data.confidence,
+                language: lang,
+            })
+        } catch (err) {
+            // A failure here is most often the language/core data fetch
+            // itself (blocked or unreachable CDN) rather than recognition —
+            // surface that distinction so it doesn't just read as generic
+            // "OCR failed" every time.
+            const message = err instanceof Error ? err.message : String(err)
+            const friendly = /fetch|network|load/i.test(message)
+                ? 'Could not download OCR language data — check your network connection'
+                : message
+            job.onError(new Error(friendly))
+            // The worker for this slot may be in a bad state after a failed
+            // load — drop it so the next job gets a fresh one instead of
+            // repeating the same failure silently.
+            if (this.slots[i]) {
+                this.slots[i]!.terminate().catch(() => { })
+                this.slots[i] = null
+                this.slotLang[i] = null
+            }
+        } finally {
+            if (url) URL.revokeObjectURL(url)
+            this.pending.delete(job.req.id)
+            this.runningOn.delete(i)
+            this.busy.delete(i)
+            this.processQueue()
+        }
     }
 
     recognize(req: OCRRequest, onProgress?: OCRProgressCallback): Promise<OCRResponse> {
         return new Promise((resolve, reject) => {
             let settled = false
+            // First-run language/core downloads can be tens of MB — give
+            // this real headroom before treating it as hung, rather than
+            // failing fast on a slow-but-working connection.
             const timeoutId = setTimeout(() => {
                 if (settled) return
                 settled = true
@@ -126,12 +147,16 @@ class OCRService {
                     if (jobId === req.id) {
                         this.runningOn.delete(idx)
                         this.busy.delete(idx)
-                        this.replaceWorker(idx) // it's silently wedged — don't reuse it as-is
+                        if (this.slots[idx]) {
+                            this.slots[idx]!.terminate().catch(() => { })
+                            this.slots[idx] = null
+                            this.slotLang[idx] = null
+                        }
                         this.processQueue()
                     }
                 }
                 reject(new Error('OCR timed out'))
-            }, 45_000)
+            }, 120_000)
 
             const job: PendingJob = {
                 req,
@@ -161,8 +186,9 @@ class OCRService {
     }
 
     terminate() {
-        this.workers.forEach(w => w.terminate())
-        this.workers = []
+        this.slots.forEach(w => w?.terminate().catch(() => { }))
+        this.slots = new Array(this.POOL_SIZE).fill(null)
+        this.slotLang = new Array(this.POOL_SIZE).fill(null)
     }
 }
 

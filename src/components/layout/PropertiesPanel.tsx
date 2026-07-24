@@ -100,8 +100,27 @@ const PageTab = memo(() => {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
             <p className="section-label" style={{ margin: 0 }}>OCR Text</p>
             <button
-              onClick={() => {
-                navigator.clipboard.writeText(firstSelected.ocrText ?? '')
+              onClick={async () => {
+                const text = firstSelected.ocrText ?? ''
+                try {
+                  if (navigator.clipboard?.writeText) {
+                    await navigator.clipboard.writeText(text)
+                  } else {
+                    // Fallback for contexts where the async Clipboard API is
+                    // unavailable or blocked (e.g. permissions policy)
+                    const ta = document.createElement('textarea')
+                    ta.value = text
+                    ta.style.position = 'fixed'
+                    ta.style.opacity = '0'
+                    document.body.appendChild(ta)
+                    ta.select()
+                    document.execCommand('copy')
+                    document.body.removeChild(ta)
+                  }
+                  toast.success('OCR text copied to clipboard')
+                } catch {
+                  toast.error('Could not copy — try selecting the text manually')
+                }
               }}
               style={{
                 display: 'flex', alignItems: 'center', gap: 4,
@@ -123,6 +142,7 @@ const PageTab = memo(() => {
             background: 'var(--s3)', border: '1px solid var(--border)',
             fontSize: 11, color: 'var(--tx-2)', lineHeight: 1.6,
             whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+            userSelect: 'text', cursor: 'text',
           }}>
             {firstSelected.ocrText}
           </div>
