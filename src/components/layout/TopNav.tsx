@@ -1,10 +1,9 @@
 import { memo, useState, useRef } from 'react'
 import {
   ChevronDown, Undo2, Redo2, Download,
-  Save, FolderOpen, Plus, PanelLeft, PanelRight,
-  Settings, Sun, Moon, ScanText,
+  PanelLeft, PanelRight,
+  Settings, ScanText,
 } from 'lucide-react'
-import { useThemeStore } from '@/stores/themeStore'
 import { useProjectStore, selectProjectName } from '@/stores/projectStore'
 import { useUndoRedo } from '@/hooks/useUndoRedo'
 import { useExportStore } from '@/stores/exportStore'
@@ -15,22 +14,17 @@ import { ProjectDropdown } from '@/features/project/ProjectNameDialog'
 import { APP_NAME } from '@/constants'
 
 interface Props {
-  onImport: () => void
-  onSettings: () => void
   onRunOCR: () => void
-  onSave: () => void
-  onOpenFile: () => void
+  onSettings: () => void
 }
 
-export const TopNav = memo(({ onImport, onSettings, onRunOCR, onSave, onOpenFile }: Props) => {
-  const { resolvedTheme, setTheme } = useThemeStore()
+export const TopNav = memo(({ onRunOCR, onSettings }: Props) => {
   const name = useProjectStore(selectProjectName)
   const { isDirty } = useProjectStore()
   const { canUndo, canRedo, undo, redo } = useUndoRedo()
   const { openDialog: openExport } = useExportStore()
-  const { toggleSidebar, togglePropertiesPanel, openCommandPalette } = useUIStore()
+  const { togglePropertiesPanel, toggleSidebar, openCommandPalette } = useUIStore()
   const pageCount = usePagesStore(selectPageCount)
-  const isDark = resolvedTheme === 'dark'
 
   const [dropdownAnchor, setDropdownAnchor] = useState<HTMLElement | null>(null)
   const projectBtnRef = useRef<HTMLButtonElement>(null)
@@ -109,21 +103,6 @@ export const TopNav = memo(({ onImport, onSettings, onRunOCR, onSave, onOpenFile
 
         <span className="nav-sep" />
 
-        <Tooltip content="Import images" shortcut="⌘O" placement="bottom">
-          <button className="icon-btn" onClick={onImport}>
-            <Plus size={14} />
-          </button>
-        </Tooltip>
-        <Tooltip content="Open project" placement="bottom">
-          <button className="icon-btn" onClick={onOpenFile}>
-            <FolderOpen size={14} />
-          </button>
-        </Tooltip>
-        <Tooltip content="Save project" shortcut="⌘S" placement="bottom">
-          <button className="icon-btn" onClick={onSave}>
-            <Save size={14} />
-          </button>
-        </Tooltip>
         <Tooltip content="Run OCR" placement="bottom">
           <button
             className="icon-btn"
@@ -142,11 +121,6 @@ export const TopNav = memo(({ onImport, onSettings, onRunOCR, onSave, onOpenFile
 
         <span className="nav-sep" />
 
-        <Tooltip content={isDark ? 'Switch to light theme' : 'Switch to dark theme'} placement="bottom">
-          <button className="icon-btn" onClick={() => setTheme(isDark ? 'light' : 'dark')}>
-            {isDark ? <Sun size={15} /> : <Moon size={15} />}
-          </button>
-        </Tooltip>
         <Tooltip content="Toggle properties" placement="bottom">
           <button className="icon-btn" onClick={togglePropertiesPanel}>
             <PanelRight size={14} />

@@ -34,7 +34,7 @@ export const PageFramePreview = memo(({ page, loading = 'lazy' }: Props) => {
     const [loaded, setLoaded] = useState(false)
 
     const preset = useActivePreset()
-    const marginKey = (preset.margin ?? 'none') as keyof typeof MARGIN_SIZES
+    const marginKey = (page.margin ?? 'none') as keyof typeof MARGIN_SIZES
     const marginPts = MARGIN_SIZES[marginKey] ?? MARGIN_SIZES.none
     const hasMargin = marginPts.top > 0
     const isAutoSize = preset.pageSize === 'auto' || preset.pageSize === 'original'
@@ -88,9 +88,9 @@ export const PageFramePreview = memo(({ page, loading = 'lazy' }: Props) => {
     const frameH = cardH - inset.top - inset.bottom
 
     const imgObjectFit: React.CSSProperties['objectFit'] =
-        preset.imageFit === 'fill' ? 'cover' :
-            preset.imageFit === 'stretch' ? 'fill' :
-                preset.imageFit === 'original' ? 'none' : 'contain'
+        page.imageFit === 'fill' ? 'cover' :
+            page.imageFit === 'stretch' ? 'fill' :
+                page.imageFit === 'original' ? 'none' : 'contain'
 
     const ready = imageUrl && cardW > 0 && cardH > 0
 

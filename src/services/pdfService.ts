@@ -219,11 +219,13 @@ export class PDFService {
                 (preset.orientation === 'auto' && effImgW > effImgH)
             if (shouldLandscape && pgW < pgH) [pgW, pgH] = [pgH, pgW]
 
-            // Margin
+            // Margin — per-page override (this is what the Page properties
+            // panel actually edits); the export preset's margin/imageFit
+            // only ever served as each new page's starting default.
             const margin =
-                preset.margin === 'custom'
-                    ? { top: 28, right: 28, bottom: 28, left: 28 }
-                    : MARGIN_SIZES[preset.margin as keyof typeof MARGIN_SIZES] ?? MARGIN_SIZES.none
+                page.margin === 'custom'
+                    ? (page.customMargin ?? { top: 28, right: 28, bottom: 28, left: 28 })
+                    : MARGIN_SIZES[page.margin as keyof typeof MARGIN_SIZES] ?? MARGIN_SIZES.none
 
             const contentW = pgW - margin.left - margin.right
             const contentH = pgH - margin.top - margin.bottom
@@ -252,17 +254,17 @@ export class PDFService {
             let centerX = margin.left + drawW / 2
             let centerY = margin.bottom + drawH / 2
 
-            if (preset.imageFit === 'fit') {
+            if (page.imageFit === 'fit') {
                 const scale = Math.min(effContentW / imgW, effContentH / imgH)
                 drawW = imgW * scale; drawH = imgH * scale
                 centerX = margin.left + contentW / 2
                 centerY = margin.bottom + contentH / 2
-            } else if (preset.imageFit === 'fill') {
+            } else if (page.imageFit === 'fill') {
                 const scale = Math.max(effContentW / imgW, effContentH / imgH)
                 drawW = imgW * scale; drawH = imgH * scale
                 centerX = margin.left + contentW / 2
                 centerY = margin.bottom + contentH / 2
-            } else if (preset.imageFit === 'stretch') {
+            } else if (page.imageFit === 'stretch') {
                 drawW = effContentW; drawH = effContentH
                 centerX = margin.left + contentW / 2
                 centerY = margin.bottom + contentH / 2

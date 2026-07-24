@@ -30,7 +30,7 @@ export const PreviewCanvas = memo(({ page, zoom, onZoomChange }: Props) => {
     })
 
     const preset = useActivePreset()
-    const marginKey = (preset.margin ?? 'none') as keyof typeof MARGIN_SIZES
+    const marginKey = (page.margin ?? 'none') as keyof typeof MARGIN_SIZES
     const marginPts = MARGIN_SIZES[marginKey] ?? MARGIN_SIZES.none
     const hasMargin = marginPts.top > 0
     const isAutoSize = preset.pageSize === 'auto' || preset.pageSize === 'original'
@@ -122,9 +122,9 @@ export const PreviewCanvas = memo(({ page, zoom, onZoomChange }: Props) => {
 
     // Image fit
     const imgObjectFit: React.CSSProperties['objectFit'] =
-        preset.imageFit === 'fill' ? 'cover' :
-            preset.imageFit === 'stretch' ? 'fill' :
-                preset.imageFit === 'original' ? 'none' : 'contain'
+        page.imageFit === 'fill' ? 'cover' :
+            page.imageFit === 'stretch' ? 'fill' :
+                page.imageFit === 'original' ? 'none' : 'contain'
 
     // Badge
     const badge = useMemo(() => {

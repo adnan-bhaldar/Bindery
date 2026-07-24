@@ -132,11 +132,8 @@ export const AppShell = memo(() => {
       <SmallScreenNotice />
 
       <TopNav
-        onImport={importFromPicker}
         onSettings={() => setSettingsOpen(true)}
         onRunOCR={() => void runOCR()}
-        onSave={handleSave}
-        onOpenFile={handleOpenFile}
       />
 
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden', minHeight: 0 }}>

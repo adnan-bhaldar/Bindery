@@ -6,7 +6,7 @@ import {
     CheckCircle2, Loader2, Trash2, ChevronDown, ChevronRight,
 } from 'lucide-react'
 import { usePagesStore } from '@/stores/pagesStore'
-import { runSmartScan, sortPagesByFilename, sortPagesByDate, type SmartScanResult } from '@/services/smartService'
+import { runSmartScan, type SmartScanResult } from '@/services/smartService'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { toast } from 'sonner'
 
@@ -75,8 +75,8 @@ export const SmartScanPanel = memo(() => {
     const [scanning, setScanning] = useState(false)
     const [result, setResult] = useState<SmartScanResult | null>(null)
     const pageCount = usePagesStore(s => s.pages.length)
-    const { removePages, setPages } = usePagesStore(
-        useShallow(s => ({ removePages: s.removePages, setPages: s.setPages }))
+    const { removePages } = usePagesStore(
+        useShallow(s => ({ removePages: s.removePages }))
     )
 
     const handleScan = useCallback(async () => {
@@ -110,49 +110,8 @@ export const SmartScanPanel = memo(() => {
         toast.success(`Removed ${result.blankPageIds.length} blank page${result.blankPageIds.length > 1 ? 's' : ''}`)
     }, [removePages])
 
-    const sortByName = useCallback(() => {
-        const sorted = sortPagesByFilename(usePagesStore.getState().pages)
-        setPages(sorted)
-        toast.success('Pages sorted by filename')
-    }, [setPages])
-
-    const sortByDate = useCallback(() => {
-        const sorted = sortPagesByDate(usePagesStore.getState().pages)
-        setPages(sorted)
-        toast.success('Pages sorted by date')
-    }, [setPages])
-
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: '16px 14px' }}>
-            {/* Sort controls */}
-            <div>
-                <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--tx-4)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 8 }}>
-                    Auto Sort
-                </p>
-                <div style={{ display: 'flex', gap: 6 }}>
-                    <button
-                        onClick={sortByName}
-                        disabled={pageCount === 0}
-                        style={sortBtnStyle}
-                        onMouseEnter={e => { e.currentTarget.style.background = 'var(--s4)' }}
-                        onMouseLeave={e => { e.currentTarget.style.background = 'var(--s3)' }}
-                    >
-                        By filename
-                    </button>
-                    <button
-                        onClick={sortByDate}
-                        disabled={pageCount === 0}
-                        style={sortBtnStyle}
-                        onMouseEnter={e => { e.currentTarget.style.background = 'var(--s4)' }}
-                        onMouseLeave={e => { e.currentTarget.style.background = 'var(--s3)' }}
-                    >
-                        By date
-                    </button>
-                </div>
-            </div>
-
-            <div style={{ height: 1, background: 'var(--border)' }} />
-
             {/* Scan button */}
             <div>
                 <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--tx-4)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 8 }}>
@@ -296,14 +255,6 @@ export const SmartScanPanel = memo(() => {
     )
 })
 SmartScanPanel.displayName = 'SmartScanPanel'
-
-const sortBtnStyle: React.CSSProperties = {
-    flex: 1, padding: '7px 10px',
-    background: 'var(--s3)', border: '1px solid var(--border)',
-    borderRadius: 'var(--r-md)', color: 'var(--tx-2)',
-    fontSize: 11.5, fontWeight: 500, fontFamily: 'var(--font-sans)',
-    cursor: 'pointer', transition: 'background 110ms',
-}
 
 const iconActionBtn: React.CSSProperties = {
     display: 'flex', alignItems: 'center', justifyContent: 'center',
