@@ -29,7 +29,7 @@ export const ProjectDropdown = memo(({ anchor, onClose }: Props) => {
   useEffect(() => {
     if (!anchor) return
     setName(currentProject?.name ?? 'Untitled Project')
-    projectService.getRecentProjects().then(setRecents)
+    projectService.getRecentProjects(10, currentProject?.id).then(setRecents)
     setTimeout(() => inputRef.current?.select(), 60)
   }, [anchor, currentProject])
 

@@ -105,8 +105,8 @@ export const ProjectPanel = memo(() => {
 
     // Load recent projects on mount
     useEffect(() => {
-        projectService.getRecentProjects().then(setRecentProjects)
-    }, [setRecentProjects])
+        projectService.getRecentProjects(10, currentProject?.id).then(setRecentProjects)
+    }, [setRecentProjects, currentProject?.id])
 
     const handleNew = useCallback(async () => {
         const project = await projectService.createProject()

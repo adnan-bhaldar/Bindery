@@ -133,12 +133,26 @@ class ProjectService {
         return project ?? null
     }
 
-    async getRecentProjects(limit = 10): Promise<Project[]> {
-        return db.projects
+    async getRecentProjects(limit = 10, keepId?: string): Promise<Project[]> {
+        const all = await db.projects
             .orderBy('lastOpenedAt')
             .reverse()
-            .limit(limit)
             .toArray()
+
+        // Empty projects are almost always abandoned — created (explicitly,
+        // or implicitly via dragging in files that were then removed) but
+        // never actually used. Don't let them accumulate in the recents
+        // list forever. The currently active project is exempt even if it
+        // has 0 pages, since that's just a brand-new project the user is
+        // about to start filling in.
+        const empties = all.filter(p => p.pageCount === 0 && p.id !== keepId)
+        if (empties.length > 0) {
+            await db.projects.bulkDelete(empties.map(p => p.id))
+        }
+
+        return all
+            .filter(p => p.pageCount > 0 || p.id === keepId)
+            .slice(0, limit)
     }
 
     // ── Restore last session ────────────────────────────────────────────────────
