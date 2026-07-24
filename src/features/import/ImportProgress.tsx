@@ -8,7 +8,7 @@ interface Props {
     isVisible: boolean
 }
 
-const PHASE_LABELS: Record<IProgress['phase'], string> = {
+export const PHASE_LABELS: Record<IProgress['phase'], string> = {
     validating: 'Checking files…',
     hashing: 'Checking for duplicates…',
     thumbnails: 'Processing images…',

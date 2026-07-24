@@ -141,7 +141,7 @@ export const AppShell = memo(() => {
 
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden', minHeight: 0 }}>
         <Sidebar onImport={importFromPicker} />
-        <Workspace onImport={importFromPicker} isImporting={isImporting} onDrop={handleImportFiles} />
+        <Workspace onImport={importFromPicker} isImporting={isImporting} onDrop={handleImportFiles} importProgress={importProgress} />
         <PropertiesPanel />
       </div>
 
@@ -153,7 +153,7 @@ export const AppShell = memo(() => {
         onNewProject={handleNewProject}
         onOpenFile={handleOpenFile}
       />
-      <ImportProgressOverlay progress={importProgress} isVisible={isImporting} />
+      <ImportProgressOverlay progress={importProgress} isVisible={isImporting && pages.length > 0} />
       <OCRProgressPanel progress={ocrProgress} onCancel={cancelOCR} />
       <ExportDialog />
       <SettingsDialog isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
