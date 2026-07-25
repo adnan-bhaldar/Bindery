@@ -18,22 +18,31 @@ const TABS: { id: PropertiesPanelTab; label: string; Icon: React.FC<{ size?: num
   { id: 'metadata', label: 'Info', Icon: FileText },
 ]
 
-const SegRow = ({ options, value, onChange }: {
+const SegRow = ({ options, value, onChange, disabled, onDisabledClick }: {
   options: { value: string; label: string }[]
   value: string
   onChange: (v: string) => void
+  disabled?: boolean
+  onDisabledClick?: () => void
 }) => (
-  <div style={{ display: 'flex', background: 'var(--s3)', borderRadius: 8, padding: 3, gap: 2 }}>
+  <div style={{
+    display: 'flex', background: 'var(--s3)', borderRadius: 8, padding: 3, gap: 2,
+    opacity: disabled ? 0.45 : 1,
+    transition: 'opacity 110ms',
+  }}>
     {options.map(o => (
-      <button key={o.value} onClick={() => onChange(o.value)} style={{
-        flex: 1, padding: '5px 4px', borderRadius: 6, border: 'none',
-        background: value === o.value ? 'var(--bg-card)' : 'transparent',
-        color: value === o.value ? 'var(--tx-1)' : 'var(--tx-3)',
-        fontSize: 11, fontWeight: value === o.value ? 600 : 400,
-        fontFamily: 'var(--font-sans)', cursor: 'pointer',
-        boxShadow: value === o.value ? 'var(--sh-xs)' : 'none',
-        transition: 'all 110ms', whiteSpace: 'nowrap',
-      }}>
+      <button
+        key={o.value}
+        onClick={() => disabled ? onDisabledClick?.() : onChange(o.value)}
+        style={{
+          flex: 1, padding: '5px 4px', borderRadius: 6, border: 'none',
+          background: value === o.value ? 'var(--bg-card)' : 'transparent',
+          color: value === o.value ? 'var(--tx-1)' : 'var(--tx-3)',
+          fontSize: 11, fontWeight: value === o.value ? 600 : 400,
+          fontFamily: 'var(--font-sans)', cursor: disabled ? 'not-allowed' : 'pointer',
+          boxShadow: value === o.value ? 'var(--sh-xs)' : 'none',
+          transition: 'all 110ms', whiteSpace: 'nowrap',
+        }}>
         {o.label}
       </button>
     ))}
@@ -47,6 +56,11 @@ const PageTab = memo(() => {
   const { setPageImageFit, setPageMargin } = usePagesStore(
     useShallow(s => ({ setPageImageFit: s.setPageImageFit, setPageMargin: s.setPageMargin }))
   )
+  const preset = useActivePreset()
+  const isAutoPageSize = preset.pageSize === 'auto'
+  const notifyAutoDisabled = useCallback(() => {
+    toast.info("Image Fit and Margin don't apply when Page Size is Auto", { duration: 2000 })
+  }, [])
 
   const hasSelection = selectedIds.length > 0
   const firstSelected = selectedIds.length > 0 ? pages.find(p => p.id === selectedIds[0]) : null
@@ -85,6 +99,8 @@ const PageTab = memo(() => {
           options={[{ value: 'fit', label: 'Fit' }, { value: 'fill', label: 'Fill' }, { value: 'original', label: 'Original' }, { value: 'stretch', label: 'Stretch' }]}
           value={firstSelected.imageFit}
           onChange={v => applyToSelection(id => setPageImageFit(id, v as ImageFit))}
+          disabled={isAutoPageSize}
+          onDisabledClick={notifyAutoDisabled}
         />
       </div>
       <div>
@@ -93,6 +109,8 @@ const PageTab = memo(() => {
           options={[{ value: 'none', label: 'None' }, { value: 'small', label: 'S' }, { value: 'medium', label: 'M' }, { value: 'large', label: 'L' }]}
           value={firstSelected.margin}
           onChange={v => applyToSelection(id => setPageMargin(id, v as PageMargin))}
+          disabled={isAutoPageSize}
+          onDisabledClick={notifyAutoDisabled}
         />
       </div>
       {selectedIds.length === 1 && firstSelected.ocrText && (

@@ -98,8 +98,10 @@ export const SmartScanPanel = memo(() => {
         }
     }, [])
 
-    const removeDuplicates = useCallback((_keepId: string, removeIds: string[]) => {
+    const removeDuplicates = useCallback((group: SmartScanResult['duplicates'][number]) => {
+        const removeIds = group.pageIds.slice(1)
         removePages(removeIds)
+        setResult(r => r ? { ...r, duplicates: r.duplicates.filter(g => g !== group) } : null)
         toast.success(`Removed ${removeIds.length} duplicate${removeIds.length > 1 ? 's' : ''}`)
     }, [removePages])
 
@@ -161,7 +163,6 @@ export const SmartScanPanel = memo(() => {
                             {result.duplicates.length === 0 ? (
                                 <p style={{ fontSize: 11.5, color: 'var(--tx-3)', padding: '4px 0' }}>No duplicates found</p>
                             ) : result.duplicates.map((group, i) => {
-                                const removeIds = group.pageIds.slice(1)
                                 const pg = usePagesStore.getState().pages.find(p => p.id === group.pageIds[0])
                                 return (
                                     <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', borderBottom: '1px solid var(--border-soft)' }}>
@@ -173,7 +174,7 @@ export const SmartScanPanel = memo(() => {
                                         </div>
                                         <Tooltip content="Remove duplicates, keep first" placement="left">
                                             <button
-                                                onClick={() => removeDuplicates(group.pageIds[0], removeIds)}
+                                                onClick={() => removeDuplicates(group)}
                                                 style={{ ...iconActionBtn, color: '#f59e0b' }}
                                                 onMouseEnter={e => { e.currentTarget.style.background = 'rgba(245,158,11,0.12)' }}
                                                 onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
