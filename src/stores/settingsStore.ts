@@ -14,6 +14,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
     theme: 'system',
     reducedMotion: false,
     compactMode: false,
+    enableWorkspaceContextMenu: false,
 
     // Import
     autoGenerateThumbnails: true,

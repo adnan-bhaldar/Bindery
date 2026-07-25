@@ -106,34 +106,37 @@ export const PreviewToolbar = memo((props: Props) => {
             {/* ── Separator ──────────────────────────────── */}
             <div style={{ width: 1, height: 20, background: 'var(--border)', margin: '0 4px' }} />
 
-            {/* ── Zoom ───────────────────────────────────── */}
-            <Tooltip content="Zoom out" shortcut="⌘−" placement="top">
-                <button className="icon-btn" onClick={onZoomOut}>
+            {/* ── Zoom (only meaningful in Single page view — disabled, not hidden, elsewhere so the toolbar layout stays stable) ── */}
+            <Tooltip content={view === 'single' ? 'Zoom out' : 'Zoom only applies to Single page view'} shortcut={view === 'single' ? '⌘−' : undefined} placement="top">
+                <button className="icon-btn" onClick={onZoomOut} disabled={view !== 'single'}>
                     <ZoomOut size={14} />
                 </button>
             </Tooltip>
 
-            <Tooltip content="Reset zoom" shortcut="⌘0" placement="top">
+            <Tooltip content={view === 'single' ? 'Reset zoom' : 'Zoom only applies to Single page view'} shortcut={view === 'single' ? '⌘0' : undefined} placement="top">
                 <button
                     onClick={onResetZoom}
+                    disabled={view !== 'single'}
                     style={{
                         height: 30, padding: '0 10px',
                         border: 'none', background: 'transparent',
-                        color: 'var(--tx-2)', fontSize: 11,
+                        color: view === 'single' ? 'var(--tx-2)' : 'var(--tx-4)', fontSize: 11,
                         fontFamily: 'var(--font-mono)', fontWeight: 500,
-                        cursor: 'pointer', borderRadius: 'var(--r-md)',
+                        cursor: view === 'single' ? 'pointer' : 'not-allowed',
+                        borderRadius: 'var(--r-md)',
                         transition: 'background 110ms, color 110ms',
                         minWidth: 52, textAlign: 'center',
+                        opacity: view === 'single' ? 1 : 0.4,
                     }}
-                    onMouseEnter={e => { e.currentTarget.style.background = 'var(--hover)'; e.currentTarget.style.color = 'var(--tx-1)' }}
-                    onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--tx-2)' }}
+                    onMouseEnter={e => { if (view === 'single') { e.currentTarget.style.background = 'var(--hover)'; e.currentTarget.style.color = 'var(--tx-1)' } }}
+                    onMouseLeave={e => { if (view === 'single') { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--tx-2)' } }}
                 >
                     {Math.round(zoom * 100)}%
                 </button>
             </Tooltip>
 
-            <Tooltip content="Zoom in" shortcut="⌘+" placement="top">
-                <button className="icon-btn" onClick={onZoomIn}>
+            <Tooltip content={view === 'single' ? 'Zoom in' : 'Zoom only applies to Single page view'} shortcut={view === 'single' ? '⌘+' : undefined} placement="top">
+                <button className="icon-btn" onClick={onZoomIn} disabled={view !== 'single'}>
                     <ZoomIn size={14} />
                 </button>
             </Tooltip>

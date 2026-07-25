@@ -188,6 +188,7 @@ export interface AppSettings {
     theme: Theme
     reducedMotion: boolean
     compactMode: boolean
+    enableWorkspaceContextMenu: boolean
 
     // Import
     autoGenerateThumbnails: boolean

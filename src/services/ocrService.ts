@@ -32,16 +32,6 @@ interface PendingJob {
     onError: (e: Error) => void
 }
 
-// Tesseract.js's createWorker() already spins up its own dedicated Web Worker
-// internally to run the wasm engine off the main thread — it IS the worker.
-// The previous version of this service wrapped that inside a second, custom
-// Worker (src/workers/ocr.worker.ts), so every OCR job ran inside a worker
-// nested inside another worker. That extra layer bought nothing (Tesseract
-// was already off-main-thread), added real overhead, and made the whole
-// thing fragile — module-worker path resolution and environment detection
-// inside a Vite-bundled nested worker is exactly the kind of thing that
-// causes slow, sometimes-failing behavior instead of a clean error. Calling
-// Tesseract directly from here removes that nesting entirely.
 class OCRService {
     private slots: (TesseractWorker | null)[] = []
     private slotLang: (string | null)[] = []

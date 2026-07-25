@@ -162,6 +162,20 @@ PageTab.displayName = 'PageTab'
 const ExportTab = memo(() => {
   const preset = useActivePreset()
   const { updatePreset } = useExportStore()
+  const { pages, setPageMargin } = usePagesStore(
+    useShallow(s => ({ pages: s.pages, setPageMargin: s.setPageMargin }))
+  )
+
+  // Page margin/imageFit are rendered per-page now (PageFramePreview,
+  // PreviewCanvas, and pdfService all read page.margin, not preset.margin —
+  // every page always has a concrete value, so preset.margin alone would
+  // never actually affect anything). This control is the "apply to all
+  // pages" bulk setter; the Page tab still lets you override an individual
+  // page afterward.
+  const handleMarginChange = useCallback((v: PageMargin) => {
+    updatePreset(preset.id, { margin: v })
+    pages.forEach(p => setPageMargin(p.id, v))
+  }, [preset.id, updatePreset, pages, setPageMargin])
 
   return (
     <div style={{ padding: '14px 14px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -191,7 +205,7 @@ const ExportTab = memo(() => {
             { value: 'large', label: 'Wide' },
           ]}
           value={preset.margin}
-          onChange={v => updatePreset(preset.id, { margin: v as PageMargin })}
+          onChange={v => handleMarginChange(v as PageMargin)}
         />
       </div>
       <div>

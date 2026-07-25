@@ -614,8 +614,11 @@ const AppearanceSection = memo(() => {
                 <CardRow label="Compact mode" desc="Slightly denser layout throughout the app">
                     <Toggle checked={settings.compactMode} onChange={v => updateSetting('compactMode', v)} />
                 </CardRow>
-                <CardRow label="Reduce motion" desc="Minimize animations throughout the interface" last>
+                <CardRow label="Reduce motion" desc="Minimize animations throughout the interface">
                     <Toggle checked={settings.reducedMotion} onChange={v => updateSetting('reducedMotion', v)} />
+                </CardRow>
+                <CardRow label="Workspace right-click menu" desc="Right-click a page in the main workspace for rotate/duplicate/delete" last>
+                    <Toggle checked={settings.enableWorkspaceContextMenu} onChange={v => updateSetting('enableWorkspaceContextMenu', v)} />
                 </CardRow>
             </Card>
 
