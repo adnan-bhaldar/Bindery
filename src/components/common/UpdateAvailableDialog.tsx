@@ -52,7 +52,7 @@ export const UpdateAvailableDialog = memo(() => {
                                 Update available
                             </p>
                             <p style={{ fontSize: 11, color: 'var(--tx-3)', marginTop: 1 }}>
-                                A new version is ready
+                                A new version is available
                             </p>
                         </div>
                         <button
