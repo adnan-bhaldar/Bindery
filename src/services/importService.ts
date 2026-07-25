@@ -197,7 +197,7 @@ class ImportService {
                 ocrText: undefined,
                 ocrStatus: 'idle',
                 isCover: existingPageCount === 0 && importedCount === 0,
-                margin: 'medium',
+                margin: 'none',
                 customMargin: undefined,
                 imageFit: 'fit',
                 createdAt: Date.now(),

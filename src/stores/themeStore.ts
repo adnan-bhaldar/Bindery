@@ -17,8 +17,8 @@ type ThemeStore = ThemeState & ThemeActions
 export const useThemeStore = create<ThemeStore>()(
     persist(
         (set) => ({
-            theme: 'dark',
-            resolvedTheme: 'dark',
+            theme: 'system',
+            resolvedTheme: window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light',
 
             setTheme: (theme) => {
                 // Immediately resolve non-system themes so there's zero async gap

@@ -342,11 +342,12 @@ GeneralSection.displayName = 'GeneralSection'
 
 // ─── Theme preview card ───────────────────────────────────────────────────────
 
-const ThemePreviewCard = memo(({ previewTheme, accent, active, onClick }: {
+const ThemePreviewCard = memo(({ previewTheme, accent, active, onClick, disabled }: {
     previewTheme: 'light' | 'dark'
     accent: string
     active: boolean
     onClick: () => void
+    disabled?: boolean
 }) => {
     const isDark = previewTheme === 'dark'
     const bg = isDark ? '#0d0d14' : '#f0f0f6'
@@ -360,9 +361,10 @@ const ThemePreviewCard = memo(({ previewTheme, accent, active, onClick }: {
 
     return (
         <button
-            onClick={onClick}
+            onClick={disabled ? undefined : onClick}
+            disabled={disabled}
             style={{
-                position: 'relative', flex: 1, cursor: 'pointer',
+                position: 'relative', flex: 1, cursor: disabled ? 'not-allowed' : 'pointer',
                 border: 'none', borderRadius: 18, padding: 14, marginTop: 10,
                 background: active
                     ? `linear-gradient(180deg, ${accent}12, transparent 65%)`
@@ -372,11 +374,12 @@ const ThemePreviewCard = memo(({ previewTheme, accent, active, onClick }: {
                 boxShadow: active
                     ? `0 14px 36px ${accent}2e, inset 0 1px 0 rgba(255,255,255,0.04)`
                     : 'var(--sh-xs)',
-                transform: active ? 'translateY(-2px)' : 'none',
+                transform: active && !disabled ? 'translateY(-2px)' : 'none',
+                opacity: disabled ? 0.45 : 1,
                 transition: 'all 220ms var(--ease-out)',
             }}
-            onMouseEnter={e => { if (!active) e.currentTarget.style.transform = 'translateY(-1px)' }}
-            onMouseLeave={e => { if (!active) e.currentTarget.style.transform = 'none' }}
+            onMouseEnter={e => { if (!active && !disabled) e.currentTarget.style.transform = 'translateY(-1px)' }}
+            onMouseLeave={e => { if (!active && !disabled) e.currentTarget.style.transform = 'none' }}
         >
             {/* Ambient glow — only for the active card, gives it a "lit up" feel */}
             {active && (
@@ -596,8 +599,8 @@ const AppearanceSection = memo(() => {
         <div>
             <Card title="Theme" icon={Palette}>
                 <div style={{ display: 'flex', gap: 14, marginBottom: 14 }}>
-                    <ThemePreviewCard previewTheme="light" accent={accent} active={resolvedTheme === 'light'} onClick={() => setTheme('light')} />
-                    <ThemePreviewCard previewTheme="dark" accent={accent} active={resolvedTheme === 'dark'} onClick={() => setTheme('dark')} />
+                    <ThemePreviewCard previewTheme="light" accent={accent} active={resolvedTheme === 'light'} onClick={() => setTheme('light')} disabled={theme === 'system'} />
+                    <ThemePreviewCard previewTheme="dark" accent={accent} active={resolvedTheme === 'dark'} onClick={() => setTheme('dark')} disabled={theme === 'system'} />
                 </div>
                 <CardRow label="Follow system theme" desc="Auto-switch based on OS preference" last>
                     <Toggle

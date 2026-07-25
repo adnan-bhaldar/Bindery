@@ -1,4 +1,4 @@
-import { memo, useState, useCallback, useEffect } from 'react'
+import { memo, useState, useCallback, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Download, X, BookOpen } from 'lucide-react'
 import { usePWA } from '@/hooks/usePWA'
@@ -10,6 +10,8 @@ const DISMISS_DURATION_MS = 7 * 24 * 60 * 60 * 1000 // 7 days
 export const InstallBanner = memo(() => {
     const { canInstall, install } = usePWA()
     const [dismissed, setDismissed] = useState(true) // default true until we check storage
+    const [autoHidden, setAutoHidden] = useState(false)
+    const autoHideTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
     // Check if user dismissed recently
     useEffect(() => {
@@ -24,7 +26,12 @@ export const InstallBanner = memo(() => {
         }
     }, [])
 
+    useEffect(() => () => {
+        if (autoHideTimer.current) clearTimeout(autoHideTimer.current)
+    }, [])
+
     const handleDismiss = useCallback(() => {
+        if (autoHideTimer.current) clearTimeout(autoHideTimer.current)
         setDismissed(true)
         try {
             localStorage.setItem(DISMISS_KEY, String(Date.now()))
@@ -41,7 +48,7 @@ export const InstallBanner = memo(() => {
         }
     }, [install, handleDismiss])
 
-    const visible = canInstall && !dismissed
+    const visible = canInstall && !dismissed && !autoHidden
 
     return (
         <AnimatePresence>
@@ -55,6 +62,14 @@ export const InstallBanner = memo(() => {
                     exit={{
                         opacity: 0, y: 16,
                         transition: { duration: 0.18, ease: [0.16, 1, 0.3, 1] }, // no delay — dismiss should feel instant
+                    }}
+                    onAnimationComplete={() => {
+                        // Fires after both the enter and exit transitions — only
+                        // start the auto-hide countdown once, when it's actually
+                        // finished appearing (not when it finishes disappearing).
+                        if (!autoHideTimer.current && !autoHidden) {
+                            autoHideTimer.current = setTimeout(() => setAutoHidden(true), 3000)
+                        }
                     }}
                     style={{
                         position: 'fixed',

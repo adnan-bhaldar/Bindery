@@ -18,7 +18,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
     // Import
     autoGenerateThumbnails: true,
     thumbnailSize: 120,
-    sidebarLayout: 'list',
+    sidebarLayout: 'grid',
     allowDragWhenSorted: false,
     detectDuplicates: true,
     warnLowResolution: true,
