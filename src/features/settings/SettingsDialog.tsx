@@ -704,19 +704,6 @@ const ExportSection = memo(() => {
                 </CardRow>
             </Card>
 
-            <Card title="Auto Page Size" desc="Applies whenever a page's size is set to Auto.">
-                <CardRow
-                    label="Exact fit (no canvas)"
-                    desc="Page sized exactly to each image — the exported PDF matches the preview exactly, no blank space around it"
-                    last
-                >
-                    <Toggle
-                        checked={settings.useExactAutoPageSize}
-                        onChange={v => updateSetting('useExactAutoPageSize', v)}
-                    />
-                </CardRow>
-            </Card>
-
             <Card title="Document Title" desc="Controls the sidebar Info tab's Title field.">
                 <CardRow
                     label="Allow custom document title"

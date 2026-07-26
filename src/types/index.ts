@@ -147,11 +147,6 @@ export interface ExportOptions {
     preset: ExportPreset
     filename: string
     metadata: ProjectMetadata
-    /** When pageSize is 'auto': true = page sized exactly to the image (no
-     * canvas/padding); false = padded onto a standard-size page oriented to
-     * match the image, same as before this became configurable. Defaults to
-     * true (no canvas) if omitted. */
-    useExactAutoPageSize?: boolean
     /** When the Author field is left empty: true = fall back to a default
      * author name; false = leave it genuinely blank in the exported PDF.
      * Defaults to true if omitted. */
@@ -202,7 +197,6 @@ export interface AppSettings {
     // Export
     defaultPresetId: string
     defaultFilename: string
-    useExactAutoPageSize: boolean
     allowCustomDocumentTitle: boolean
     useDefaultAuthorName: boolean
 

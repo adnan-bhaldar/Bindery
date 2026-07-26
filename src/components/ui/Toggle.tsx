@@ -17,7 +17,7 @@ function ensureStyles() {
     stylesInjected = true
     const style = document.createElement('style')
     style.textContent = `
-        .toggle { position: relative; display: inline-flex; align-items: center; cursor: pointer; flex-shrink: 0; }
+        .toggle { position: relative; display: inline-flex; align-items: center; cursor: pointer; flex-shrink: 0; border-radius: 9999px; }
         .toggle input { position: absolute; opacity: 0; width: 0; height: 0; }
         .toggle-track {
           border-radius: 9999px;
