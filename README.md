@@ -1,73 +1,121 @@
-# React + TypeScript + Vite
+<div align="center">
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+#  Bindery
 
-Currently, two official plugins are available:
+### Turn a pile of photos and screenshots into a clean, exportable PDF.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+**Local-first. Private. Built for the messy paperwork of everyday life.**
 
-## React Compiler
+<br>
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+[![🚀 Try Bindery — Live Demo](https://img.shields.io/badge/🚀%20Try%20Bindery-Live%20Demo-7c6df2?style=for-the-badge&logo=vercel&logoColor=white)](https://bindery.vercel.app)
 
-## Expanding the ESLint configuration
+<br>
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+[![PWA](https://img.shields.io/badge/PWA-installable-7c6df2?style=flat-square)](#)
+[![License: MIT](https://img.shields.io/badge/license-MIT-8b8b9e?style=flat-square)](#license)
+[![Built with Vite](https://img.shields.io/badge/built%20with-Vite-a78bfa?style=flat-square)](#tech-stack)
+[![TypeScript](https://img.shields.io/badge/TypeScript-strict-7c6df2?style=flat-square)](#tech-stack)
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+</div>
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+<br>
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+<p align="center">
+  <img src="./preview.png" alt="Bindery — the same document assembly workspace shown in light and dark theme" width="100%">
+</p>
+
+<br>
+
+## 📋 Contents
+
+- [✨ Overview](#-overview)
+- [🚀 Features](#-features)
+- [🔒 Privacy](#-privacy)
+- [🧱 Tech Stack](#-tech-stack)
+- [🛠️ Getting Started](#️-getting-started)
+- [📄 License](#-license)
+
+<br>
+
+## ✨ Overview
+
+**Bindery** turns scattered photos, scans, screenshots, and documents into a single, polished PDF — entirely in your browser.
+
+Drop your files in, arrange and clean up the pages, adjust how each image sits on the page, optionally pull out text with on-device OCR, and export one properly formatted document. No upload, no account, no server round-trip — everything runs locally and stays on your device.
+
+> 💡 Built for the pile of paperwork everyone has — forms, receipts, ID cards, handwritten notes, whiteboard photos, screenshots — all the things you need as *one document*, but only ever have as a folder of mismatched images.
+
+<br>
+
+## 🚀 Features
+
+### 📥 Import & Organize
+Drag-and-drop or browse to import. Work in Grid, List, Single-page, or Continuous scroll view. Reorder by dragging, rotate, duplicate, delete, or set a cover page — with Smart Scan flagging likely duplicate or blank pages along the way.
+
+### 🎛️ Per-Page & Project-Wide Control
+Every page can be tuned independently — Image Fit (`Fit` / `Fill` / `Original` / `Stretch`) and margin — or you can bulk-apply a setting across the whole project. Choose a page size (`A4`, `Letter`, `A3`, or `Auto`, sized exactly to each image) and orientation, then zoom and pan in single-page view before you export.
+
+### 🔎 On-Device OCR
+Extract text in English, Hindi, or Marathi (or let it auto-detect), then select or copy it straight from the properties panel. Recognition happens in a Web Worker on your machine — nothing is sent anywhere.
+
+### 💾 Built to Protect Your Work
+Background autosave, session recovery if a tab closes unexpectedly, a history of recent projects with their own settings, and full undo/redo — including drag-reorders.
+
+### ⚡ The Rest
+Installable as a desktop or mobile PWA and works offline. A command palette (`⌘K`) and keyboard shortcuts for everything. Light, dark, or system theme. Update notifications when a new version ships.
+
+<br>
+
+## 🔒 Privacy
+
+Bindery has **no backend**. Files, extracted text, projects, and generated PDFs all stay on your device — processed locally and stored via IndexedDB.
+
+**Nothing is uploaded, ever.**
+
+<br>
+
+## 🧱 Tech Stack
+
+| | |
+|---|---|
+| **Framework** | React 19 + TypeScript (strict) |
+| **Build tool** | Vite |
+| **Styling** | Tailwind CSS v4 |
+| **State** | Zustand |
+| **Local storage** | Dexie (IndexedDB) |
+| **PDF generation** | pdf-lib |
+| **OCR** | Tesseract.js, in a Web Worker |
+| **Drag & drop / sorting** | dnd-kit |
+| **Motion** | Framer Motion |
+| **File import** | react-dropzone |
+
+<br>
+
+## 🛠️ Getting Started
+
+**Prerequisites:** Node.js and npm
+
+```bash
+git clone https://github.com/adnan-bhaldar/Bindery.git
+cd Bindery
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Open the local URL printed in your terminal and start dropping in images. 🎉
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run build      # production build
+npm run preview    # preview the production build locally
+npm run lint       # run ESLint
 ```
+
+<br>
+
+<div align="center">
+
+Made with ❤️ 
+<!-- by <a href="https://github.com/adnan-bhaldar"><strong>Adnan Bhaldar</strong></a> -->
+
+</div>
