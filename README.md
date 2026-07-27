@@ -113,9 +113,15 @@ npm run lint       # run ESLint
 
 <br>
 
+## 📄 License
+
+This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
+
+<br>
+
 <div align="center">
 
-Made with ❤️ 
+# Made with ❤️ 
 <!-- by <a href="https://github.com/adnan-bhaldar"><strong>Adnan Bhaldar</strong></a> -->
 
 </div>
