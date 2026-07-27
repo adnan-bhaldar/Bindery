@@ -22,7 +22,7 @@
 <br>
 
 <p align="center">
-  <img src="./preview.png" alt="Bindery — the same document assembly workspace shown in light and dark theme" width="100%">
+  <img src="./public/preview.png" alt="Bindery — the same document assembly workspace shown in light and dark theme" width="100%">
 </p>
 
 <br>
