@@ -59,26 +59,6 @@ export const AppShell = memo(() => {
     }
   }, [currentProject, pages, setCurrentProject, markSaved, settings.maxRecoverySnapshots])
 
-  // ── Open file handler ────────────────────────────────────────────────────────
-  const handleOpenFile = useCallback(() => {
-    const input = document.createElement('input')
-    input.type = 'file'
-    input.accept = '.bindery'
-    input.onchange = async () => {
-      const file = input.files?.[0]
-      if (!file) return
-      try {
-        const result = await projectService.importProjectFile(file)
-        setCurrentProject(result.project)
-        suppressNextDirtyFlag(); setPages(result.pages)
-        toast.success(`Opened "${result.project.name}"`)
-      } catch {
-        toast.error('Invalid .bindery file')
-      }
-    }
-    input.click()
-  }, [setCurrentProject, setPages])
-
   const handleNewProject = useCallback(async () => {
     const project = await projectService.createProject()
     suppressNextDirtyFlag()
@@ -148,7 +128,6 @@ export const AppShell = memo(() => {
         onImport={importFromPicker}
         onSave={handleSave}
         onNewProject={handleNewProject}
-        onOpenFile={handleOpenFile}
       />
       <ImportProgressOverlay progress={importProgress} isVisible={isImporting && pages.length > 0} />
       <OCRProgressPanel progress={ocrProgress} onCancel={cancelOCR} />

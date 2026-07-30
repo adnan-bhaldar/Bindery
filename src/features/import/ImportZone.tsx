@@ -2,7 +2,7 @@ import { memo, useCallback } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { Upload } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ACCEPTED_IMAGE_TYPES } from '@/constants'
+import { ACCEPTED_IMPORT_TYPES } from '@/constants'
 
 interface Props {
     onFiles: (files: File[]) => void
@@ -17,7 +17,7 @@ export const ImportZone = memo(({ onFiles, isImporting, children }: Props) => {
 
     const { getRootProps, getInputProps, isDragActive } = useDropzone({
         onDrop,
-        accept: ACCEPTED_IMAGE_TYPES,
+        accept: ACCEPTED_IMPORT_TYPES,
         noClick: true, // Don't open picker on click — we have explicit buttons
         noKeyboard: true,
         disabled: isImporting,

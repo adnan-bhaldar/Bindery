@@ -10,6 +10,7 @@ interface Props {
 
 export const PHASE_LABELS: Record<IProgress['phase'], string> = {
     validating: 'Checking files…',
+    'rendering-pdf': 'Rendering PDF pages…',
     hashing: 'Checking for duplicates…',
     thumbnails: 'Processing images…',
     saving: 'Saving…',

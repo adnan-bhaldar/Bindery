@@ -5,7 +5,7 @@ import { useDropzone } from 'react-dropzone'
 import { useUIStore } from '@/stores/uiStore'
 import { usePagesStore, selectPageCount } from '@/stores/pagesStore'
 import { PreviewWorkspace } from '@/features/preview/PreviewWorkspace'
-import { ACCEPTED_IMAGE_TYPES } from '@/constants'
+import { ACCEPTED_IMPORT_TYPES } from '@/constants'
 import { PHASE_LABELS } from '@/features/import/ImportProgress'
 import type { ImportProgress } from '@/services/importService'
 
@@ -21,7 +21,7 @@ export const Workspace = memo(({ onImport, isImporting, onDrop, importProgress }
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    accept: ACCEPTED_IMAGE_TYPES,
+    accept: ACCEPTED_IMPORT_TYPES,
     noClick: true,
     noKeyboard: true,
     disabled: isImporting,
@@ -177,7 +177,7 @@ const EmptyState = memo(({ onImport }: { onImport: () => void }) => {
           style={{ textAlign: 'center', marginBottom: 28 }}>
           <h2 className="ws-card-title">Drop images to get started</h2>
           <p className="ws-card-sub">
-            Supports JPG, PNG, WEBP, GIF, BMP, TIFF, HEIC
+            Supports JPG, PNG, WEBP, GIF, BMP, TIFF, HEIC, PDF
           </p>
         </div>
 

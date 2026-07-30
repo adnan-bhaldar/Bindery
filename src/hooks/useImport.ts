@@ -153,7 +153,7 @@ export function useImport(): UseImportReturn {
         const input = document.createElement('input')
         input.type = 'file'
         input.multiple = true
-        input.accept = 'image/jpeg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/heic,image/heif'
+        input.accept = 'image/jpeg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/heic,image/heif,application/pdf'
         input.onchange = async () => {
             const files = Array.from(input.files ?? [])
             if (files.length > 0) await importFiles(files)

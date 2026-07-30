@@ -24,7 +24,7 @@ export interface ImportResult {
 }
 
 export interface ImportProgress {
-    phase: 'validating' | 'hashing' | 'thumbnails' | 'saving' | 'done'
+    phase: 'validating' | 'rendering-pdf' | 'hashing' | 'thumbnails' | 'saving' | 'done'
     current: number
     total: number
     currentFile: string
@@ -118,8 +118,29 @@ class ImportService {
         const result: ImportResult = { imported: [], duplicates: [], errors: [], lowResolution: [], total: files.length }
         const existingPageCount = existingPages.length
 
+        // Expand any PDFs into one rendered image per page first — from
+        // this point on, every downstream step (validation, hashing,
+        // thumbnailing, Page creation) just sees ordinary images and needs
+        // no PDF-specific handling at all.
+        const hasPdf = files.some(f => f.type === 'application/pdf')
+        let workingFiles = files
+        if (hasPdf) {
+            const pdfPageTotal = files.filter(f => f.type === 'application/pdf').length
+            onProgress?.({ phase: 'rendering-pdf', current: 0, total: pdfPageTotal, currentFile: '' })
+            const { pdfImportService } = await import('./pdfImportService')
+            const expanded = await pdfImportService.expandAll(files, (p) => {
+                onProgress?.({
+                    phase: 'rendering-pdf',
+                    current: p.pageIndex, total: p.pageCount,
+                    currentFile: p.fileName,
+                })
+            })
+            workingFiles = expanded.files
+            result.errors.push(...expanded.errors)
+        }
+
         const validFiles: File[] = []
-        for (const file of files) {
+        for (const file of workingFiles) {
             const err = validateFile(file)
             if (err) result.errors.push({ filename: file.name, reason: err })
             else validFiles.push(file)

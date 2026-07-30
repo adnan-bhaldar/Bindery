@@ -4,8 +4,6 @@ export const APP_NAME = 'Bindery'
 export const APP_VERSION = '1.0.0'
 export const APP_DESCRIPTION = 'Professional image to PDF converter'
 export const APP_AUTHOR = 'Bindery'
-export const APP_FILE_EXTENSION = '.bindery'
-export const APP_MIME_TYPE = 'application/x-bindery'
 
 // ─── Database ─────────────────────────────────────────────────────────────────
 
@@ -58,6 +56,18 @@ export const ACCEPTED_IMAGE_TYPES = {
 } as const
 
 export const ACCEPTED_IMAGE_MIME_TYPES = Object.keys(ACCEPTED_IMAGE_TYPES)
+
+// PDFs are accepted as an import source too — each page is rendered to an
+// image and dropped into the exact same page pipeline as a photo import
+// (see pdfImportService.ts), so every existing page operation (reorder,
+// rotate, delete, margins, OCR, export) works on PDF-sourced pages with no
+// special-casing anywhere else in the app.
+export const ACCEPTED_PDF_TYPE = { 'application/pdf': ['.pdf'] } as const
+
+export const ACCEPTED_IMPORT_TYPES = {
+    ...ACCEPTED_IMAGE_TYPES,
+    ...ACCEPTED_PDF_TYPE,
+} as const
 
 // ─── Performance ──────────────────────────────────────────────────────────────
 

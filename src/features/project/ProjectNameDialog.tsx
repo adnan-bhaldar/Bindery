@@ -191,41 +191,6 @@ export const ProjectDropdown = memo(({ anchor, onClose }: Props) => {
               New Project
             </button>
 
-            <button
-              onClick={() => {
-                onClose()
-                const input = document.createElement('input')
-                input.type = 'file'; input.accept = '.bindery'
-                input.onchange = async () => {
-                  const f = input.files?.[0]; if (!f) return
-                  try {
-                    const r = await projectService.importProjectFile(f)
-                    setCurrentProject(r.project); suppressNextDirtyFlag(); setPages(r.pages)
-                    toast.success(`Opened "${r.project.name}"`)
-                  } catch { toast.error('Invalid .bindery file') }
-                }
-                input.click()
-              }}
-              style={{
-                width: '100%', display: 'flex', alignItems: 'center', gap: 10,
-                padding: '8px 14px', border: 'none', background: 'transparent',
-                color: 'var(--tx-2)', fontSize: 12.5, fontFamily: 'var(--font-sans)',
-                cursor: 'pointer', transition: 'background 110ms',
-                textAlign: 'left',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.background = 'var(--hover)' }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
-            >
-              <div style={{
-                width: 26, height: 26, borderRadius: 8,
-                background: 'var(--s4)', border: '1px solid var(--border)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-              }}>
-                <FolderOpen size={13} color="var(--tx-3)" />
-              </div>
-              Open .bindery file
-            </button>
-
             {/* Recents */}
             {recents.length > 0 && (
               <>

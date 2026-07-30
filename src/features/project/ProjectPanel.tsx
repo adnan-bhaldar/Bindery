@@ -2,8 +2,8 @@ import { useShallow } from 'zustand/react/shallow'
 import { memo, useEffect, useCallback, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-    FolderOpen, Plus, Clock, Trash2,
-    FileText, Save, Download,
+    Plus, Clock, Trash2,
+    FileText, Save,
 } from 'lucide-react'
 import { suppressNextDirtyFlag } from '@/stores/storeLinks'
 import { useProjectStore } from '@/stores/projectStore'
@@ -164,41 +164,6 @@ export const ProjectPanel = memo(() => {
         }
     }, [removeRecentProject, recentProjects, confirm])
 
-    const handleExportFile = useCallback(async () => {
-        if (!currentProject) return
-        try {
-            const blob = await projectService.exportProjectFile(useProjectStore.getState().currentProject!, usePagesStore.getState().pages)
-            const url = URL.createObjectURL(blob)
-            const a = document.createElement('a')
-            a.href = url
-            a.download = `${currentProject.name}.bindery`
-            a.click()
-            URL.revokeObjectURL(url)
-            toast.success('Project exported as .bindery file')
-        } catch {
-            toast.error('Export failed')
-        }
-    }, [currentProject])
-
-    const handleImportFile = useCallback(() => {
-        const input = document.createElement('input')
-        input.type = 'file'
-        input.accept = '.bindery'
-        input.onchange = async () => {
-            const file = input.files?.[0]
-            if (!file) return
-            try {
-                const result = await projectService.importProjectFile(file)
-                setCurrentProject(result.project)
-                suppressNextDirtyFlag(); setPages(result.pages)
-                toast.success(`Imported "${result.project.name}"`)
-            } catch {
-                toast.error('Invalid .bindery file')
-            }
-        }
-        input.click()
-    }, [setCurrentProject, setPages])
-
     return (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
 
@@ -250,29 +215,18 @@ export const ProjectPanel = memo(() => {
                                     {saving ? 'Saving…' : 'Save'}
                                 </button>
                             </Tooltip>
-                            <Tooltip content="Export .bindery file" placement="top">
-                                <button
-                                    onClick={handleExportFile}
-                                    style={{ ...projectBtnStyle, flex: 1 }}
-                                    onMouseEnter={e => { e.currentTarget.style.background = 'var(--s5)' }}
-                                    onMouseLeave={e => { e.currentTarget.style.background = 'var(--s4)' }}
-                                >
-                                    <Download size={12} />
-                                    Export
-                                </button>
-                            </Tooltip>
                         </div>
                     </div>
                 </div>
             ) : (
                 <div style={{ padding: '14px 14px 0' }}>
                     <p style={{ fontSize: 11.5, color: 'var(--tx-3)', lineHeight: 1.5, marginBottom: 10 }}>
-                        No project open. Create a new project or open a .bindery file.
+                        No project open. Create a new project to get started.
                     </p>
                 </div>
             )}
 
-            {/* New / Open buttons */}
+            {/* New project button */}
             <div style={{ padding: '12px 14px 0', display: 'flex', gap: 6 }}>
                 <button
                     onClick={handleNew}
@@ -283,17 +237,6 @@ export const ProjectPanel = memo(() => {
                     <Plus size={12} />
                     New Project
                 </button>
-                <Tooltip content="Open .bindery file" placement="top">
-                    <button
-                        onClick={handleImportFile}
-                        style={{ ...projectBtnStyle, flex: 1 }}
-                        onMouseEnter={e => { e.currentTarget.style.background = 'var(--s5)' }}
-                        onMouseLeave={e => { e.currentTarget.style.background = 'var(--s4)' }}
-                    >
-                        <FolderOpen size={12} />
-                        Open
-                    </button>
-                </Tooltip>
             </div>
 
             {/* Recents */}

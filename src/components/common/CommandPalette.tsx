@@ -2,7 +2,7 @@ import { memo, useCallback } from 'react'
 import { Command } from 'cmdk'
 import {
     Upload, Download, RotateCw, Trash2, Settings,
-    Moon, Sun, ScanText, Save, FolderOpen,
+    Moon, Sun, ScanText, Save,
     Plus, Layers,
 } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
@@ -33,11 +33,10 @@ interface Props {
     onImport: () => void
     onSave: () => void
     onNewProject: () => void
-    onOpenFile: () => void
 }
 
 export const CommandPalette = memo(({
-    onOpenSettings, onRunOCR, onImport, onSave, onNewProject, onOpenFile,
+    onOpenSettings, onRunOCR, onImport, onSave, onNewProject,
 }: Props) => {
     const { isCommandPaletteOpen, closeCommandPalette } = useUIStore()
     const { openDialog: openExport } = useExportStore()
@@ -105,10 +104,6 @@ export const CommandPalette = memo(({
         {
             id: 'new', label: 'New Project', desc: 'Start fresh',
             Icon: Plus, group: 'Actions', action: onNewProject,
-        },
-        {
-            id: 'open', label: 'Open Project', desc: 'Open a .bindery file',
-            Icon: FolderOpen, group: 'Actions', action: onOpenFile,
         },
         {
             id: 'rotate', label: 'Rotate Selected Pages', desc: '90° clockwise',
