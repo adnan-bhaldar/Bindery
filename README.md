@@ -13,7 +13,7 @@
 <br>
 
 [![PWA](https://img.shields.io/badge/PWA-installable-7c6df2?style=flat-square)](#)
-[![License: MIT](https://img.shields.io/badge/license-MIT-8b8b9e?style=flat-square)](#license)
+[![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-8b8b9e?style=flat-square)](#license)
 [![Built with Vite](https://img.shields.io/badge/built%20with-Vite-a78bfa?style=flat-square)](#tech-stack)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-7c6df2?style=flat-square)](#tech-stack)
 
