@@ -15,6 +15,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
     reducedMotion: false,
     compactMode: false,
     enableWorkspaceContextMenu: false,
+    showImportTypeChooser: false,
 
     // Import
     autoGenerateThumbnails: true,

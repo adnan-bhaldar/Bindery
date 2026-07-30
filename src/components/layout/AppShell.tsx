@@ -7,6 +7,7 @@ import { Workspace } from './Workspace'
 import { PropertiesPanel } from './PropertiesPanel'
 import { CommandPalette } from '@/components/common/CommandPalette'
 import { ImportProgressOverlay } from '@/features/import/ImportProgress'
+import { ImportTypeDialog } from '@/features/import/ImportTypeDialog'
 import { ExportDialog } from '@/features/export/ExportDialog'
 import { SettingsDialog } from '@/features/settings/SettingsDialog'
 import { OCRProgressPanel } from '@/features/ocr/OCRProgressPanel'
@@ -29,7 +30,10 @@ export const AppShell = memo(() => {
   useAccessibilitySettings()
 
   const [settingsOpen, setSettingsOpen] = useState(false)
-  const { isImporting, progress: importProgress, importFiles, importFromPicker } = useImport()
+  const {
+    isImporting, progress: importProgress, importFiles, importFromPicker,
+    showImportChooser, chooseImportImages, chooseImportPdf, cancelImportChooser,
+  } = useImport()
   const { progress: ocrProgress, runOCR, cancelOCR } = useOCR()
   const { settings } = useSettingsStore()
 
@@ -130,6 +134,12 @@ export const AppShell = memo(() => {
         onNewProject={handleNewProject}
       />
       <ImportProgressOverlay progress={importProgress} isVisible={isImporting && pages.length > 0} />
+      <ImportTypeDialog
+        open={showImportChooser}
+        onChooseImages={chooseImportImages}
+        onChoosePdf={chooseImportPdf}
+        onClose={cancelImportChooser}
+      />
       <OCRProgressPanel progress={ocrProgress} onCancel={cancelOCR} />
       <ExportDialog />
       <SettingsDialog isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />

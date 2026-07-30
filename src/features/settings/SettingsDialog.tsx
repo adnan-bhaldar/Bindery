@@ -656,8 +656,11 @@ const ImportSection = memo(() => {
                 <CardRow label="Generate thumbnails automatically" desc="Create preview thumbnails when images are imported">
                     <Toggle checked={settings.autoGenerateThumbnails} onChange={v => updateSetting('autoGenerateThumbnails', v)} />
                 </CardRow>
-                <CardRow label="Detect duplicates" desc="Skip images already in the project, based on real content hashing" last>
+                <CardRow label="Detect duplicates" desc="Skip images already in the project, based on real content hashing">
                     <Toggle checked={settings.detectDuplicates} onChange={v => updateSetting('detectDuplicates', v)} />
+                </CardRow>
+                <CardRow label="Choose import type" desc="Ask Images or PDF before opening the file picker, instead of always showing both" last>
+                    <Toggle checked={settings.showImportTypeChooser} onChange={v => updateSetting('showImportTypeChooser', v)} />
                 </CardRow>
             </Card>
             <Card title="Quality Warnings">

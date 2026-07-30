@@ -2,10 +2,12 @@ import { useShallow } from 'zustand/react/shallow'
 import { memo, useState, useRef, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Check, FolderOpen, Plus, Clock, Trash2 } from 'lucide-react'
+import { Check, FolderOpen, Plus, Clock, Trash2, FileText } from 'lucide-react'
 import { useProjectStore } from '@/stores/projectStore'
 import { projectService, formatProjectDate } from '@/services/projectService'
+import { importService } from '@/services/importService'
 import { usePagesStore } from '@/stores/pagesStore'
+import { useSettingsStore } from '@/stores/settingsStore'
 import { toast } from 'sonner'
 import type { Project } from '@/types'
 import { suppressNextDirtyFlag } from '@/stores/storeLinks'
@@ -62,6 +64,49 @@ export const ProjectDropdown = memo(({ anchor, onClose }: Props) => {
     toast.success('New project created')
     onClose()
   }, [clearPages, setCurrentProject, onClose])
+
+  const handleOpenPdf = useCallback(() => {
+    onClose()
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = 'application/pdf'
+    input.onchange = async () => {
+      const file = input.files?.[0]
+      if (!file) return
+      try {
+        const project = await projectService.createProject(file.name.replace(/\.pdf$/i, ''))
+        suppressNextDirtyFlag()
+        clearPages()
+        setCurrentProject(project)
+
+        // Lazy-loaded — pdfjs-dist only needs to be fetched when someone
+        // actually opens a PDF this way, same reasoning as the main import
+        // pipeline's dynamic import of pdfImportService.
+        const { pdfImportService } = await import('@/services/pdfImportService')
+        const renderedFiles = await pdfImportService.expandToImageFiles(file)
+
+        const settings = useSettingsStore.getState().settings
+        const result = await importService.importFiles(
+          renderedFiles, project.id, [], undefined,
+          settings.detectDuplicates, settings.thumbnailSize,
+          settings.warnLowResolution, settings.lowResolutionThreshold,
+        )
+
+        if (result.imported.length > 0) {
+          suppressNextDirtyFlag()
+          setPages(result.imported)
+        }
+        if (result.errors.length > 0) {
+          toast.error(result.errors[0].reason)
+        } else {
+          toast.success(`Opened "${project.name}" — ${result.imported.length} page${result.imported.length !== 1 ? 's' : ''}`)
+        }
+      } catch {
+        toast.error('Could not open this PDF')
+      }
+    }
+    input.click()
+  }, [clearPages, setCurrentProject, setPages, onClose])
 
   const handleOpen = useCallback(async (project: Project) => {
     try {
@@ -189,6 +234,29 @@ export const ProjectDropdown = memo(({ anchor, onClose }: Props) => {
                 <Plus size={13} color="var(--accent)" />
               </div>
               New Project
+            </button>
+
+            {/* Open project from PDF */}
+            <button
+              onClick={handleOpenPdf}
+              style={{
+                width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+                padding: '10px 14px', border: 'none', background: 'transparent',
+                color: 'var(--tx-2)', fontSize: 12.5, fontFamily: 'var(--font-sans)',
+                cursor: 'pointer', transition: 'background 110ms',
+                textAlign: 'left',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'var(--hover)' }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+            >
+              <div style={{
+                width: 26, height: 26, borderRadius: 8,
+                background: 'var(--s4)', border: '1px solid var(--border)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+              }}>
+                <FileText size={13} color="var(--tx-3)" />
+              </div>
+              Open Project (PDF)
             </button>
 
             {/* Recents */}

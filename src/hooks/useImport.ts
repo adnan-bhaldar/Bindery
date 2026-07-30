@@ -15,6 +15,10 @@ export interface UseImportReturn {
     importFiles: (files: File[]) => Promise<void>
     importFromPicker: () => Promise<void>
     importFromClipboard: () => Promise<void>
+    showImportChooser: boolean
+    chooseImportImages: () => void
+    chooseImportPdf: () => void
+    cancelImportChooser: () => void
 }
 
 export function useImport(): UseImportReturn {
@@ -59,7 +63,7 @@ export function useImport(): UseImportReturn {
         // Fire-and-forget: register it as the tracked project right away so
         // refreshing before the first autosave tick still has a project (and
         // soon a snapshot) to recover.
-        projectService.persistProject(project).catch(() => {})
+        projectService.persistProject(project).catch(() => { })
         return id
     }, [])
 
@@ -149,17 +153,42 @@ export function useImport(): UseImportReturn {
         }
     }, [ensureProject, addPages, setDirty, pushHistory, settings])
 
-    const importFromPicker = useCallback(async () => {
+    const IMAGE_ACCEPT = 'image/jpeg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/heic,image/heif'
+    const PDF_ACCEPT = 'application/pdf'
+
+    const pickFiles = useCallback((accept: string) => {
         const input = document.createElement('input')
         input.type = 'file'
         input.multiple = true
-        input.accept = 'image/jpeg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/heic,image/heif,application/pdf'
+        input.accept = accept
         input.onchange = async () => {
             const files = Array.from(input.files ?? [])
             if (files.length > 0) await importFiles(files)
         }
         input.click()
     }, [importFiles])
+
+    const [showImportChooser, setShowImportChooser] = useState(false)
+
+    const importFromPicker = useCallback(async () => {
+        if (settings.showImportTypeChooser) {
+            setShowImportChooser(true)
+            return
+        }
+        pickFiles(IMAGE_ACCEPT)
+    }, [settings.showImportTypeChooser, pickFiles])
+
+    const chooseImportImages = useCallback(() => {
+        setShowImportChooser(false)
+        pickFiles(IMAGE_ACCEPT)
+    }, [pickFiles])
+
+    const chooseImportPdf = useCallback(() => {
+        setShowImportChooser(false)
+        pickFiles(PDF_ACCEPT)
+    }, [pickFiles])
+
+    const cancelImportChooser = useCallback(() => setShowImportChooser(false), [])
 
     const importFromClipboard = useCallback(async () => {
         try {
@@ -184,5 +213,8 @@ export function useImport(): UseImportReturn {
         }
     }, [importFiles])
 
-    return { isImporting, progress, importFiles, importFromPicker, importFromClipboard }
+    return {
+        isImporting, progress, importFiles, importFromPicker, importFromClipboard,
+        showImportChooser, chooseImportImages, chooseImportPdf, cancelImportChooser,
+    }
 }
