@@ -1,6 +1,6 @@
 <div align="center">
 
-#  Bindery
+# Bindery
 
 ### Turn a pile of photos and screenshots into a clean, exportable PDF.
 
@@ -44,25 +44,30 @@
 
 Drop your files in, arrange and clean up the pages, adjust how each image sits on the page, optionally pull out text with on-device OCR, and export one properly formatted document. No upload, no account, no server round-trip — everything runs locally and stays on your device.
 
-> 💡 Built for the pile of paperwork everyone has — forms, receipts, ID cards, handwritten notes, whiteboard photos, screenshots — all the things you need as *one document*, but only ever have as a folder of mismatched images.
+> 💡 Built for the pile of paperwork everyone has — forms, receipts, ID cards, handwritten notes, whiteboard photos, screenshots — all the things you need as _one document_, but only ever have as a folder of mismatched images.
 
 <br>
 
 ## 🚀 Features
 
 ### 📥 Import & Organize
-Drag-and-drop or browse to import. Work in Grid, List, Single-page, or Continuous scroll view. Reorder by dragging, rotate, duplicate, delete, or set a cover page — with Smart Scan flagging likely duplicate or blank pages along the way.
+
+Drag-and-drop or browse to import — including PDFs, not just images. Every page of an imported PDF becomes a fully editable page, just like a photo: reorder by dragging, rotate, duplicate, delete, or set a cover page — with Smart Scan flagging likely duplicate or blank pages along the way. Work in Grid, List, Single-page, or Continuous scroll view throughout.
 
 ### 🎛️ Per-Page & Project-Wide Control
+
 Every page can be tuned independently — Image Fit (`Fit` / `Fill` / `Original` / `Stretch`) and margin — or you can bulk-apply a setting across the whole project. Choose a page size (`A4`, `Letter`, `A3`, or `Auto`, sized exactly to each image) and orientation, then zoom and pan in single-page view before you export.
 
 ### 🔎 On-Device OCR
+
 Extract text in English, Hindi, or Marathi (or let it auto-detect), then select or copy it straight from the properties panel. Recognition happens in a Web Worker on your machine — nothing is sent anywhere.
 
 ### 💾 Built to Protect Your Work
+
 Background autosave, session recovery if a tab closes unexpectedly, a history of recent projects with their own settings, and full undo/redo — including drag-reorders.
 
 ### ⚡ The Rest
+
 Installable as a desktop or mobile PWA and works offline. A command palette (`⌘K`) and keyboard shortcuts for everything. Light, dark, or system theme. Update notifications when a new version ships.
 
 <br>
@@ -77,18 +82,18 @@ Bindery has **no backend**. Files, extracted text, projects, and generated PDFs 
 
 ## 🧱 Tech Stack
 
-| | |
-|---|---|
-| **Framework** | React 19 + TypeScript (strict) |
-| **Build tool** | Vite |
-| **Styling** | Tailwind CSS v4 |
-| **State** | Zustand |
-| **Local storage** | Dexie (IndexedDB) |
-| **PDF generation** | pdf-lib |
-| **OCR** | Tesseract.js, in a Web Worker |
-| **Drag & drop / sorting** | dnd-kit |
-| **Motion** | Framer Motion |
-| **File import** | react-dropzone |
+|                           |                                |
+| ------------------------- | ------------------------------ |
+| **Framework**             | React 19 + TypeScript (strict) |
+| **Build tool**            | Vite                           |
+| **Styling**               | Tailwind CSS v4                |
+| **State**                 | Zustand                        |
+| **Local storage**         | Dexie (IndexedDB)              |
+| **PDF generation**        | pdf-lib                        |
+| **OCR**                   | Tesseract.js, in a Web Worker  |
+| **Drag & drop / sorting** | dnd-kit                        |
+| **Motion**                | Framer Motion                  |
+| **File import**           | react-dropzone                 |
 
 <br>
 
@@ -106,22 +111,22 @@ npm run dev
 Open the local URL printed in your terminal and start dropping in images. 🎉
 
 ```bash
-npm run build      # production build
-npm run preview    # preview the production build locally
-npm run lint       # run ESLint
+npm run build # production build
+npm run preview # preview the production build locally
+npm run lint # run ESLint
 ```
 
 <br>
 
 ## 📄 License
 
-This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
+GPL-3.0 — see [LICENSE](./LICENSE) for details.
 
 <br>
 
 <div align="center">
 
-# Made with ❤️ 
+## Made with ❤️ 
 <!-- by <a href="https://github.com/adnan-bhaldar"><strong>Adnan Bhaldar</strong></a> -->
 
 </div>
