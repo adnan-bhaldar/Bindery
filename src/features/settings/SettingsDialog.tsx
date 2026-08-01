@@ -15,7 +15,7 @@ import { Toggle } from '@/components/ui/Toggle'
 import { Spinner } from '@/components/ui/Spinner'
 import { useConfirm } from '@/components/ui/ConfirmDialog'
 import { Tooltip } from '@/components/ui/Tooltip'
-import { OCR_LANGUAGE_LABELS } from '@/constants'
+import { OCR_LANGUAGE_LABELS, APP_VERSION } from '@/constants'
 import { getStorageStats, clearDatabase, type StorageStats } from '@/db/schema'
 import { formatFileSize } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -1098,7 +1098,7 @@ const AboutSection = memo(() => (
                         Bindery
                     </p>
                     <p style={{ fontSize: 12, color: 'var(--tx-3)', marginTop: 2 }}>
-                        Version 1.0.0 · Professional Image to PDF
+                        Version {APP_VERSION} · Professional Image to PDF
                     </p>
                 </div>
             </div>
