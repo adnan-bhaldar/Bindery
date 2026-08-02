@@ -12,10 +12,9 @@ export const CHANGELOG: ChangelogEntry[] = [
     {
         version: '1.6.1',
         highlights: [
-            'Import PDFs, not just images — every page becomes fully editable',
-            'Choose Images or PDF before importing, if you turn that on in Settings',
-            'Drag pages to reorder them directly in the workspace grid',
-            'You\'ll now see a prompt the moment a new version is ready, instead of finding out later',
+            'A "What\'s New" summary now appears after an update, showing what changed',
+            'Refreshed the Images/PDF import chooser with a more polished, modern look',
+            'Moved the import-chooser setting to the Import section, where it belongs',
         ],
     },
 ]

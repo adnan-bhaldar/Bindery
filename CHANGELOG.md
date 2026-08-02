@@ -9,6 +9,10 @@ baseline.
 
 ## [1.6.1] 
 
+### Added
+- A "What's New" dialog now appears once after updating to a new version,
+  summarizing what changed
+
 ### Changed
 
 - Redesigned the Images/PDF import chooser dialog with the app's premium

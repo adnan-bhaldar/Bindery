@@ -1,10 +1,55 @@
-import { memo } from 'react'
+import { memo, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Sparkles, X, Check } from 'lucide-react'
 import { useWhatsNew } from '@/hooks/useWhatsNew'
 
+const FOCUSABLE_SELECTOR = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+
 export const WhatsNewDialog = memo(() => {
     const { entry, dismiss } = useWhatsNew()
+    const dialogRef = useRef<HTMLDivElement>(null)
+    const previouslyFocused = useRef<HTMLElement | null>(null)
+
+    // Initial focus + focus restoration, and a basic Tab-cycle trap so
+    // keyboard focus can't escape into the (visually obscured) app behind
+    // the dialog while it's open.
+    useEffect(() => {
+        if (!entry) return
+
+        previouslyFocused.current = document.activeElement as HTMLElement | null
+        dialogRef.current?.focus()
+
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                e.preventDefault()
+                dismiss()
+                return
+            }
+            if (e.key !== 'Tab' || !dialogRef.current) return
+
+            const focusable = Array.from(
+                dialogRef.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)
+            )
+            if (focusable.length === 0) return
+
+            const first = focusable[0]
+            const last = focusable[focusable.length - 1]
+
+            if (e.shiftKey && document.activeElement === first) {
+                e.preventDefault()
+                last.focus()
+            } else if (!e.shiftKey && document.activeElement === last) {
+                e.preventDefault()
+                first.focus()
+            }
+        }
+
+        window.addEventListener('keydown', handleKeyDown)
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown)
+            previouslyFocused.current?.focus()
+        }
+    }, [entry, dismiss])
 
     return (
         <AnimatePresence>
@@ -17,10 +62,16 @@ export const WhatsNewDialog = memo(() => {
                         background: 'radial-gradient(circle at 50% 40%, rgba(124,109,242,0.08), rgba(0,0,0,0.6) 70%)',
                         backdropFilter: 'blur(6px)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        padding: 16,
                     }}
                     onClick={dismiss}
                 >
                     <motion.div
+                        ref={dialogRef}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="whats-new-title"
+                        tabIndex={-1}
                         initial={{ scale: 0.92, opacity: 0, y: 14 }}
                         animate={{ scale: 1, opacity: 1, y: 0 }}
                         exit={{ scale: 0.94, opacity: 0, y: 8, transition: { duration: 0.15 } }}
@@ -28,11 +79,14 @@ export const WhatsNewDialog = memo(() => {
                         onClick={e => e.stopPropagation()}
                         style={{
                             position: 'relative',
-                            width: 400, background: 'var(--bg-overlay)',
+                            width: 'min(400px, calc(100vw - 32px))',
+                            boxSizing: 'border-box',
+                            background: 'var(--bg-overlay)',
                             border: '1px solid var(--border-hard)', borderRadius: 22,
                             padding: 22,
                             boxShadow: 'var(--sh-xl), 0 0 60px rgba(124,109,242,0.12)',
                             overflow: 'hidden',
+                            outline: 'none',
                         }}
                     >
                         <div style={{
@@ -53,7 +107,7 @@ export const WhatsNewDialog = memo(() => {
                                     <Sparkles size={16} color="#fff" strokeWidth={2} />
                                 </div>
                                 <div>
-                                    <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--tx-1)', letterSpacing: '-0.2px' }}>
+                                    <p id="whats-new-title" style={{ fontSize: 15, fontWeight: 700, color: 'var(--tx-1)', letterSpacing: '-0.2px' }}>
                                         What's new
                                     </p>
                                     <p style={{ fontSize: 11, color: 'var(--tx-3)', fontFamily: 'var(--font-mono)' }}>
