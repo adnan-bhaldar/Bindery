@@ -7,6 +7,13 @@ usage, so all of them are `MINOR` or `PATCH` bumps against the `1.0.0`
 baseline.
 
 
+## [1.6.2] 
+
+### Changed
+
+- Updated the logo shown in the install banner for a more polished appearance
+- Added descriptive alt text to all logo images for improved accessibility
+
 ## [1.6.1] 
 
 ### Added
