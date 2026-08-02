@@ -10,11 +10,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
     {
-        version: '1.6.1',
+        version: '1.6.2',
         highlights: [
             'A "What\'s New" summary now appears after an update, showing what changed',
-            'Refreshed the Images/PDF import chooser with a more polished, modern look',
-            'Moved the import-chooser setting to the Import section, where it belongs',
+            'Refreshed the install banner with an updated app logo',
+            'Added alt text to all logo images to improve accessibility',
         ],
     },
 ]

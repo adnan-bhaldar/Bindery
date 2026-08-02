@@ -1,6 +1,6 @@
 import { memo, useState, useCallback, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Download, X, BookOpen } from 'lucide-react'
+import { Download, X } from 'lucide-react'
 import { usePWA } from '@/hooks/usePWA'
 import { APP_NAME } from '@/constants'
 
@@ -93,7 +93,11 @@ export const InstallBanner = memo(() => {
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                             flexShrink: 0,
                         }}>
-                            <BookOpen size={15} color="#fff" strokeWidth={2.5} />
+                            <img
+                                src="/icons/favicon.svg"
+                                alt="logo"
+                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            />
                         </div>
                         <div style={{ flex: 1 }}>
                             <p style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--tx-1)', letterSpacing: '-0.2px' }}>

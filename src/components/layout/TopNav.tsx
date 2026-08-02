@@ -45,7 +45,7 @@ export const TopNav = memo(({ onRunOCR, onSettings }: Props) => {
           <div className="nav-logo-mark">
             <img
               src="/icons/favicon.svg"
-              alt=""
+              alt="logo"
               style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 'inherit' }}
             />
           </div>
