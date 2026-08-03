@@ -7,6 +7,12 @@ usage, so all of them are `MINOR` or `PATCH` bumps against the `1.0.0`
 baseline.
 
 
+## [1.6.3] 
+
+### Changed
+
+- The "What's New" dialog now features a scroll bar for longer entries
+
 ## [1.6.2] 
 
 ### Changed
