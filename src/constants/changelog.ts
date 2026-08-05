@@ -10,12 +10,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
     {
-        version: '1.6.3',
+        version: '1.6.4',
         highlights: [
-            'A "What\'s New" summary now appears after an update, showing what changed',
-            'Refreshed the install banner with an updated app logo',
-            'Added alt text to all logo images to improve accessibility',
-            'If there are more than 5 entries, a More button with a down arrow will appear below the last entry.'
+            'Fixed "Remove all" not working for blank pages detected by Smart Scan',
+            'Smart Tools is now available even when no page is selected',
+            'Fixed inconsistent spacing in the Page panel between selected and empty states',
         ],
     },
 ]

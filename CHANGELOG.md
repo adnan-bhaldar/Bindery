@@ -6,6 +6,13 @@ release below adds functionality or fixes bugs without breaking existing
 usage, so all of them are `MINOR` or `PATCH` bumps against the `1.0.0`
 baseline.
 
+## [1.6.4] 
+
+### Fixed
+
+- "Remove all" in Smart Scan not clearing blank pages it detected
+- Smart Tools panel not showing when no page was selected
+- Inconsistent spacing in the Page panel between the selected and empty states
 
 ## [1.6.3] 
 

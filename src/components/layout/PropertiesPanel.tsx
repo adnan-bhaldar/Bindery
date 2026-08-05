@@ -69,102 +69,102 @@ const PageTab = memo(() => {
     selectedIds.forEach(fn)
   }, [selectedIds])
 
-  if (!hasSelection || !firstSelected) {
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, minHeight: 220, padding: '0 16px', textAlign: 'center' }}>
-        <div className="sidebar-empty-icon">
-          <SlidersHorizontal size={16} strokeWidth={1.5} color="var(--tx-3)" />
-        </div>
-        <p className="sidebar-empty-title">No page selected</p>
-        <p className="sidebar-empty-desc">Select a page to adjust its properties</p>
-      </div>
-    )
-  }
-
   return (
     <div style={{ padding: '14px 14px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-      {selectedIds.length > 1 && (
-        <div style={{
-          padding: '6px 10px', borderRadius: 8,
-          background: 'var(--accent-dim)', border: '1px solid var(--accent-border)',
-          fontSize: 11, color: 'var(--accent)', fontWeight: 500,
-        }}>
-          Editing {selectedIds.length} pages
+      {!hasSelection || !firstSelected ? (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, minHeight: 125, padding: '0 16px', textAlign: 'center' }}>
+          <div className="sidebar-empty-icon">
+            <SlidersHorizontal size={16} strokeWidth={1.5} color="var(--tx-3)" />
+          </div>
+          <p className="sidebar-empty-title">No page selected</p>
+          <p className="sidebar-empty-desc">Select a page to adjust its properties</p>
         </div>
-      )}
+      ) : (
+        <>
+          {selectedIds.length > 1 && (
+            <div style={{
+              padding: '6px 10px', borderRadius: 8,
+              background: 'var(--accent-dim)', border: '1px solid var(--accent-border)',
+              fontSize: 11, color: 'var(--accent)', fontWeight: 500,
+            }}>
+              Editing {selectedIds.length} pages
+            </div>
+          )}
 
-      <div>
-        <p className="section-label">Image Fit</p>
-        <SegRow
-          options={[{ value: 'fit', label: 'Fit' }, { value: 'fill', label: 'Fill' }, { value: 'original', label: 'Original' }, { value: 'stretch', label: 'Stretch' }]}
-          value={firstSelected.imageFit}
-          onChange={v => applyToSelection(id => setPageImageFit(id, v as ImageFit))}
-          disabled={isAutoPageSize}
-          onDisabledClick={notifyAutoDisabled}
-        />
-      </div>
-      <div>
-        <p className="section-label">Margin</p>
-        <SegRow
-          options={[{ value: 'none', label: 'None' }, { value: 'small', label: 'S' }, { value: 'medium', label: 'M' }, { value: 'large', label: 'L' }]}
-          value={firstSelected.margin}
-          onChange={v => applyToSelection(id => setPageMargin(id, v as PageMargin))}
-          disabled={isAutoPageSize}
-          onDisabledClick={notifyAutoDisabled}
-        />
-      </div>
-      {selectedIds.length === 1 && firstSelected.ocrText && (
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-            <p className="section-label" style={{ margin: 0 }}>OCR Text</p>
-            <button
-              onClick={async () => {
-                const text = firstSelected.ocrText ?? ''
-                try {
-                  if (navigator.clipboard?.writeText) {
-                    await navigator.clipboard.writeText(text)
-                  } else {
-                    // Fallback for contexts where the async Clipboard API is
-                    // unavailable or blocked (e.g. permissions policy)
-                    const ta = document.createElement('textarea')
-                    ta.value = text
-                    ta.style.position = 'fixed'
-                    ta.style.opacity = '0'
-                    document.body.appendChild(ta)
-                    ta.select()
-                    document.execCommand('copy')
-                    document.body.removeChild(ta)
-                  }
-                  toast.success('OCR text copied to clipboard')
-                } catch {
-                  toast.error('Could not copy — try selecting the text manually')
-                }
-              }}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 4,
-                padding: '2px 7px', borderRadius: 6, border: 'none',
-                background: 'transparent', color: 'var(--tx-3)',
-                fontSize: 10.5, cursor: 'pointer',
-                transition: 'background 110ms, color 110ms',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.background = 'var(--hover)'; e.currentTarget.style.color = 'var(--tx-1)' }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--tx-3)' }}
-            >
-              <Copy size={10} />
-              Copy
-            </button>
+          <div>
+            <p className="section-label">Image Fit</p>
+            <SegRow
+              options={[{ value: 'fit', label: 'Fit' }, { value: 'fill', label: 'Fill' }, { value: 'original', label: 'Original' }, { value: 'stretch', label: 'Stretch' }]}
+              value={firstSelected.imageFit}
+              onChange={v => applyToSelection(id => setPageImageFit(id, v as ImageFit))}
+              disabled={isAutoPageSize}
+              onDisabledClick={notifyAutoDisabled}
+            />
           </div>
-          <div style={{
-            maxHeight: 160, overflowY: 'auto',
-            padding: '8px 10px', borderRadius: 8,
-            background: 'var(--s3)', border: '1px solid var(--border)',
-            fontSize: 11, color: 'var(--tx-2)', lineHeight: 1.6,
-            whiteSpace: 'pre-wrap', wordBreak: 'break-word',
-            userSelect: 'text', cursor: 'text',
-          }}>
-            {firstSelected.ocrText}
+          <div>
+            <p className="section-label">Margin</p>
+            <SegRow
+              options={[{ value: 'none', label: 'None' }, { value: 'small', label: 'S' }, { value: 'medium', label: 'M' }, { value: 'large', label: 'L' }]}
+              value={firstSelected.margin}
+              onChange={v => applyToSelection(id => setPageMargin(id, v as PageMargin))}
+              disabled={isAutoPageSize}
+              onDisabledClick={notifyAutoDisabled}
+            />
           </div>
-        </div>
+          {selectedIds.length === 1 && firstSelected.ocrText && (
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                <p className="section-label" style={{ margin: 0 }}>OCR Text</p>
+                <button
+                  onClick={async () => {
+                    const text = firstSelected.ocrText ?? ''
+                    try {
+                      if (navigator.clipboard?.writeText) {
+                        await navigator.clipboard.writeText(text)
+                      } else {
+                        // Fallback for contexts where the async Clipboard API is
+                        // unavailable or blocked (e.g. permissions policy)
+                        const ta = document.createElement('textarea')
+                        ta.value = text
+                        ta.style.position = 'fixed'
+                        ta.style.opacity = '0'
+                        document.body.appendChild(ta)
+                        ta.select()
+                        document.execCommand('copy')
+                        document.body.removeChild(ta)
+                      }
+                      toast.success('OCR text copied to clipboard')
+                    } catch {
+                      toast.error('Could not copy — try selecting the text manually')
+                    }
+                  }}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 4,
+                    padding: '2px 7px', borderRadius: 6, border: 'none',
+                    background: 'transparent', color: 'var(--tx-3)',
+                    fontSize: 10.5, cursor: 'pointer',
+                    transition: 'background 110ms, color 110ms',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'var(--hover)'; e.currentTarget.style.color = 'var(--tx-1)' }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--tx-3)' }}
+                >
+                  <Copy size={10} />
+                  Copy
+                </button>
+              </div>
+              <div style={{
+                maxHeight: 160, overflowY: 'auto',
+                padding: '8px 10px', borderRadius: 8,
+                background: 'var(--s3)', border: '1px solid var(--border)',
+                fontSize: 11, color: 'var(--tx-2)', lineHeight: 1.6,
+                whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+                userSelect: 'text', cursor: 'text',
+              }}>
+                {firstSelected.ocrText}
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       <div>
