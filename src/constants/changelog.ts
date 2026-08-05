@@ -15,6 +15,7 @@ export const CHANGELOG: ChangelogEntry[] = [
             'A "What\'s New" summary now appears after an update, showing what changed',
             'Refreshed the install banner with an updated app logo',
             'Added alt text to all logo images to improve accessibility',
+            'If there are more than 5 entries, a More button with a down arrow will appear below the last entry.'
         ],
     },
 ]
