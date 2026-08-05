@@ -6,6 +6,13 @@ release below adds functionality or fixes bugs without breaking existing
 usage, so all of them are `MINOR` or `PATCH` bumps against the `1.0.0`
 baseline.
 
+## [1.6.5] 
+
+### Changed
+
+- Refined the "What's New" dialog's More button with a softer, more gradual fade
+- The highlights list no longer scrolls unless it's actually expanded
+
 ## [1.6.4] 
 
 ### Fixed

@@ -10,11 +10,10 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
     {
-        version: '1.6.4',
+        version: '1.6.5',
         highlights: [
-            'Fixed "Remove all" not working for blank pages detected by Smart Scan',
-            'Smart Tools is now available even when no page is selected',
-            'Fixed inconsistent spacing in the Page panel between selected and empty states',
+            'Polished the "What\'s New" dialog with a smoother fade above the More button',
+            'Fixed the highlights list scrolling even when nothing was collapsed',
         ],
     },
 ]

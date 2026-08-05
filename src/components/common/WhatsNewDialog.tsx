@@ -145,7 +145,8 @@ export const WhatsNewDialog = memo(() => {
                             aria-label="What's new highlights"
                             tabIndex={0}
                             style={{
-                                position: 'relative', flex: 1, minHeight: 0, overflowY: 'auto',
+                                position: 'relative', flex: 1, minHeight: 0,
+                                overflowY: expanded ? 'auto' : 'hidden',
                                 display: 'flex', flexDirection: 'column', gap: 10,
                                 padding: '0 22px', marginBottom: 20,
                             }}
@@ -171,23 +172,50 @@ export const WhatsNewDialog = memo(() => {
                             ))}
 
                             {!expanded && entry.highlights.length > MAX_COLLAPSED && (
-                                <motion.button
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    transition={{ delay: 0.05 + MAX_COLLAPSED * 0.05, duration: 0.2 }}
-                                    onClick={() => setExpanded(true)}
-                                    style={{
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
-                                        marginTop: 2, padding: '7px 0',
-                                        background: 'transparent', border: 'none',
-                                        color: 'var(--accent)', fontSize: 11.5, fontWeight: 600,
-                                        fontFamily: 'var(--font-sans)', cursor: 'pointer',
-                                    }}
-                                >
-                                    {/* {entry.highlights.length - MAX_COLLAPSED}  */} 
-                                    More
-                                    <ChevronDown size={14} strokeWidth={2.4} />
-                                </motion.button>
+                                // Zero-height wrapper pulled up via negative margin: this is
+                                // what lets the blur/button sit *inside* the space of the last
+                                // entry above, instead of adding their own row to the flex
+                                // column (which would re-introduce unwanted scroll height).
+                                <div style={{ position: 'relative', marginTop: -34, height: 0 }}>
+                                    {/* Progressive blur: 2 stacked layers, each stronger and
+                                        more tightly masked than the last, so the blur builds up
+                                        gradually toward the button instead of switching on at a
+                                        hard edge. Each layer's maskImage fades its own blur in/out
+                                        smoothly; together they read as one continuous gradient. */}
+                                    <div aria-hidden="true" style={{
+                                        position: 'absolute', left: -22, right: -22, bottom: -9, height: 40,
+                                        backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(2px)',
+                                        maskImage: 'linear-gradient(to bottom, transparent, black 60%)',
+                                        WebkitMaskImage: 'linear-gradient(to bottom, transparent, black 60%)',
+                                        pointerEvents: 'none',
+                                    }} />
+                                    <div aria-hidden="true" style={{
+                                        position: 'absolute', left: -22, right: -22, bottom: -9, height: 26,
+                                        backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(4px)',
+                                        background: 'linear-gradient(to bottom, transparent, var(--bg-overlay) 75%)',
+                                        maskImage: 'linear-gradient(to bottom, transparent, black 45%)',
+                                        WebkitMaskImage: 'linear-gradient(to bottom, transparent, black 45%)',
+                                        pointerEvents: 'none',
+                                    }} />
+                                    <motion.button
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        transition={{ delay: 0.05 + MAX_COLLAPSED * 0.05, duration: 0.2 }}
+                                        onClick={() => setExpanded(true)}
+                                        style={{
+                                            position: 'absolute', left: -22, right: -22, bottom: -10,
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+                                            padding: '7px 0',
+                                            background: 'transparent', border: 'none',
+                                            color: 'var(--accent)', fontSize: 11.5, fontWeight: 600,
+                                            fontFamily: 'var(--font-sans)', cursor: 'pointer',
+                                        }}
+                                    >
+                                        {/* {entry.highlights.length - MAX_COLLAPSED}  */}
+                                        More
+                                        <ChevronDown size={14} strokeWidth={2.4} />
+                                    </motion.button>
+                                </div>
                             )}
                         </div>
 
