@@ -7,6 +7,13 @@ usage, so all of them are `MINOR` or `PATCH` bumps against the `1.0.0`
 baseline.
 
 
+## [1.6.3] 
+
+### Changed
+
+- The "What's New" dialog now features a scroll bar for longer entries
+- If the "What's New" dialog contains more than 5 entries, a More button accompanied by a downward-pointing arrow icon will appear beneath the final entry.
+
 ## [1.6.2] 
 
 ### Changed

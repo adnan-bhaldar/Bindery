@@ -225,6 +225,19 @@ textarea,
   background: var(--sb-hover);
 }
 
+/* For elements that need to scroll (overflow content past a max-height)
+   without showing a scrollbar at all — e.g. a dialog capped at roughly
+   5 items tall, where content beyond that scrolls invisibly rather than
+   growing the dialog further. */
+.hide-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
 
   *,
