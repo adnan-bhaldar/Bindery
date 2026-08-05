@@ -110,7 +110,7 @@ export const SmartScanPanel = memo(() => {
         removePages(result.blankPageIds)
         setResult(r => r ? { ...r, blankPageIds: [] } : null)
         toast.success(`Removed ${result.blankPageIds.length} blank page${result.blankPageIds.length > 1 ? 's' : ''}`)
-    }, [removePages])
+    }, [result, removePages])
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: '16px 14px' }}>
@@ -208,7 +208,7 @@ export const SmartScanPanel = memo(() => {
                                         onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
                                     >
                                         <Trash2 size={11} />
-                                        <span style={{ fontSize: 11 }}>Remove all</span>
+                                        <span style={{ fontSize: 11 }}>Remove</span>
                                     </button>
                                 </div>
                             )}
