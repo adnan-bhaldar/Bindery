@@ -10,10 +10,9 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
     {
-        version: '1.6.5',
+        version: '1.6.6',
         highlights: [
-            'Polished the "What\'s New" dialog with a smoother fade above the More button',
-            'Fixed the highlights list scrolling even when nothing was collapsed',
+            'Fixed the bug where the app would show reload dialog on startup in some scenarios.',
         ],
     },
 ]
