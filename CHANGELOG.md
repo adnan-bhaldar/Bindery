@@ -6,6 +6,12 @@ release below adds functionality or fixes bugs without breaking existing
 usage, so all of them are `MINOR` or `PATCH` bumps against the `1.0.0`
 baseline.
 
+## [1.6.6] 
+
+### Fixed
+
+- Reload dialog bug that would popup on startup in some scenarios.
+
 ## [1.6.5] 
 
 ### Changed

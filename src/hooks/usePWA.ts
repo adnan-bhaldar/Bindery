@@ -26,6 +26,17 @@ let swRegistered = false
 let updateAvailable = false
 let waitingWorker: ServiceWorker | null = null
 let reloadTriggered = false
+// Flips true the moment our OWN periodic poll / focus / visibility check
+// runs at least once. An updatefound event that fires before this flag is
+// set (e.g. from the automatic check register() performs on its own) means
+// the deploy happened while this tab was CLOSED — the HTML/JS this page
+// just loaded already came straight from the network and is the latest
+// build, so there's nothing stale actually running yet, and prompting
+// "Update Available" would be redundant. Only updatefound events that occur
+// AFTER this flag is set are genuine mid-session updates, where the JS
+// currently running in memory really has gone stale and a reload is
+// actually needed.
+let activeSessionCheckHappened = false
 const subscribers = new Set<() => void>()
 
 function notifyAll() {
@@ -71,18 +82,39 @@ function ensureGlobalListeners() {
                 notifyAll()
                 console.log('[PWA] Service worker registered:', reg.scope)
 
-                // A new worker may already be sitting in "waiting" if the
-                // update installed while this tab was open but idle.
+                // A waiting worker found right here — either already
+                // waiting the instant we register, or found by the
+                // automatic check the browser performs as part of
+                // register() itself — means the deploy happened while this
+                // tab was CLOSED. The HTML/JS this page just loaded came
+                // straight from the network and is already the latest
+                // build (see useWhatsNew/APP_VERSION), so surfacing
+                // "Update Available" here would be redundant. Activate
+                // silently instead; no reload needed since the content is
+                // already current.
                 if (reg.waiting && navigator.serviceWorker.controller) {
-                    handleWaitingWorker(reg.waiting)
+                    reg.waiting.postMessage({ type: 'SKIP_WAITING' })
                 }
 
                 reg.addEventListener('updatefound', () => {
                     const newWorker = reg.installing
                     newWorker?.addEventListener('statechange', () => {
                         if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                            console.log('[PWA] New version available')
-                            handleWaitingWorker(newWorker)
+                            if (activeSessionCheckHappened) {
+                                // Found by our own periodic poll or a
+                                // focus/visibility check — a genuine
+                                // mid-session deploy. The JS currently
+                                // running in memory really is stale now, so
+                                // this legitimately needs a user-triggered
+                                // reload.
+                                console.log('[PWA] New version available')
+                                handleWaitingWorker(newWorker)
+                            } else {
+                                // Same "tab was closed, already fresh" case
+                                // as above — this fired from register()'s
+                                // own automatic check, not from our polling.
+                                newWorker.postMessage({ type: 'SKIP_WAITING' })
+                            }
                         }
                     })
                 })
@@ -91,8 +123,13 @@ function ensureGlobalListeners() {
                 // the browser only checks for a new sw.js on navigation by
                 // default, so poll periodically too, and also the moment the
                 // tab regains focus (the most common way people notice a
-                // stale tab — switching back after time away).
-                const checkForUpdate = () => { reg.update().catch(() => { }) }
+                // stale tab — switching back after time away). Any
+                // updatefound resulting from THESE checks is a real
+                // mid-session update, so it's safe to prompt for it.
+                const checkForUpdate = () => {
+                    activeSessionCheckHappened = true
+                    reg.update().catch(() => { })
+                }
                 setInterval(checkForUpdate, 15_000)
                 document.addEventListener('visibilitychange', () => {
                     if (document.visibilityState === 'visible') checkForUpdate()
