@@ -2,6 +2,9 @@ const CACHE_NAME = 'bindery-__BUILD_ID__'
 const STATIC_ASSETS = [
     '/',
     '/index.html',
+    '/icons/favicon.svg',
+    '/icons/icon-192.png',
+    '/icons/icon-512.png',
 ]
 
 // Install — cache static shell
@@ -30,8 +33,12 @@ self.addEventListener('fetch', (e) => {
     // Skip non-GET and cross-origin
     if (request.method !== 'GET' || url.origin !== self.location.origin) return
 
-    // Assets (JS/CSS/workers) — cache first, network fallback
-    if (url.pathname.startsWith('/assets/') || url.pathname.endsWith('.js') || url.pathname.endsWith('.css')) {
+    // Assets (JS/CSS/workers/icons) — cache first, network fallback.
+    // /icons/ is included here (not just precached above) so any icon
+    // that's fetched successfully at least once — including ones added
+    // later that aren't in STATIC_ASSETS yet — gets opportunistically
+    // cached for next time, the same way JS/CSS assets already do.
+    if (url.pathname.startsWith('/assets/') || url.pathname.startsWith('/icons/') || url.pathname.endsWith('.js') || url.pathname.endsWith('.css')) {
         e.respondWith(
             caches.match(request).then(cached => {
                 if (cached) return cached

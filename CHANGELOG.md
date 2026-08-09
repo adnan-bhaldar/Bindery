@@ -6,6 +6,18 @@ release below adds functionality or fixes bugs without breaking existing
 usage, so all of them are `MINOR` or `PATCH` bumps against the `1.0.0`
 baseline.
 
+## [1.7.0] 
+
+### Added
+
+- A storage warning now appears once local usage crosses 90% of the browser's quota, with a "Clear Data" option that removes every other project while keeping the one currently open
+
+### Fixed
+
+- Deleting a project now also removes its recovery snapshots and export-history records, instead of leaving them behind in IndexedDB indefinitely
+- The project switcher's Recent list showed a stale page count for the currently open project right after an import, until the next autosave
+- The logo in the header and Settings → About failed to load when the app was opened offline, since the service worker never cached it
+
 ## [1.6.6] 
 
 ### Fixed

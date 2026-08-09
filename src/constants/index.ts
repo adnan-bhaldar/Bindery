@@ -21,6 +21,13 @@ export const STORAGE_KEYS = {
     SETTINGS: 'bindery:settings',
 } as const
 
+// ─── Storage ───────────────────────────────────────────────────────────────────
+
+// Once IndexedDB usage crosses this share of the browser's storage quota,
+// StorageWarningDialog prompts the user to clear data before they hit a
+// hard write failure.
+export const STORAGE_WARNING_THRESHOLD = 0.9
+
 // ─── Layout ───────────────────────────────────────────────────────────────────
 
 export const LAYOUT = {
@@ -140,8 +147,6 @@ export const OCR_LANGUAGE_LABELS: Record<string, string> = {
     mar: 'Marathi',
     auto: 'Auto Detect',
 }
-
-// ─── Accent Colors ────────────────────────────────────────────────────────────
 
 // ─── Error Messages ───────────────────────────────────────────────────────────
 

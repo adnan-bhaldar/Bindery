@@ -9,10 +9,13 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
-    {
-        version: '1.6.6',
+        {
+        version: '1.7.0',
         highlights: [
-            'Fixed the bug where the app would show reload dialog on startup in some scenarios.',
+            'Deleting a project now also clears its recovery snapshots and export history, keeping storage usage lower',
+            'Added a low-storage warning with a one-click way to clear old projects while keeping the one you have open',
+            'Fixed the project switcher showing an outdated page count for the current project right after importing',
+            'Fixed the logo not loading in the header and Settings when the app is opened offline',
         ],
     },
 ]

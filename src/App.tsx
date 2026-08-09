@@ -8,6 +8,7 @@ import { RecoveryDialog } from '@/features/recovery/RecoveryDialog'
 import { InstallBanner } from '@/components/common/InstallBanner'
 import { UpdateAvailableDialog } from '@/components/common/UpdateAvailableDialog'
 import { WhatsNewDialog } from '@/components/common/WhatsNewDialog'
+import { StorageWarningDialog } from '@/components/common/StorageWarningDialog'
 
 export const App = memo(() => (
   <ErrorBoundary>
@@ -19,6 +20,7 @@ export const App = memo(() => (
           <InstallBanner />
           <UpdateAvailableDialog />
           <WhatsNewDialog />
+          <StorageWarningDialog />
         </ContextMenuProvider>
       </ConfirmProvider>
     </TooltipProvider>
