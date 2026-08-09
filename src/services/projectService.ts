@@ -114,16 +114,42 @@ class ProjectService {
             .where('projectId').equals(projectId)
             .primaryKeys()
 
-        await db.transaction('rw', [db.projects, db.pages, db.thumbnails], async () => {
-            await db.projects.delete(projectId)
-            await db.pages.bulkDelete(pageIds as string[])
-            await db.thumbnails.where('pageId').anyOf(pageIds as string[]).delete()
-        })
+        await db.transaction(
+            'rw',
+            [db.projects, db.pages, db.thumbnails, db.recovery, db.exports],
+            async () => {
+                await db.projects.delete(projectId)
+                await db.pages.bulkDelete(pageIds as string[])
+                await db.thumbnails.where('pageId').anyOf(pageIds as string[]).delete()
+                // Recovery snapshots and export-history records both carry
+                // a projectId but were previously never cleaned up here —
+                // they'd silently keep accumulating in IndexedDB forever,
+                // even for a project the user explicitly deleted.
+                await db.recovery.where('projectId').equals(projectId).delete()
+                await db.exports.where('projectId').equals(projectId).delete()
+            }
+        )
 
         const lastId = localStorage.getItem(STORAGE_KEYS.LAST_PROJECT_ID)
         if (lastId === projectId) {
             localStorage.removeItem(STORAGE_KEYS.LAST_PROJECT_ID)
         }
+    }
+
+    // ── Bulk delete (keep one) ──────────────────────────────────────────────────
+
+    // Used by the storage-full warning: wipes every project's data except
+    // the one currently open, so freeing up space doesn't cost the user
+    // their in-progress work. Reuses deleteProject per-project so each one
+    // gets the exact same cleanup (pages, thumbnails, recovery snapshots,
+    // export records) — nothing here duplicates that logic.
+    async deleteAllProjectsExcept(keepProjectId: string): Promise<number> {
+        const all = await db.projects.toArray()
+        const toDelete = all.filter(p => p.id !== keepProjectId)
+        for (const project of toDelete) {
+            await this.deleteProject(project.id)
+        }
+        return toDelete.length
     }
 
     // ── Recent projects ─────────────────────────────────────────────────────────

@@ -6,7 +6,7 @@ import { Check, FolderOpen, Plus, Clock, Trash2, FileText } from 'lucide-react'
 import { useProjectStore } from '@/stores/projectStore'
 import { projectService, formatProjectDate } from '@/services/projectService'
 import { importService } from '@/services/importService'
-import { usePagesStore } from '@/stores/pagesStore'
+import { usePagesStore, selectPageCount } from '@/stores/pagesStore'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { toast } from 'sonner'
 import type { Project } from '@/types'
@@ -26,6 +26,13 @@ export const ProjectDropdown = memo(({ anchor, onClose }: Props) => {
   const { setPages, clearPages } = usePagesStore(
     useShallow(s => ({ setPages: s.setPages, clearPages: s.clearPages }))
   )
+  // The current project's persisted pageCount (on the `recents` entries
+  // below) may lag behind reality — it's only written to IndexedDB on
+  // autosave or an explicit save, not on every import. Reading the live
+  // in-memory count here lets us show the real number for the currently
+  // open project specifically, without touching how other (not actively
+  // being edited) projects' counts are read or displayed.
+  const livePageCount = usePagesStore(selectPageCount)
 
 
   useEffect(() => {
@@ -273,54 +280,64 @@ export const ProjectDropdown = memo(({ anchor, onClose }: Props) => {
                   </p>
                 </div>
                 <div style={{ maxHeight: 200, overflowY: 'auto', paddingBottom: 6 }}>
-                  {recents.slice(0, 8).map(p => (
-                    <button
-                      key={p.id}
-                      onClick={() => handleOpen(p)}
-                      style={{
-                        width: '100%', display: 'flex', alignItems: 'center', gap: 10,
-                        padding: '7px 14px', border: 'none', background: 'transparent',
-                        cursor: 'pointer', transition: 'background 110ms', textAlign: 'left',
-                      }}
-                      onMouseEnter={e => { e.currentTarget.style.background = 'var(--hover)' }}
-                      onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
-                    >
-                      <div style={{
-                        width: 28, height: 28, borderRadius: 8,
-                        background: p.id === currentProject?.id ? 'var(--accent-dim)' : 'var(--s3)',
-                        border: `1px solid ${p.id === currentProject?.id ? 'var(--accent-border)' : 'var(--border)'}`,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                      }}>
-                        <FolderOpen size={12} color={p.id === currentProject?.id ? 'var(--accent)' : 'var(--tx-3)'} />
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{
-                          fontSize: 12, fontWeight: 500,
-                          color: p.id === currentProject?.id ? 'var(--accent)' : 'var(--tx-1)',
-                          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                        }}>
-                          {p.name}
-                        </p>
-                        <p style={{ fontSize: 10.5, color: 'var(--tx-3)' }}>
-                          {p.pageCount} pages · {formatProjectDate(p)}
-                        </p>
-                      </div>
+                  {recents.slice(0, 8).map(p => {
+                    const isCurrent = p.id === currentProject?.id
+                    // Only the currently open project's count can be stale
+                    // in `recents` (its persisted pageCount hasn't caught
+                    // up to an in-progress import yet) — every other
+                    // project's p.pageCount is untouched and already
+                    // correct, so this only swaps the number for the one
+                    // row where it matters.
+                    const displayCount = isCurrent ? livePageCount : p.pageCount
+                    return (
                       <button
-                        onClick={e => handleDelete(p.id, e)}
+                        key={p.id}
+                        onClick={() => handleOpen(p)}
                         style={{
-                          width: 22, height: 22, flexShrink: 0,
-                          borderRadius: 6, border: 'none', background: 'transparent',
-                          color: 'var(--tx-4)', cursor: 'pointer',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          transition: 'background 110ms, color 110ms',
+                          width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+                          padding: '7px 14px', border: 'none', background: 'transparent',
+                          cursor: 'pointer', transition: 'background 110ms', textAlign: 'left',
                         }}
-                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.10)'; e.currentTarget.style.color = '#ef4444' }}
-                        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--tx-4)' }}
+                        onMouseEnter={e => { e.currentTarget.style.background = 'var(--hover)' }}
+                        onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
                       >
-                        <Trash2 size={11} />
+                        <div style={{
+                          width: 28, height: 28, borderRadius: 8,
+                          background: isCurrent ? 'var(--accent-dim)' : 'var(--s3)',
+                          border: `1px solid ${isCurrent ? 'var(--accent-border)' : 'var(--border)'}`,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                        }}>
+                          <FolderOpen size={12} color={isCurrent ? 'var(--accent)' : 'var(--tx-3)'} />
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <p style={{
+                            fontSize: 12, fontWeight: 500,
+                            color: isCurrent ? 'var(--accent)' : 'var(--tx-1)',
+                            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                          }}>
+                            {p.name}
+                          </p>
+                          <p style={{ fontSize: 10.5, color: 'var(--tx-3)' }}>
+                            {displayCount} pages · {formatProjectDate(p)}
+                          </p>
+                        </div>
+                        <button
+                          onClick={e => handleDelete(p.id, e)}
+                          style={{
+                            width: 22, height: 22, flexShrink: 0,
+                            borderRadius: 6, border: 'none', background: 'transparent',
+                            color: 'var(--tx-4)', cursor: 'pointer',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            transition: 'background 110ms, color 110ms',
+                          }}
+                          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.10)'; e.currentTarget.style.color = '#ef4444' }}
+                          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--tx-4)' }}
+                        >
+                          <Trash2 size={11} />
+                        </button>
                       </button>
-                    </button>
-                  ))}
+                    )
+                  })}
                 </div>
               </>
             )}
