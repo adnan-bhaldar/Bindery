@@ -124,6 +124,7 @@ export const BUILT_IN_PRESET_IDS = {
 // ─── Keyboard Shortcuts ───────────────────────────────────────────────────────
 
 export const SHORTCUTS = {
+    NEW_PROJECT: 'n',
     IMPORT: 'mod+o',
     SAVE: 'mod+s',
     SAVE_AS: 'mod+shift+s',

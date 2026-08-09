@@ -103,7 +103,7 @@ export const CommandPalette = memo(({
         },
         {
             id: 'new', label: 'New Project', desc: 'Start fresh',
-            Icon: Plus, group: 'Actions', action: onNewProject,
+            Icon: Plus, shortcut: ['N'], group: 'Actions', action: onNewProject,
         },
         {
             id: 'rotate', label: 'Rotate Selected Pages', desc: '90° clockwise',

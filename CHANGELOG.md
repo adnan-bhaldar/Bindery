@@ -6,6 +6,16 @@ release below adds functionality or fixes bugs without breaking existing
 usage, so all of them are `MINOR` or `PATCH` bumps against the `1.0.0`
 baseline.
 
+## [1.7.1]
+
+### Added
+
+- A keyboard shortcut (`N`) to instantly start a new project
+
+### Fixed
+
+- Pressing New Project no longer creates a redundant empty project (and duplicate toast) when the current project was already blank and unsaved
+
 ## [1.7.0] 
 
 ### Added

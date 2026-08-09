@@ -797,6 +797,7 @@ AccessibilitySection.displayName = 'AccessibilitySection'
 
 const ShortcutsSection = memo(() => {
     const shortcuts = [
+        { action: 'New Project', keys: ['N'] },
         { action: 'Import Images', keys: ['⌘', 'O'] },
         { action: 'Save Project', keys: ['⌘', 'S'] },
         { action: 'Save As', keys: ['⌘', '⇧', 'S'] },

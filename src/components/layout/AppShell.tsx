@@ -64,14 +64,20 @@ export const AppShell = memo(() => {
   }, [currentProject, pages, setCurrentProject, markSaved, settings.maxRecoverySnapshots])
 
   const handleNewProject = useCallback(async () => {
+    // Already on a fresh, untouched project — nothing to gain from creating
+    // another one (would just leave an extra empty row in IndexedDB and
+    // spam the toast for no reason).
+    if (currentProject && currentProject.status === 'new' && pages.length === 0) {
+      return
+    }
     const project = await projectService.createProject()
     suppressNextDirtyFlag()
     setPages([])
     setCurrentProject(project)
     toast.success('New project created')
-  }, [setPages, setCurrentProject])
+  }, [currentProject, pages.length, setPages, setCurrentProject])
 
-  useKeyboardShortcuts({ onImport: importFromPicker, onSave: handleSave })
+  useKeyboardShortcuts({ onImport: importFromPicker, onSave: handleSave, onNewProject: handleNewProject })
 
   // ── Auto-save ────────────────────────────────────────────────────────────────
   const handleAutoSave = useCallback(async () => {
