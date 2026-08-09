@@ -30,10 +30,8 @@ export const ProjectDropdown = memo(({ anchor, onClose }: Props) => {
   // below) may lag behind reality — it's only written to IndexedDB on
   // autosave or an explicit save, not on every import. Reading the live
   // in-memory count here lets us show the real number for the currently
-  // open project specifically, without touching how other (not actively
-  // being edited) projects' counts are read or displayed.
+  // open project specifically.
   const livePageCount = usePagesStore(selectPageCount)
-
 
   useEffect(() => {
     if (!anchor) return
@@ -283,59 +281,78 @@ export const ProjectDropdown = memo(({ anchor, onClose }: Props) => {
                   {recents.slice(0, 8).map(p => {
                     const isCurrent = p.id === currentProject?.id
                     // Only the currently open project's count can be stale
-                    // in `recents` (its persisted pageCount hasn't caught
-                    // up to an in-progress import yet) — every other
-                    // project's p.pageCount is untouched and already
-                    // correct, so this only swaps the number for the one
-                    // row where it matters.
+                    // here (its persisted pageCount hasn't caught up to an
+                    // in-progress import/edit yet) — every other project's
+                    // p.pageCount is untouched and already correct.
                     const displayCount = isCurrent ? livePageCount : p.pageCount
                     return (
-                      <button
+                      // A non-interactive row instead of a <button>, with
+                      // Open and Delete as separate sibling buttons — a
+                      // <button> can't legally contain another <button>
+                      // (invalid HTML, unreliable keyboard/AT behavior).
+                      <div
                         key={p.id}
-                        onClick={() => handleOpen(p)}
+                        role="group"
                         style={{
                           width: '100%', display: 'flex', alignItems: 'center', gap: 10,
-                          padding: '7px 14px', border: 'none', background: 'transparent',
-                          cursor: 'pointer', transition: 'background 110ms', textAlign: 'left',
+                          padding: '7px 14px',
+                          transition: 'background 110ms',
                         }}
                         onMouseEnter={e => { e.currentTarget.style.background = 'var(--hover)' }}
                         onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
                       >
-                        <div style={{
-                          width: 28, height: 28, borderRadius: 8,
-                          background: isCurrent ? 'var(--accent-dim)' : 'var(--s3)',
-                          border: `1px solid ${isCurrent ? 'var(--accent-border)' : 'var(--border)'}`,
-                          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                        }}>
-                          <FolderOpen size={12} color={isCurrent ? 'var(--accent)' : 'var(--tx-3)'} />
-                        </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <p style={{
-                            fontSize: 12, fontWeight: 500,
-                            color: isCurrent ? 'var(--accent)' : 'var(--tx-1)',
-                            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                          }}>
-                            {p.name}
-                          </p>
-                          <p style={{ fontSize: 10.5, color: 'var(--tx-3)' }}>
-                            {displayCount} pages · {formatProjectDate(p)}
-                          </p>
-                        </div>
                         <button
-                          onClick={e => handleDelete(p.id, e)}
+                          onClick={() => handleOpen(p)}
                           style={{
-                            width: 22, height: 22, flexShrink: 0,
-                            borderRadius: 6, border: 'none', background: 'transparent',
-                            color: 'var(--tx-4)', cursor: 'pointer',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            transition: 'background 110ms, color 110ms',
+                            flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 10,
+                            border: 'none', background: 'transparent', padding: 0,
+                            cursor: 'pointer', textAlign: 'left',
                           }}
-                          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.10)'; e.currentTarget.style.color = '#ef4444' }}
-                          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--tx-4)' }}
                         >
-                          <Trash2 size={11} />
+                          <div style={{
+                            width: 28, height: 28, borderRadius: 8,
+                            background: isCurrent ? 'var(--accent-dim)' : 'var(--s3)',
+                            border: `1px solid ${isCurrent ? 'var(--accent-border)' : 'var(--border)'}`,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                          }}>
+                            <FolderOpen size={12} color={isCurrent ? 'var(--accent)' : 'var(--tx-3)'} />
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <p style={{
+                              fontSize: 12, fontWeight: 500,
+                              color: isCurrent ? 'var(--accent)' : 'var(--tx-1)',
+                              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                            }}>
+                              {p.name}
+                            </p>
+                            <p style={{ fontSize: 10.5, color: 'var(--tx-3)' }}>
+                              {displayCount} pages · {formatProjectDate(p)}
+                            </p>
+                          </div>
                         </button>
-                      </button>
+                        {/* Deleting the project you currently have open
+                            would remove it from IndexedDB while the UI
+                            keeps showing it as active, with stale
+                            in-memory pages — so that action simply isn't
+                            offered here for the current project. */}
+                        {!isCurrent && (
+                          <button
+                            onClick={e => handleDelete(p.id, e)}
+                            aria-label={`Remove "${p.name}" from recents`}
+                            style={{
+                              width: 22, height: 22, flexShrink: 0,
+                              borderRadius: 6, border: 'none', background: 'transparent',
+                              color: 'var(--tx-4)', cursor: 'pointer',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              transition: 'background 110ms, color 110ms',
+                            }}
+                            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.10)'; e.currentTarget.style.color = '#ef4444' }}
+                            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--tx-4)' }}
+                          >
+                            <Trash2 size={11} />
+                          </button>
+                        )}
+                      </div>
                     )
                   })}
                 </div>

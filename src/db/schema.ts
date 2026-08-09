@@ -113,6 +113,20 @@ export interface StorageStats {
     quotaBytes: number
 }
 
+// Lightweight alternative to getStorageStats() for callers that only need
+// the overall usage/quota ratio (e.g. periodic background polling) —
+// unlike getStorageStats, this never loads every page/thumbnail Blob
+// record via toArray(), just to compute a percentage. Use this for
+// anything that runs repeatedly/in the background; reserve the full
+// getStorageStats() for one-off, on-demand reads (e.g. the Settings page).
+export async function getQuotaUsage(): Promise<{ usageBytes: number; quotaBytes: number }> {
+    const estimate = await navigator.storage?.estimate()
+    return {
+        usageBytes: estimate?.usage ?? 0,
+        quotaBytes: estimate?.quota ?? 0,
+    }
+}
+
 export async function getStorageStats(): Promise<StorageStats> {
     const [projectCount, pages, thumbnails, exportCount, estimate] = await Promise.all([
         db.projects.count(),

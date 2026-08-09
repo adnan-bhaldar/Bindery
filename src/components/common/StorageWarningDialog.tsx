@@ -1,4 +1,4 @@
-import { memo, useState, useCallback } from 'react'
+import { memo, useState, useCallback, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { HardDrive, Trash2, X } from 'lucide-react'
 import { useStorageWarning } from '@/hooks/useStorageWarning'
@@ -7,11 +7,19 @@ import { projectService } from '@/services/projectService'
 import { clearDatabase } from '@/db/schema'
 import { toast } from 'sonner'
 
+const FOCUSABLE_SELECTOR = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+
 // ─── Clear-data confirmation ────────────────────────────────────────────────
 // Purpose-built rather than reusing the shared useConfirm() dialog — this
 // flow needs a genuine 3-way choice (close / clear all / keep current
 // project), not the generic confirm/cancel shape every other confirm() call
 // in the app relies on.
+//
+// This performs an irreversible deletion, so it's treated as a real modal:
+// role="dialog" + aria-modal, focus moves in on open and is trapped inside
+// (background controls must not be reachable while it's up), focus returns
+// to whatever triggered it on close, and Escape closes it — but only while
+// not mid-delete (busy), so a click can't be raced by an accidental Escape.
 const ClearDataConfirm = memo(({
     projectName, onClose, onClearAll, onClearOthers, busy,
 }: {
@@ -20,148 +28,200 @@ const ClearDataConfirm = memo(({
     onClearAll: () => void
     onClearOthers: () => void
     busy: boolean
-}) => (
-    <>
-        <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            onClick={onClose}
-            style={{
-                position: 'fixed', inset: 0, zIndex: 9000,
-                background: 'color-mix(in srgb, var(--bg-app) 45%, transparent)',
-                backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
-            }}
-        />
-        <motion.div
-            initial={{ opacity: 0, scale: 0.94, y: -8 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.94, y: -8 }}
-            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            style={{
-                position: 'fixed', inset: 0, margin: 'auto',
-                zIndex: 9001, width: 388, height: 'fit-content',
-            }}
-        >
-            <div style={{
-                position: 'absolute', inset: -28, zIndex: 0, pointerEvents: 'none',
-                background: 'radial-gradient(ellipse 65% 55% at 50% 8%, rgba(239,68,68,0.28), transparent 70%)',
-                filter: 'blur(6px)',
-            }} />
+}) => {
+    const dialogRef = useRef<HTMLDivElement>(null)
+    const previouslyFocused = useRef<HTMLElement | null>(null)
 
-            <div style={{
-                position: 'relative', zIndex: 1,
-                background: 'var(--bg-overlay)',
-                border: '1px solid var(--border-hard)',
-                borderRadius: 'var(--r-2xl)',
-                boxShadow: 'var(--sh-dialog)',
-                overflow: 'hidden',
-                display: 'flex', flexDirection: 'column',
-            }}>
+    useEffect(() => {
+        previouslyFocused.current = document.activeElement as HTMLElement | null
+        dialogRef.current?.focus()
+
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                if (busy) return
+                e.preventDefault()
+                onClose()
+                return
+            }
+            if (e.key !== 'Tab' || !dialogRef.current) return
+
+            const focusable = Array.from(
+                dialogRef.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)
+            )
+            if (focusable.length === 0) return
+
+            const first = focusable[0]
+            const last = focusable[focusable.length - 1]
+
+            if (e.shiftKey && document.activeElement === first) {
+                e.preventDefault()
+                last.focus()
+            } else if (!e.shiftKey && document.activeElement === last) {
+                e.preventDefault()
+                first.focus()
+            }
+        }
+
+        window.addEventListener('keydown', handleKeyDown)
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown)
+            previouslyFocused.current?.focus()
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
+
+    return (
+        <>
+            <motion.div
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                onClick={busy ? undefined : onClose}
+                style={{
+                    position: 'fixed', inset: 0, zIndex: 9000,
+                    background: 'color-mix(in srgb, var(--bg-app) 45%, transparent)',
+                    backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
+                }}
+            />
+            <motion.div
+                ref={dialogRef}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="clear-data-title"
+                aria-describedby="clear-data-desc"
+                tabIndex={-1}
+                initial={{ opacity: 0, scale: 0.94, y: -8 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.94, y: -8 }}
+                transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                onClick={e => e.stopPropagation()}
+                style={{
+                    position: 'fixed', inset: 0, margin: 'auto',
+                    zIndex: 9001, width: 388, height: 'fit-content',
+                    outline: 'none',
+                }}
+            >
                 <div style={{
-                    position: 'absolute', inset: 0, zIndex: 2, pointerEvents: 'none',
-                    background: 'linear-gradient(120deg, rgba(255,255,255,0.05) 0%, transparent 32%)',
+                    position: 'absolute', inset: -28, zIndex: 0, pointerEvents: 'none',
+                    background: 'radial-gradient(ellipse 65% 55% at 50% 8%, rgba(239,68,68,0.28), transparent 70%)',
+                    filter: 'blur(6px)',
                 }} />
 
-                <button
-                    className="icon-btn"
-                    onClick={onClose}
-                    aria-label="Close"
-                    style={{ position: 'absolute', top: 14, right: 14, zIndex: 3 }}
-                >
-                    <X size={14} />
-                </button>
-
-                {/* Body */}
-                <div style={{ position: 'relative', zIndex: 1, padding: '26px 24px 20px' }}>
-                    <div style={{ position: 'relative', width: 46, height: 46, marginBottom: 18 }}>
-                        <div style={{
-                            position: 'absolute', inset: -10, borderRadius: '50%',
-                            background: 'radial-gradient(circle, rgba(239,68,68,0.28), transparent 72%)',
-                        }} />
-                        <div style={{
-                            position: 'relative', width: 46, height: 46, borderRadius: 15,
-                            background: 'rgba(239,68,68,0.12)',
-                            border: '1px solid rgba(239,68,68,0.28)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)',
-                        }}>
-                            <span style={{ color: '#f87171', display: 'flex' }}>
-                                <Trash2 size={20} strokeWidth={2.25} />
-                            </span>
-                        </div>
-                    </div>
-
-                    <p style={{
-                        fontSize: 15.5, fontWeight: 700, color: 'var(--tx-1)',
-                        letterSpacing: '-0.3px', marginBottom: 8, lineHeight: 1.3,
-                    }}>
-                        Clear data?
-                    </p>
-
-                    <p style={{ fontSize: 13, color: 'var(--tx-3)', lineHeight: 1.65 }}>
-                        {projectName
-                            ? `Choose how much to clear. "${projectName}" is currently open.`
-                            : 'This permanently deletes every project, page, thumbnail, and export record stored in this browser.'}
-                        {' '}This cannot be undone.
-                    </p>
-                </div>
-
-                <div style={{ height: 1, background: 'var(--border-soft)' }} />
-
-                {/* Actions */}
                 <div style={{
                     position: 'relative', zIndex: 1,
-                    display: 'flex', gap: 8,
-                    padding: '16px 24px 20px',
-                    background: 'var(--bg-panel)',
+                    background: 'var(--bg-overlay)',
+                    border: '1px solid var(--border-hard)',
+                    borderRadius: 'var(--r-2xl)',
+                    boxShadow: 'var(--sh-dialog)',
+                    overflow: 'hidden',
+                    display: 'flex', flexDirection: 'column',
                 }}>
-                    <button
-                        onClick={onClearAll}
-                        disabled={busy}
-                        style={{
-                            flex: 1, padding: '10px 16px',
-                            borderRadius: 12,
-                            border: '1px solid rgba(239,68,68,0.35)',
-                            background: 'rgba(239,68,68,0.10)',
-                            color: '#f87171',
-                            fontSize: 13, fontWeight: 600,
-                            fontFamily: 'var(--font-sans)',
-                            cursor: busy ? 'default' : 'pointer',
-                            opacity: busy ? 0.6 : 1,
-                            transition: 'background 130ms, border-color 130ms',
-                        }}
-                        onMouseEnter={e => { if (!busy) e.currentTarget.style.background = 'rgba(239,68,68,0.16)' }}
-                        onMouseLeave={e => { if (!busy) e.currentTarget.style.background = 'rgba(239,68,68,0.10)' }}
-                    >
-                        Clear All
-                    </button>
+                    <div style={{
+                        position: 'absolute', inset: 0, zIndex: 2, pointerEvents: 'none',
+                        background: 'linear-gradient(120deg, rgba(255,255,255,0.05) 0%, transparent 32%)',
+                    }} />
 
                     <button
-                        onClick={onClearOthers}
-                        disabled={busy || !projectName}
-                        style={{
-                            flex: 1, padding: '10px 16px',
-                            borderRadius: 12,
-                            border: 'none',
-                            background: 'linear-gradient(135deg,#ef4444,#dc2626)',
-                            color: '#fff',
-                            fontSize: 13, fontWeight: 600,
-                            fontFamily: 'var(--font-sans)',
-                            cursor: busy || !projectName ? 'default' : 'pointer',
-                            opacity: busy || !projectName ? 0.6 : 1,
-                            boxShadow: '0 4px 16px rgba(239,68,68,0.32)',
-                            transition: 'transform 130ms, box-shadow 130ms',
-                        }}
-                        onMouseEnter={e => { if (!busy && projectName) { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 7px 22px rgba(239,68,68,0.32)' } }}
-                        onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(239,68,68,0.32)' }}
+                        className="icon-btn"
+                        onClick={onClose}
+                        disabled={busy}
+                        aria-label="Close"
+                        style={{ position: 'absolute', top: 14, right: 14, zIndex: 3, opacity: busy ? 0.5 : 1 }}
                     >
-                        {projectName ? 'Clear Other Projects' : 'Clear Everything'}
+                        <X size={14} />
                     </button>
+
+                    {/* Body */}
+                    <div style={{ position: 'relative', zIndex: 1, padding: '26px 24px 20px' }}>
+                        <div style={{ position: 'relative', width: 46, height: 46, marginBottom: 18 }}>
+                            <div style={{
+                                position: 'absolute', inset: -10, borderRadius: '50%',
+                                background: 'radial-gradient(circle, rgba(239,68,68,0.28), transparent 72%)',
+                            }} />
+                            <div style={{
+                                position: 'relative', width: 46, height: 46, borderRadius: 15,
+                                background: 'rgba(239,68,68,0.12)',
+                                border: '1px solid rgba(239,68,68,0.28)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)',
+                            }}>
+                                <span style={{ color: '#f87171', display: 'flex' }}>
+                                    <Trash2 size={20} strokeWidth={2.25} />
+                                </span>
+                            </div>
+                        </div>
+
+                        <p id="clear-data-title" style={{
+                            fontSize: 15.5, fontWeight: 700, color: 'var(--tx-1)',
+                            letterSpacing: '-0.3px', marginBottom: 8, lineHeight: 1.3,
+                        }}>
+                            Clear data?
+                        </p>
+
+                        <p id="clear-data-desc" style={{ fontSize: 13, color: 'var(--tx-3)', lineHeight: 1.65 }}>
+                            {projectName
+                                ? `Choose how much to clear. "${projectName}" is currently open.`
+                                : 'This permanently deletes every project, page, thumbnail, and export record stored in this browser.'}
+                            {' '}This cannot be undone.
+                        </p>
+                    </div>
+
+                    <div style={{ height: 1, background: 'var(--border-soft)' }} />
+
+                    {/* Actions */}
+                    <div style={{
+                        position: 'relative', zIndex: 1,
+                        display: 'flex', gap: 8,
+                        padding: '16px 24px 20px',
+                        background: 'var(--bg-panel)',
+                    }}>
+                        <button
+                            onClick={onClearAll}
+                            disabled={busy}
+                            style={{
+                                flex: 1, padding: '10px 16px',
+                                borderRadius: 12,
+                                border: '1px solid rgba(239,68,68,0.35)',
+                                background: 'rgba(239,68,68,0.10)',
+                                color: '#f87171',
+                                fontSize: 13, fontWeight: 600,
+                                fontFamily: 'var(--font-sans)',
+                                cursor: busy ? 'default' : 'pointer',
+                                opacity: busy ? 0.6 : 1,
+                                transition: 'background 130ms, border-color 130ms',
+                            }}
+                            onMouseEnter={e => { if (!busy) e.currentTarget.style.background = 'rgba(239,68,68,0.16)' }}
+                            onMouseLeave={e => { if (!busy) e.currentTarget.style.background = 'rgba(239,68,68,0.10)' }}
+                        >
+                            Clear All
+                        </button>
+
+                        <button
+                            onClick={onClearOthers}
+                            disabled={busy || !projectName}
+                            style={{
+                                flex: 1, padding: '10px 16px',
+                                borderRadius: 12,
+                                border: 'none',
+                                background: 'linear-gradient(135deg,#ef4444,#dc2626)',
+                                color: '#fff',
+                                fontSize: 13, fontWeight: 600,
+                                fontFamily: 'var(--font-sans)',
+                                cursor: busy || !projectName ? 'default' : 'pointer',
+                                opacity: busy || !projectName ? 0.6 : 1,
+                                boxShadow: '0 4px 16px rgba(239,68,68,0.32)',
+                                transition: 'transform 130ms, box-shadow 130ms',
+                            }}
+                            onMouseEnter={e => { if (!busy && projectName) { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 7px 22px rgba(239,68,68,0.32)' } }}
+                            onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(239,68,68,0.32)' }}
+                        >
+                            {projectName ? 'Clear Other Projects' : 'Clear Everything'}
+                        </button>
+                    </div>
                 </div>
-            </div>
-        </motion.div>
-    </>
-))
+            </motion.div>
+        </>
+    )
+})
 ClearDataConfirm.displayName = 'ClearDataConfirm'
 
 export const StorageWarningDialog = memo(() => {

@@ -110,14 +110,21 @@ class ProjectService {
     // ── Delete ──────────────────────────────────────────────────────────────────
 
     async deleteProject(projectId: string): Promise<void> {
-        const pageIds = await db.pages
-            .where('projectId').equals(projectId)
-            .primaryKeys()
-
         await db.transaction(
             'rw',
             [db.projects, db.pages, db.thumbnails, db.recovery, db.exports],
             async () => {
+                // Read pageIds INSIDE the transaction, not before it. If a
+                // saveProject() commit landed between an outside read and
+                // this transaction starting, an outside-read list would be
+                // stale — deleting the project with old IDs and orphaning
+                // any pages/thumbnails written by that concurrent save.
+                // Reading here guarantees we see whatever the DB actually
+                // holds at the moment this transaction runs.
+                const pageIds = await db.pages
+                    .where('projectId').equals(projectId)
+                    .primaryKeys()
+
                 await db.projects.delete(projectId)
                 await db.pages.bulkDelete(pageIds as string[])
                 await db.thumbnails.where('pageId').anyOf(pageIds as string[]).delete()

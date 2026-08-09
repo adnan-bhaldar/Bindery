@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
-import { getStorageStats } from '@/db/schema'
+import { getQuotaUsage } from '@/db/schema'
 import { STORAGE_WARNING_THRESHOLD } from '@/constants'
 
 // ─── Module-level singleton state ──────────────────────────────────────────────
@@ -19,9 +19,15 @@ function notifyAll() {
 
 async function checkStorage() {
     try {
-        const stats = await getStorageStats()
-        if (stats.quotaBytes <= 0) return
-        percentUsed = stats.totalUsageBytes / stats.quotaBytes
+        // getQuotaUsage() only reads navigator.storage.estimate() — unlike
+        // getStorageStats() (used by the Settings page), it never loads
+        // every page/thumbnail Blob via toArray() just to compute a
+        // percentage. This runs on a timer plus every focus/visibility
+        // change, so it needs to stay cheap — especially since it's
+        // exactly the moment storage is already under pressure.
+        const { usageBytes, quotaBytes } = await getQuotaUsage()
+        if (quotaBytes <= 0) return
+        percentUsed = usageBytes / quotaBytes
         checked = true
         notifyAll()
     } catch {
