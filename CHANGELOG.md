@@ -18,6 +18,11 @@ baseline.
 - The project switcher's Recent list showed a stale page count for the currently open project right after an import, until the next autosave
 - The logo in the header and Settings → About failed to load when the app was opened offline, since the service worker never cached it
 
+## [1.6.6] 
+
+### Fixed
+
+- Reload dialog bug that would popup on startup in some scenarios.
 
 ## [1.6.5] 
 
