@@ -7,7 +7,7 @@ import { projectService } from '@/services/projectService'
 import { clearDatabase } from '@/db/schema'
 import { toast } from 'sonner'
 
-const FOCUSABLE_SELECTOR = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+const FOCUSABLE_SELECTOR = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
 
 // ─── Clear-data confirmation ────────────────────────────────────────────────
 // Purpose-built rather than reusing the shared useConfirm() dialog — this
@@ -31,6 +31,19 @@ const ClearDataConfirm = memo(({
 }) => {
     const dialogRef = useRef<HTMLDivElement>(null)
     const previouslyFocused = useRef<HTMLElement | null>(null)
+    // The effect below runs once (mount/unmount only) so it can safely
+    // register/unregister its listener and do focus restoration exactly
+    // once — but that means handleKeyDown's closure would otherwise
+    // capture `busy` and `onClose` from that first render and never see
+    // later updates (onClose is an inline arrow function in the parent,
+    // not wrapped in useCallback, so it closes over `clearing` as it was
+    // AT MOUNT — always false — and would ignore later changes too).
+    // Mirroring both into refs, updated on every render, lets the handler
+    // always read the current values without re-running the whole effect.
+    const busyRef = useRef(busy)
+    busyRef.current = busy
+    const onCloseRef = useRef(onClose)
+    onCloseRef.current = onClose
 
     useEffect(() => {
         previouslyFocused.current = document.activeElement as HTMLElement | null
@@ -38,9 +51,9 @@ const ClearDataConfirm = memo(({
 
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Escape') {
-                if (busy) return
+                if (busyRef.current) return
                 e.preventDefault()
-                onClose()
+                onCloseRef.current()
                 return
             }
             if (e.key !== 'Tab' || !dialogRef.current) return
