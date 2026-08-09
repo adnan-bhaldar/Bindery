@@ -1,5 +1,5 @@
 import { useShallow } from 'zustand/react/shallow'
-import { memo, useCallback, useState } from 'react'
+import { memo, useCallback, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { TopNav } from './TopNav'
 import { Sidebar } from './Sidebar'
@@ -63,18 +63,31 @@ export const AppShell = memo(() => {
     }
   }, [currentProject, pages, setCurrentProject, markSaved, settings.maxRecoverySnapshots])
 
+  // Guards against a second handleNewProject call landing while the first
+  // is still awaiting projectService.createProject() — e.g. a fast double
+  // click/press. Without this, both calls read the same pre-await state,
+  // both pass the blank-project check below, and two empty projects get
+  // persisted instead of one.
+  const creatingProject = useRef(false)
+
   const handleNewProject = useCallback(async () => {
+    if (creatingProject.current) return
     // Already on a fresh, untouched project — nothing to gain from creating
     // another one (would just leave an extra empty row in IndexedDB and
     // spam the toast for no reason).
     if (currentProject && currentProject.status === 'new' && pages.length === 0) {
       return
     }
-    const project = await projectService.createProject()
-    suppressNextDirtyFlag()
-    setPages([])
-    setCurrentProject(project)
-    toast.success('New project created')
+    creatingProject.current = true
+    try {
+      const project = await projectService.createProject()
+      suppressNextDirtyFlag()
+      setPages([])
+      setCurrentProject(project)
+      toast.success('New project created')
+    } finally {
+      creatingProject.current = false
+    }
   }, [currentProject, pages.length, setPages, setCurrentProject])
 
   useKeyboardShortcuts({ onImport: importFromPicker, onSave: handleSave, onNewProject: handleNewProject })
