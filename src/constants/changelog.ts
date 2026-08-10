@@ -10,10 +10,10 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
     {
-        version: '1.7.1',
+        version: '1.7.2',
         highlights: [
-            'Added a keyboard shortcut (N) to start a new project instantly',
-            'Fixed New Project creating a redundant empty project and toast when the current one was already blank',
+            'Added an Instant auto-save option that saves shortly after every change instead of on a fixed timer',
+            'Fixed a rare case where a very fast double New Project could create two empty projects instead of one',
         ],
     },
 ]
