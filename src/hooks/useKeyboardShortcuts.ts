@@ -11,6 +11,7 @@ import { SHORTCUTS } from '@/constants'
 export function useKeyboardShortcuts(opts?: {
     onImport?: () => void
     onSave?: () => void
+    onNewProject?: () => void
 }) {
     // ── Stable action-only destructures (no data arrays) ─────────────────────────
     const { toggleCommandPalette, zoomIn, zoomOut, resetZoom, openPreview } = useUIStore(
@@ -43,6 +44,12 @@ export function useKeyboardShortcuts(opts?: {
     useHotkeys(SHORTCUTS.COMMAND_PALETTE, (e) => {
         e.preventDefault()
         toggleCommandPalette()
+    }, { enableOnFormTags: false })
+
+    // ── New Project ───────────────────────────────────────────────────────────────
+    useHotkeys(SHORTCUTS.NEW_PROJECT, (e) => {
+        e.preventDefault()
+        opts?.onNewProject?.()
     }, { enableOnFormTags: false })
 
     // ── Import ────────────────────────────────────────────────────────────────────
