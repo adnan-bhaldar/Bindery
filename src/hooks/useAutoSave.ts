@@ -2,31 +2,61 @@ import { useEffect, useRef } from 'react'
 import { useProjectStore } from '@/stores/projectStore'
 import { useSettingsStore } from '@/stores/settingsStore'
 
+// autoSaveInterval === 0 means "Instant" — see the branch below.
+const INSTANT_DEBOUNCE_MS = 1000
+
 export function useAutoSave(onSave: () => Promise<void>) {
     const isDirty = useProjectStore(s => s.isDirty)
     const hasProject = useProjectStore(s => s.currentProject !== null)
     const { settings } = useSettingsStore()
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+    const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
     const isSavingRef = useRef(false)
 
+    const isInstant = settings.autoSaveInterval === 0
+
+    const runSave = async () => {
+        if (isSavingRef.current) return
+        isSavingRef.current = true
+        try {
+            await onSave()
+        } catch (err) {
+            console.error('[AutoSave] Failed:', err)
+        } finally {
+            isSavingRef.current = false
+        }
+    }
+
+    // ── Instant mode ─────────────────────────────────────────────────────────────
+    // Saves shortly after each change instead of waiting for a fixed interval to
+    // elapse. Debounced (rather than saving on every single change) so a burst of
+    // edits — dragging pages around, batch-rotating a selection — collapses into
+    // one save instead of hammering IndexedDB on every intermediate state.
     useEffect(() => {
+        if (!isInstant) return
+        if (debounceRef.current) clearTimeout(debounceRef.current)
+        if (!isDirty || !hasProject) return
+
+        debounceRef.current = setTimeout(() => { void runSave() }, INSTANT_DEBOUNCE_MS)
+
+        return () => {
+            if (debounceRef.current) clearTimeout(debounceRef.current)
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isInstant, isDirty, hasProject, onSave])
+
+    // ── Interval mode ────────────────────────────────────────────────────────────
+    useEffect(() => {
+        if (isInstant) return
         if (timerRef.current) {
             clearInterval(timerRef.current)
         }
 
         const intervalMs = settings.autoSaveInterval * 1000
 
-        timerRef.current = setInterval(async () => {
-            if (!isDirty || !hasProject || isSavingRef.current) return
-
-            isSavingRef.current = true
-            try {
-                await onSave()
-            } catch (err) {
-                console.error('[AutoSave] Failed:', err)
-            } finally {
-                isSavingRef.current = false
-            }
+        timerRef.current = setInterval(() => {
+            if (!isDirty || !hasProject) return
+            void runSave()
         }, intervalMs)
 
         return () => {
@@ -34,5 +64,6 @@ export function useAutoSave(onSave: () => Promise<void>) {
                 clearInterval(timerRef.current)
             }
         }
-    }, [isDirty, hasProject, settings.autoSaveInterval, onSave])
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isInstant, isDirty, hasProject, settings.autoSaveInterval, onSave])
 }

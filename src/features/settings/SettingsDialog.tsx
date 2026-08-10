@@ -72,7 +72,7 @@ const SECTIONS: SettingsSection[] = [
 const SEARCH_INDEX: Record<string, string[]> = {
     general: [
         'restore previous session', 'reopen last project on startup',
-        'auto save interval', 'how often to automatically save',
+        'auto save interval', 'how often to automatically save', 'instant',
         'recovery snapshots', 'number of recovery snapshots to keep',
     ],
     appearance: [
@@ -320,10 +320,10 @@ const GeneralSection = memo(() => {
                 </CardRow>
             </Card>
             <Card title="Auto Save" desc="Applies immediately — no restart needed.">
-                <CardRow label="Auto save interval" desc="How often to automatically save your project">
+                <CardRow label="Auto save interval" desc="How often to automatically save your project, or save shortly after every change">
                     <SegRow
                         value={String(settings.autoSaveInterval)}
-                        options={[{ value: '10', label: '10s' }, { value: '15', label: '15s' }, { value: '30', label: '30s' }, { value: '60', label: '1m' }, { value: '300', label: '5m' }]}
+                        options={[{ value: '0', label: 'Instant' }, { value: '10', label: '10s' }, { value: '15', label: '15s' }, { value: '30', label: '30s' }, { value: '60', label: '1m' }, { value: '300', label: '5m' }]}
                         onChange={v => updateSetting('autoSaveInterval', Number(v))}
                     />
                 </CardRow>

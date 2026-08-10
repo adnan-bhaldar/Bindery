@@ -6,6 +6,16 @@ release below adds functionality or fixes bugs without breaking existing
 usage, so all of them are `MINOR` or `PATCH` bumps against the `1.0.0`
 baseline.
 
+## [1.7.2]
+
+### Added
+
+- An **Instant** auto-save option (Settings → General) that saves shortly after every change instead of waiting for a fixed interval
+
+### Fixed
+
+- A very fast double-trigger of New Project (e.g. rapid double-press of `N`) could occasionally create two empty projects instead of one; project creation is now single-flight
+
 ## [1.7.1]
 
 ### Added
