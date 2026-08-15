@@ -1,0 +1,17 @@
+node_modules/
+.env
+*.local
+
+# Production build output (if using TypeScript or Build tools)
+dist/
+build/
+
+# Server and error logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# System files
+.DS_Store
