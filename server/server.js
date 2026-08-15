@@ -2,7 +2,6 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import morgan from "morgan";
 
 import { connectDB } from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
@@ -26,9 +25,6 @@ app.use(
 );
 app.use(express.json());
 app.use(cookieParser());
-if (process.env.NODE_ENV !== "production") {
-  app.use(morgan("dev"));
-}
 
 app.get("/", statusPage);
 app.get("/api/health", (req, res) => res.json({ status: "ok" }));
@@ -40,6 +36,16 @@ app.use(notFound);
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Bindery server running on port ${PORT}`);
-});
+
+// Vercel wraps this exported app as a serverless function — it never calls
+// app.listen() itself. Locally (and on any traditional host like Render),
+// process.env.VERCEL isn't set, so this runs exactly as before.
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    if (process.env.NODE_ENV !== "production") {
+      console.log(`Bindery server running on port ${PORT}`);
+    }
+  });
+}
+
+export default app;

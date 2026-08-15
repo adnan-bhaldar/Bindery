@@ -22,7 +22,7 @@
 <br>
 
 <p align="center">
-  <img src="./public/preview.png" alt="Bindery — the same document assembly workspace shown in light and dark theme" width="100%">
+  <img src="./client/public/preview.png" alt="Bindery — the same document assembly workspace shown in light and dark theme" width="100%">
 </p>
 
 <br>
@@ -99,11 +99,21 @@ Bindery has **no backend**. Files, extracted text, projects, and generated PDFs 
 
 ## 🛠️ Getting Started
 
-**Prerequisites:** Node.js and npm
+**Prerequisites:** Node.js, npm, and a MongoDB connection (a free
+[Atlas](https://www.mongodb.com/atlas) cluster works fine)
 
 ```bash
 git clone https://github.com/adnan-bhaldar/Bindery.git
 cd Bindery
+```
+
+Bindery is split into two parts — a `client/` frontend and a `server/`
+backend — each with its own dependencies and setup.
+
+### Client
+
+```bash
+cd client
 npm install
 npm run dev
 ```
@@ -111,10 +121,24 @@ npm run dev
 Open the local URL printed in your terminal and start dropping in images. 🎉
 
 ```bash
-npm run build # production build
+npm run build   # production build
 npm run preview # preview the production build locally
-npm run lint # run ESLint
+npm run lint    # run ESLint
 ```
+
+### Server
+
+The backend stores account credentials and synced settings only — no
+project or page data ever leaves your browser.
+
+```bash
+cd server
+npm install
+cp .env.example .env   # fill in MONGO_URI, JWT_SECRET, CLIENT_ORIGIN
+npm run dev             # runs via nodemon
+```
+
+`npm start` runs the same server with plain `node` for production.
 
 <br>
 
@@ -126,7 +150,8 @@ GPL-3.0 — see [LICENSE](./LICENSE) for details.
 
 <div align="center">
 
-## Made with ❤️ 
+## Made with ❤️
+
 <!-- by <a href="https://github.com/adnan-bhaldar"><strong>Adnan Bhaldar</strong></a> -->
 
 </div>

@@ -5,7 +5,9 @@ import type { AppSettings } from '@/types'
 // ─── Client ───────────────────────────────────────────────────────────────────
 
 const api = axios.create({
-    baseURL: API_BASE_URL,
+    // Strips a trailing slash so VITE_API_URL can be set either way
+    // (with or without one) without producing a double slash before /api.
+    baseURL: `${API_BASE_URL.replace(/\/$/, '')}/api`,
     withCredentials: true, // sends/receives the httpOnly auth cookie
 })
 
@@ -39,8 +41,17 @@ class AuthService {
         await api.post('/auth/logout')
     }
 
-    async me(): Promise<AuthUser> {
-        const res = await api.get<AuthUser>('/auth/me')
+    async me(): Promise<AuthUser | null> {
+        // 401 here means "no active session" — a totally expected outcome on
+        // every fresh page load, not an error. Without validateStatus, axios
+        // throws on any non-2xx status, and the browser logs that as a red
+        // console error regardless of try/catch around the call site. Telling
+        // axios that <500 is an acceptable response lets it resolve normally
+        // instead, so a logged-out visit produces a clean console.
+        const res = await api.get<AuthUser>('/auth/me', {
+            validateStatus: (status) => status < 500,
+        })
+        if (res.status === 401) return null
         return res.data
     }
 
