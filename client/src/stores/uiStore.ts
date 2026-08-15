@@ -22,6 +22,10 @@ interface UIState {
     // Command palette
     isCommandPaletteOpen: boolean
 
+    // Settings dialog
+    isSettingsOpen: boolean
+    settingsSection: string
+
     // Preview
     previewPageId: string | null
     isPreviewOpen: boolean
@@ -61,6 +65,10 @@ interface UIActions {
     closeCommandPalette: () => void
     toggleCommandPalette: () => void
 
+    // Settings dialog
+    openSettings: (section?: string) => void
+    closeSettings: () => void
+
     // Preview
     openPreview: (pageId: string) => void
     closePreview: () => void
@@ -93,6 +101,8 @@ export const useUIStore = create<UIStore>()((set, get) => ({
     zoom: ZOOM_DEFAULT,
     isFullscreen: false,
     isCommandPaletteOpen: false,
+    isSettingsOpen: false,
+    settingsSection: 'general',
     previewPageId: null,
     isPreviewOpen: false,
     focusedPageId: null,
@@ -152,6 +162,12 @@ export const useUIStore = create<UIStore>()((set, get) => ({
         set((state) => ({
             isCommandPaletteOpen: !state.isCommandPaletteOpen,
         })),
+
+    // ── Settings dialog ────────────────────────────────────────────────────────
+
+    openSettings: (section = 'general') =>
+        set({ isSettingsOpen: true, settingsSection: section }),
+    closeSettings: () => set({ isSettingsOpen: false }),
 
     // ── Preview ────────────────────────────────────────────────────────────────
 

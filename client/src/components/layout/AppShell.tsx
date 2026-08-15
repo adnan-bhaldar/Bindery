@@ -1,5 +1,5 @@
 import { useShallow } from 'zustand/react/shallow'
-import { memo, useCallback, useRef, useState } from 'react'
+import { memo, useCallback, useRef } from 'react'
 import { toast } from 'sonner'
 import { TopNav } from './TopNav'
 import { Sidebar } from './Sidebar'
@@ -22,6 +22,7 @@ import { useProjectStore } from '@/stores/projectStore'
 import { usePagesStore } from '@/stores/pagesStore'
 import { projectService } from '@/services/projectService'
 import { useSettingsStore } from '@/stores/settingsStore'
+import { useUIStore } from '@/stores/uiStore'
 import { suppressNextDirtyFlag } from '@/stores/storeLinks'
 import { SmallScreenNotice } from '@/components/common/SmallScreenNotice'
 
@@ -29,7 +30,13 @@ export const AppShell = memo(() => {
   useTheme()
   useAccessibilitySettings()
 
-  const [settingsOpen, setSettingsOpen] = useState(false)
+  const { isSettingsOpen, closeSettings, openSettings } = useUIStore(
+    useShallow((s) => ({
+      isSettingsOpen: s.isSettingsOpen,
+      closeSettings: s.closeSettings,
+      openSettings: s.openSettings,
+    }))
+  )
   const {
     isImporting, progress: importProgress, importFiles, importFromPicker,
     showImportChooser, chooseImportImages, chooseImportPdf, cancelImportChooser,
@@ -135,7 +142,7 @@ export const AppShell = memo(() => {
       <SmallScreenNotice />
 
       <TopNav
-        onSettings={() => setSettingsOpen(true)}
+        onSettings={() => openSettings()}
         onRunOCR={() => void runOCR()}
       />
 
@@ -146,7 +153,7 @@ export const AppShell = memo(() => {
       </div>
 
       <CommandPalette
-        onOpenSettings={() => setSettingsOpen(true)}
+        onOpenSettings={() => openSettings()}
         onRunOCR={() => void runOCR()}
         onImport={importFromPicker}
         onSave={handleSave}
@@ -161,7 +168,7 @@ export const AppShell = memo(() => {
       />
       <OCRProgressPanel progress={ocrProgress} onCancel={cancelOCR} />
       <ExportDialog />
-      <SettingsDialog isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <SettingsDialog isOpen={isSettingsOpen} onClose={closeSettings} />
     </div>
   )
 })

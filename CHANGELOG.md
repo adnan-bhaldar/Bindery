@@ -5,6 +5,15 @@ All notable changes to Bindery are documented here. This project follows
 release below adds functionality or fixes bugs without breaking existing
 usage, so all of them are `MINOR` or `PATCH` bumps against the `1.0.0`
 baseline.
+ 
+## [2.0.0]
+ 
+### Added
+ 
+- **Accounts** — sign up or log in from a new button in the header, with a combined login/signup dialog (including a confirm-password field on signup and show/hide toggles on password fields)
+- **Settings sync** — two new buttons in Settings let you save your current settings to your account, or load them back on another device. Only fields that actually differ from local state are applied, so loading identical data is a genuine no-op. Sync is manual only — nothing uploads or downloads automatically, only when you click one of the two buttons
+- **Account section** in Settings (new first item in the sidebar) — view and update your username and email (saved automatically when you leave the field), and change your password (requires your current password, plus a dedicated Update button)
+- A backend server (Node/Express + MongoDB) now exists alongside the client, storing only account credentials and synced settings — no project or page data ever leaves the browser
 
 ## [1.7.2]
 

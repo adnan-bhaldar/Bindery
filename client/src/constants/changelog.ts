@@ -10,10 +10,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
     {
-        version: '1.7.2',
+        version: '2.0.0',
         highlights: [
-            'Added an Instant auto-save option that saves shortly after every change instead of on a fixed timer',
-            'Fixed a rare case where a very fast double New Project could create two empty projects instead of one',
+            'New: sign up or log in from the header — Bindery now has accounts',
+            'New: save your settings to your account and load them on another device, from two new buttons in Settings',
+            'New: an Account section in Settings for managing your username, email, and password',
         ],
     },
 ]

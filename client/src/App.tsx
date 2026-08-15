@@ -9,6 +9,7 @@ import { InstallBanner } from '@/components/common/InstallBanner'
 import { UpdateAvailableDialog } from '@/components/common/UpdateAvailableDialog'
 import { WhatsNewDialog } from '@/components/common/WhatsNewDialog'
 import { StorageWarningDialog } from '@/components/common/StorageWarningDialog'
+import { AuthDialog } from '@/components/ui/AuthDialog'
 
 export const App = memo(() => (
   <ErrorBoundary>
@@ -21,6 +22,7 @@ export const App = memo(() => (
           <UpdateAvailableDialog />
           <WhatsNewDialog />
           <StorageWarningDialog />
+          <AuthDialog />
         </ContextMenuProvider>
       </ConfirmProvider>
     </TooltipProvider>

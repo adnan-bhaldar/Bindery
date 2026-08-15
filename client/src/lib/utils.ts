@@ -203,3 +203,18 @@ export function pick<T extends object, K extends keyof T>(
         {} as Pick<T, K>
     )
 }
+
+// ─── Diff keys between two objects ────────────────────────────────────────────
+// Used by the account settings save/load buttons — only fields that actually
+// differ from current state get applied, so loading identical remote data is
+// a genuine no-op rather than a same-value write that still triggers a re-render.
+
+export function diffKeys<T extends object>(current: T, incoming: Partial<T>): Partial<T> {
+    const diff: Partial<T> = {}
+    for (const key of Object.keys(incoming) as (keyof T)[]) {
+        if (incoming[key] !== current[key]) {
+            diff[key] = incoming[key]
+        }
+    }
+    return diff
+}

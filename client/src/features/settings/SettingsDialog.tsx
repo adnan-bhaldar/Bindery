@@ -6,9 +6,12 @@ import {
     Shield, Database, Info, RotateCcw,
     HardDrive, Image as ImageIcon, FileArchive, Trash2,
     Sun, Moon, Check, ExternalLink, ChevronDown,
-    Smartphone, WifiOff, CheckCircle2,
+    Smartphone, WifiOff, CheckCircle2, Cloud, User, CloudDownload, Eye, EyeOff,
 } from 'lucide-react'
 import { useSettingsStore } from '@/stores/settingsStore'
+import { useAuthStore } from '@/stores/authStore'
+import { useUIStore } from '@/stores/uiStore'
+import { settingsSyncService } from '@/services/authService'
 import { usePWA } from '@/hooks/usePWA'
 import { useThemeStore } from '@/stores/themeStore'
 import { Toggle } from '@/components/ui/Toggle'
@@ -17,7 +20,7 @@ import { useConfirm } from '@/components/ui/ConfirmDialog'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { OCR_LANGUAGE_LABELS, APP_VERSION } from '@/constants'
 import { getStorageStats, clearDatabase, type StorageStats } from '@/db/schema'
-import { formatFileSize } from '@/lib/utils'
+import { formatFileSize, diffKeys } from '@/lib/utils'
 import { toast } from 'sonner'
 import type { AppSettings } from '@/types'
 
@@ -49,6 +52,7 @@ interface SettingsSection {
 // settings that quietly do nothing, they were removed outright.
 
 const SECTIONS: SettingsSection[] = [
+    { id: 'account', label: 'Account', Icon: User },
     { id: 'general', label: 'General', Icon: Settings },
     { id: 'appearance', label: 'Appearance', Icon: Palette },
     { id: 'import', label: 'Import', Icon: Upload },
@@ -70,6 +74,10 @@ const SECTIONS: SettingsSection[] = [
 // which is what made search look completely broken. This index is what lets
 // a search term match the real thing the user is looking for.
 const SEARCH_INDEX: Record<string, string[]> = {
+    account: [
+        'username', 'email', 'password', 'change password', 'sign in', 'sign out',
+        'log in', 'log out', 'profile',
+    ],
     general: [
         'restore previous session', 'reopen last project on startup',
         'auto save interval', 'how often to automatically save', 'instant',
@@ -1077,6 +1085,211 @@ const StorageSection = memo(() => {
 })
 StorageSection.displayName = 'StorageSection'
 
+const textFieldStyle: React.CSSProperties = {
+    padding: '6px 10px', borderRadius: 8,
+    background: 'var(--s3)', border: '1px solid var(--border)',
+    color: 'var(--tx-1)', fontSize: 12, fontFamily: 'var(--font-sans)',
+    outline: 'none', width: 220,
+    transition: 'border-color 110ms, box-shadow 110ms',
+}
+const passwordFieldStyle: React.CSSProperties = { ...textFieldStyle, paddingRight: 34 }
+const eyeButtonStyle: React.CSSProperties = {
+    position: 'absolute', right: 3, top: '50%', transform: 'translateY(-50%)',
+    background: 'transparent', border: 'none', cursor: 'pointer',
+    color: 'var(--tx-3)', padding: 5, borderRadius: 'var(--r-sm)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+}
+const textFieldFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    e.currentTarget.style.borderColor = 'var(--accent)'
+    e.currentTarget.style.boxShadow = '0 0 0 3px var(--accent-dim)'
+}
+const textFieldBlurStyle = (e: React.FocusEvent<HTMLInputElement>) => {
+    e.currentTarget.style.borderColor = 'var(--border)'
+    e.currentTarget.style.boxShadow = 'none'
+}
+
+const AccountSection = memo(() => {
+    const { user, status, updateProfile, changePassword, openAuthDialog, logout } = useAuthStore()
+
+    const [username, setUsername] = useState(user?.username ?? '')
+    const [email, setEmail] = useState(user?.email ?? '')
+    const [currentPassword, setCurrentPassword] = useState('')
+    const [newPassword, setNewPassword] = useState('')
+    const [isSavingPassword, setIsSavingPassword] = useState(false)
+    const [showNewPassword, setShowNewPassword] = useState(false)
+
+    useEffect(() => {
+        setUsername(user?.username ?? '')
+        setEmail(user?.email ?? '')
+    }, [user])
+
+    if (status !== 'authenticated' || !user) {
+        return (
+            <Card title="Account" icon={Info}>
+                <p style={{ fontSize: 12, color: 'var(--tx-3)', marginBottom: 12, lineHeight: 1.6 }}>
+                    Sign in to manage your username, email, and password, and to sync your
+                    settings across devices.
+                </p>
+                <button
+                    onClick={() => openAuthDialog('login')}
+                    style={{
+                        padding: '7px 14px', borderRadius: 'var(--r-md)', border: 'none',
+                        background: 'var(--gradient-accent)', color: 'var(--accent-fg)',
+                        fontSize: 12.5, fontWeight: 500, fontFamily: 'var(--font-sans)',
+                        cursor: 'pointer',
+                    }}
+                >
+                    Sign in
+                </button>
+            </Card>
+        )
+    }
+
+    const handleUsernameBlur = async () => {
+        if (username === (user.username ?? '')) return
+        try {
+            await updateProfile({ username })
+            toast.success('Username updated')
+        } catch (err) {
+            toast.error('Could not update username', {
+                description: err instanceof Error ? err.message : undefined,
+            })
+            setUsername(user.username ?? '')
+        }
+    }
+
+    const handleEmailBlur = async () => {
+        if (email === user.email) return
+        try {
+            await updateProfile({ email })
+            toast.success('Email updated')
+        } catch (err) {
+            toast.error('Could not update email', {
+                description: err instanceof Error ? err.message : undefined,
+            })
+            setEmail(user.email)
+        }
+    }
+
+    const handlePasswordSubmit = async (e: React.FormEvent) => {
+        e.preventDefault()
+        if (newPassword.length < 8) {
+            toast.error('New password must be at least 8 characters')
+            return
+        }
+        setIsSavingPassword(true)
+        try {
+            await changePassword(currentPassword, newPassword)
+            toast.success('Password updated')
+            setCurrentPassword('')
+            setNewPassword('')
+            setShowNewPassword(false)
+        } catch (err) {
+            toast.error('Could not change password', {
+                description: err instanceof Error ? err.message : undefined,
+            })
+        } finally {
+            setIsSavingPassword(false)
+        }
+    }
+
+    return (
+        <div>
+            <Card title="Profile" icon={Settings}>
+                <CardRow label="Username" desc="Shown in the app header.">
+                    <input
+                        value={username}
+                        onChange={e => setUsername(e.target.value)}
+                        onBlur={handleUsernameBlur}
+                        placeholder="Not set"
+                        style={textFieldStyle}
+                        onFocus={textFieldFocus}
+                        onBlurCapture={textFieldBlurStyle}
+                    />
+                </CardRow>
+                <CardRow label="Email" desc="Used to log in." last>
+                    <input
+                        type="email"
+                        value={email}
+                        onChange={e => setEmail(e.target.value)}
+                        onBlur={handleEmailBlur}
+                        style={textFieldStyle}
+                        onFocus={textFieldFocus}
+                        onBlurCapture={textFieldBlurStyle}
+                    />
+                </CardRow>
+            </Card>
+
+            <Card title="Password" desc="Changing your password does not affect other signed-in devices.">
+                <form onSubmit={handlePasswordSubmit}>
+                    <CardRow label="Current password">
+                        <input
+                            type="password"
+                            value={currentPassword}
+                            onChange={e => setCurrentPassword(e.target.value)}
+                            style={textFieldStyle}
+                            onFocus={textFieldFocus}
+                            onBlurCapture={textFieldBlurStyle}
+                        />
+                    </CardRow>
+                    <CardRow label="New password" desc="At least 8 characters." last>
+                        <div style={{ position: 'relative' }}>
+                            <input
+                                type={showNewPassword ? 'text' : 'password'}
+                                value={newPassword}
+                                onChange={e => setNewPassword(e.target.value)}
+                                style={passwordFieldStyle}
+                                onFocus={textFieldFocus}
+                                onBlurCapture={textFieldBlurStyle}
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowNewPassword(v => !v)}
+                                aria-label={showNewPassword ? 'Hide password' : 'Show password'}
+                                style={eyeButtonStyle}
+                            >
+                                {showNewPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                            </button>
+                        </div>
+                    </CardRow>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 12 }}>
+                        <button
+                            type="submit"
+                            disabled={isSavingPassword || !currentPassword || !newPassword}
+                            style={{
+                                display: 'flex', alignItems: 'center', gap: 8,
+                                padding: '7px 14px', borderRadius: 'var(--r-md)', border: 'none',
+                                background: 'var(--gradient-accent)', color: 'var(--accent-fg)',
+                                fontSize: 12.5, fontWeight: 500, fontFamily: 'var(--font-sans)',
+                                cursor: isSavingPassword ? 'not-allowed' : 'pointer',
+                                opacity: (!currentPassword || !newPassword) ? 0.5 : 1,
+                            }}
+                        >
+                            {isSavingPassword && <Spinner size={13} />}
+                            Update password
+                        </button>
+                    </div>
+                </form>
+            </Card>
+
+            <Card title="Sign out" desc="You'll need to log in again to sync settings on this device.">
+                <button
+                    onClick={() => logout()}
+                    style={{
+                        padding: '7px 14px', borderRadius: 'var(--r-md)',
+                        border: '1px solid var(--border)', background: 'transparent',
+                        color: 'var(--tx-1)', fontSize: 12.5, fontWeight: 500,
+                        fontFamily: 'var(--font-sans)', cursor: 'pointer',
+                    }}
+                >
+                    Sign out
+                </button>
+            </Card>
+        </div>
+    )
+})
+AccountSection.displayName = 'AccountSection'
+
 const AboutSection = memo(() => (
     <div>
         <Card>
@@ -1183,6 +1396,7 @@ AboutSection.displayName = 'AboutSection'
 // ─── Section map ──────────────────────────────────────────────────────────────
 
 const SECTION_COMPONENTS: Record<string, React.FC> = {
+    account: AccountSection,
     general: GeneralSection,
     appearance: AppearanceSection,
     import: ImportSection,
@@ -1206,8 +1420,20 @@ interface Props {
 export const SettingsDialog = memo(({ isOpen, onClose }: Props) => {
     const [activeSection, setActiveSection] = useState('general')
     const [search, setSearch] = useState('')
-    const { resetSettings } = useSettingsStore()
+    const [isSaving, setIsSaving] = useState(false)
+    const [isLoadingRemote, setIsLoadingRemote] = useState(false)
+    const { settings, resetSettings, updateSettings } = useSettingsStore()
+    const { status: authStatus, openAuthDialog } = useAuthStore()
+    const settingsSection = useUIStore((s) => s.settingsSection)
     const confirm = useConfirm()
+
+    // Jump to whichever section the dialog was opened for (e.g. the header's
+    // profile icon opens straight to 'account') — only on the open transition,
+    // so navigating between sections while open doesn't get overridden.
+    useEffect(() => {
+        if (isOpen) setActiveSection(settingsSection)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isOpen])
 
     const filtered = useMemo(
         () => SECTIONS.filter(s => sectionMatches(s, search)),
@@ -1235,6 +1461,80 @@ export const SettingsDialog = memo(({ isOpen, onClose }: Props) => {
         })
         if (ok) resetSettings()
     }, [resetSettings, confirm])
+
+    const handleSaveToAccount = useCallback(async () => {
+        if (authStatus !== 'authenticated') {
+            openAuthDialog('login')
+            return
+        }
+        setIsSaving(true)
+        try {
+            // settingsStore.settings.theme exists in the AppSettings type but
+            // isn't actually what drives the rendered theme — that's
+            // useThemeStore, a separate persisted store (see useTheme.ts).
+            // Overwrite the payload's theme with the real live value so a
+            // save actually captures what the user currently sees.
+            const liveTheme = useThemeStore.getState().theme
+            const payload = { ...settings, theme: liveTheme }
+            await settingsSyncService.updateRemoteSettings(payload)
+            toast.success('Settings saved to your account')
+        } catch (err) {
+            toast.error('Failed to save settings', {
+                description: err instanceof Error ? err.message : undefined,
+            })
+        } finally {
+            setIsSaving(false)
+        }
+    }, [authStatus, openAuthDialog, settings])
+
+    const handleLoadFromAccount = useCallback(async () => {
+        if (authStatus !== 'authenticated') {
+            openAuthDialog('login')
+            return
+        }
+        const ok = await confirm({
+            title: 'Load settings from your account?',
+            message: 'This will overwrite your current local settings with whatever was last saved to your account. This cannot be undone.',
+            confirmLabel: 'Load Settings',
+            cancelLabel: 'Cancel',
+            variant: 'warning',
+        })
+        if (!ok) return
+
+        setIsLoadingRemote(true)
+        try {
+            const { data } = await settingsSyncService.getRemoteSettings()
+
+            if (!data || Object.keys(data).length === 0) {
+                toast.error('No settings have been saved to your account yet')
+                return
+            }
+
+            // Only apply keys that actually differ — a field already matching
+            // locally is genuinely a no-op, not just an invisible same-value write.
+            const currentSettings = useSettingsStore.getState().settings
+            const changed = diffKeys(currentSettings, data)
+            const themeChanged = data.theme && data.theme !== useThemeStore.getState().theme
+
+            if (Object.keys(changed).length === 0 && !themeChanged) {
+                toast.success('Already up to date — nothing to load')
+                return
+            }
+
+            if (Object.keys(changed).length > 0) updateSettings(changed)
+            // Same reason as the save side: theme is actually rendered from
+            // useThemeStore, not settingsStore, so it needs applying separately.
+            if (themeChanged) useThemeStore.getState().setTheme(data.theme!)
+
+            toast.success('Settings loaded from your account')
+        } catch (err) {
+            toast.error('Failed to load settings', {
+                description: err instanceof Error ? err.message : undefined,
+            })
+        } finally {
+            setIsLoadingRemote(false)
+        }
+    }, [authStatus, openAuthDialog, confirm, updateSettings])
 
     return (
         <AnimatePresence>
@@ -1285,6 +1585,34 @@ export const SettingsDialog = memo(({ isOpen, onClose }: Props) => {
                             <Tooltip content="Reset all settings" placement="bottom">
                                 <button onClick={handleReset} className="icon-btn" style={{ color: 'var(--tx-3)' }}>
                                     <RotateCcw size={14} />
+                                </button>
+                            </Tooltip>
+
+                            <Tooltip
+                                content={authStatus === 'authenticated' ? 'Save settings to your account' : 'Sign in to save settings to your account'}
+                                placement="bottom"
+                            >
+                                <button
+                                    onClick={handleSaveToAccount}
+                                    disabled={isSaving}
+                                    className="icon-btn"
+                                    style={{ color: 'var(--tx-3)', cursor: isSaving ? 'not-allowed' : 'pointer' }}
+                                >
+                                    {isSaving ? <Spinner size={14} /> : <Cloud size={14} />}
+                                </button>
+                            </Tooltip>
+
+                            <Tooltip
+                                content={authStatus === 'authenticated' ? 'Load settings from your account' : 'Sign in to load settings from your account'}
+                                placement="bottom"
+                            >
+                                <button
+                                    onClick={handleLoadFromAccount}
+                                    disabled={isLoadingRemote}
+                                    className="icon-btn"
+                                    style={{ color: 'var(--tx-3)', cursor: isLoadingRemote ? 'not-allowed' : 'pointer' }}
+                                >
+                                    {isLoadingRemote ? <Spinner size={14} /> : <CloudDownload size={14} />}
                                 </button>
                             </Tooltip>
 

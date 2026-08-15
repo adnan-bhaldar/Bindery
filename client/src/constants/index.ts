@@ -19,6 +19,7 @@ export const STORAGE_KEYS = {
     THEME: 'bindery:theme',
     ACCENT_COLOR: 'bindery:accent-color',
     SETTINGS: 'bindery:settings',
+    HAD_SESSION: 'bindery:had-session',
 } as const
 
 // ─── Storage ───────────────────────────────────────────────────────────────────
@@ -161,3 +162,7 @@ export const ERROR_MESSAGES = {
     DUPLICATE_DETECTED: 'Duplicate image detected.',
     LOW_RESOLUTION: 'Image resolution may be too low for print quality.',
 } as const
+
+// ─── API ─────────────────────────────────────────────────────────────────────
+
+export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'

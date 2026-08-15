@@ -12,6 +12,7 @@ import { usePagesStore, selectPageCount } from '@/stores/pagesStore'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { ProjectDropdown } from '@/features/project/ProjectNameDialog'
 import { APP_NAME } from '@/constants'
+import { HeaderAuthControl } from '@/components/layout/HeaderAuthControl'
 
 interface Props {
   onRunOCR: () => void
@@ -136,6 +137,8 @@ export const TopNav = memo(({ onRunOCR, onSettings }: Props) => {
             Export PDF
           </button>
         </Tooltip>
+
+        <HeaderAuthControl />
       </div>
     </header>
   )
