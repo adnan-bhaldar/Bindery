@@ -9,7 +9,7 @@ import {
     Smartphone, WifiOff, CheckCircle2, Cloud, User, CloudDownload, Eye, EyeOff,
 } from 'lucide-react'
 import { useSettingsStore } from '@/stores/settingsStore'
-import { useAuthStore } from '@/stores/authStore'
+import { useAuthStore, extractErrorMessage } from '@/stores/authStore'
 import { useUIStore } from '@/stores/uiStore'
 import { settingsSyncService } from '@/services/authService'
 import { usePWA } from '@/hooks/usePWA'
@@ -1109,7 +1109,8 @@ const textFieldBlurStyle = (e: React.FocusEvent<HTMLInputElement>) => {
 }
 
 const AccountSection = memo(() => {
-    const { user, status, updateProfile, changePassword, openAuthDialog, logout } = useAuthStore()
+    const { user, status, updateProfile, changePassword, deleteAccount, openAuthDialog, logout } = useAuthStore()
+    const confirm = useConfirm()
 
     const [username, setUsername] = useState(user?.username ?? '')
     const [email, setEmail] = useState(user?.email ?? '')
@@ -1117,6 +1118,9 @@ const AccountSection = memo(() => {
     const [newPassword, setNewPassword] = useState('')
     const [isSavingPassword, setIsSavingPassword] = useState(false)
     const [showNewPassword, setShowNewPassword] = useState(false)
+    const [deletePassword, setDeletePassword] = useState('')
+    const [showDeletePassword, setShowDeletePassword] = useState(false)
+    const [isDeletingAccount, setIsDeletingAccount] = useState(false)
 
     useEffect(() => {
         setUsername(user?.username ?? '')
@@ -1190,6 +1194,35 @@ const AccountSection = memo(() => {
             })
         } finally {
             setIsSavingPassword(false)
+        }
+    }
+
+    const handleDeleteAccount = async () => {
+        if (!deletePassword) {
+            toast.error('Enter your password to confirm')
+            return
+        }
+        const ok = await confirm({
+            title: 'Delete your account?',
+            message: 'This permanently deletes your account and any settings saved to it. Your local projects and pages on this device are not affected. This cannot be undone.',
+            confirmLabel: 'Delete Account',
+            cancelLabel: 'Cancel',
+            variant: 'danger',
+        })
+        if (!ok) return
+
+        setIsDeletingAccount(true)
+        try {
+            await deleteAccount(deletePassword)
+            toast.success('Account deleted')
+            useUIStore.getState().closeSettings()
+        } catch (err) {
+            toast.error('Could not delete account', {
+                description: err instanceof Error ? err.message : undefined,
+            })
+        } finally {
+            setIsDeletingAccount(false)
+            setDeletePassword('')
         }
     }
 
@@ -1284,6 +1317,59 @@ const AccountSection = memo(() => {
                 >
                     Sign out
                 </button>
+            </Card>
+
+            <Card title="Delete Account" icon={Trash2}>
+                <p style={{ fontSize: 11.5, color: 'var(--tx-3)', marginBottom: 12, lineHeight: 1.6 }}>
+                    Permanently deletes your account and any settings saved to it. Your local
+                    projects and pages on this device are not affected. This cannot be undone.
+                </p>
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8 }}>
+                    <div style={{ flex: 1 }}>
+                        <label style={{ display: 'block', fontSize: 11, color: 'var(--tx-3)', marginBottom: 5 }}>
+                            Password
+                        </label>
+                        <div style={{ position: 'relative' }}>
+                            <input
+                                type={showDeletePassword ? 'text' : 'password'}
+                                value={deletePassword}
+                                onChange={e => setDeletePassword(e.target.value)}
+                                placeholder="Confirm with your password"
+                                style={{ ...passwordFieldStyle, width: '100%' }}
+                                onFocus={textFieldFocus}
+                                onBlurCapture={textFieldBlurStyle}
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowDeletePassword(v => !v)}
+                                aria-label={showDeletePassword ? 'Hide password' : 'Show password'}
+                                style={eyeButtonStyle}
+                            >
+                                {showDeletePassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                            </button>
+                        </div>
+                    </div>
+                    <button
+                        onClick={handleDeleteAccount}
+                        disabled={isDeletingAccount || !deletePassword}
+                        style={{
+                            display: 'flex', alignItems: 'center', gap: 6,
+                            padding: '8px 16px', borderRadius: 'var(--r-md)',
+                            border: '1px solid rgba(239,68,68,0.3)',
+                            background: 'rgba(239,68,68,0.08)',
+                            color: '#ef4444', fontSize: 12, fontWeight: 500,
+                            fontFamily: 'var(--font-sans)',
+                            cursor: (isDeletingAccount || !deletePassword) ? 'default' : 'pointer',
+                            opacity: (isDeletingAccount || !deletePassword) ? 0.6 : 1,
+                            transition: 'background 110ms', flexShrink: 0,
+                        }}
+                        onMouseEnter={e => { if (!isDeletingAccount && deletePassword) e.currentTarget.style.background = 'rgba(239,68,68,0.14)' }}
+                        onMouseLeave={e => { if (!isDeletingAccount && deletePassword) e.currentTarget.style.background = 'rgba(239,68,68,0.08)' }}
+                    >
+                        {isDeletingAccount ? <Spinner size={13} /> : <Trash2 size={13} />}
+                        {isDeletingAccount ? 'Deleting…' : 'Delete Account'}
+                    </button>
+                </div>
             </Card>
         </div>
     )
@@ -1480,7 +1566,7 @@ export const SettingsDialog = memo(({ isOpen, onClose }: Props) => {
             toast.success('Settings saved to your account')
         } catch (err) {
             toast.error('Failed to save settings', {
-                description: err instanceof Error ? err.message : undefined,
+                description: extractErrorMessage(err, 'Something went wrong'),
             })
         } finally {
             setIsSaving(false)
@@ -1529,7 +1615,7 @@ export const SettingsDialog = memo(({ isOpen, onClose }: Props) => {
             toast.success('Settings loaded from your account')
         } catch (err) {
             toast.error('Failed to load settings', {
-                description: err instanceof Error ? err.message : undefined,
+                description: extractErrorMessage(err, 'Something went wrong'),
             })
         } finally {
             setIsLoadingRemote(false)

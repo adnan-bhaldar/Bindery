@@ -123,3 +123,40 @@ export const changePassword = async (req, res, next) => {
     next(error);
   }
 };
+
+// DELETE /api/auth/account — permanently deletes the account and its settings.
+// Requires the current password as confirmation, same as changing it — this
+// is the most destructive action available, so identity gets re-verified
+// rather than trusting the session cookie alone.
+export const deleteAccount = async (req, res, next) => {
+  try {
+    const { password } = req.body;
+
+    if (!password) {
+      return res.status(400).json({ message: "Password is required to delete your account" });
+    }
+
+    const user = await User.findById(req.user._id).select("+password");
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      return res.status(401).json({ message: "Password is incorrect" });
+    }
+
+    // Delete the linked settings doc first, then the user — if the settings
+    // delete succeeded but the user delete somehow failed, an orphaned empty
+    // settings doc is harmless; the reverse order could leave settings behind
+    // for a user id that no longer exists anywhere else in the system.
+    await Settings.deleteOne({ user: user._id });
+    await User.deleteOne({ _id: user._id });
+
+    res.clearCookie("token", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    });
+
+    res.status(200).json({ message: "Account deleted" });
+  } catch (error) {
+    next(error);
+  }
+};

@@ -63,6 +63,10 @@ class AuthService {
     async changePassword(currentPassword: string, newPassword: string): Promise<void> {
         await api.put('/auth/password', { currentPassword, newPassword })
     }
+
+    async deleteAccount(password: string): Promise<void> {
+        await api.delete('/auth/account', { data: { password } })
+    }
 }
 
 export const authService = new AuthService()

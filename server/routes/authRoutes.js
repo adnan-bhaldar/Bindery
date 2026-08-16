@@ -6,6 +6,7 @@ import {
     getMe,
     updateProfile,
     changePassword,
+    deleteAccount,
 } from "../controllers/authController.js";
 import { protect } from "../middlewares/authMiddleware.js";
 import { authLimiter } from "../middlewares/rateLimitMiddleware.js";
@@ -18,5 +19,6 @@ router.post("/logout", protect, logout);
 router.get("/me", protect, getMe);
 router.patch("/profile", protect, updateProfile);
 router.put("/password", protect, authLimiter, changePassword);
+router.delete("/account", protect, authLimiter, deleteAccount);
 
 export default router;

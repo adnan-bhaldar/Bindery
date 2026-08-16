@@ -19,6 +19,7 @@ interface AuthActions {
   hydrate: () => Promise<void> // checks for an existing session on app load
   updateProfile: (updates: { username?: string; email?: string }) => Promise<void>
   changePassword: (currentPassword: string, newPassword: string) => Promise<void>
+  deleteAccount: (password: string) => Promise<void>
   clearError: () => void
   openAuthDialog: (mode?: 'login' | 'signup') => void
   closeAuthDialog: () => void
@@ -50,7 +51,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
     } catch (err) {
       const message = extractErrorMessage(err, 'Signup failed')
       set({ status: 'unauthenticated', error: message })
-      throw err
+      throw new Error(message)
     }
   },
 
@@ -63,7 +64,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
     } catch (err) {
       const message = extractErrorMessage(err, 'Login failed')
       set({ status: 'unauthenticated', error: message })
-      throw err
+      throw new Error(message)
     }
   },
 
@@ -109,7 +110,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
     } catch (err) {
       const message = extractErrorMessage(err, 'Could not update profile')
       set({ error: message })
-      throw err
+      throw new Error(message)
     }
   },
 
@@ -120,7 +121,19 @@ export const useAuthStore = create<AuthStore>((set) => ({
     } catch (err) {
       const message = extractErrorMessage(err, 'Could not change password')
       set({ error: message })
-      throw err
+      throw new Error(message)
+    }
+  },
+
+  deleteAccount: async (password) => {
+    try {
+      await authService.deleteAccount(password)
+      localStorage.removeItem(STORAGE_KEYS.HAD_SESSION)
+      set({ user: null, status: 'unauthenticated', error: null })
+    } catch (err) {
+      const message = extractErrorMessage(err, 'Could not delete account')
+      set({ error: message })
+      throw new Error(message)
     }
   },
 
@@ -129,7 +142,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function extractErrorMessage(err: unknown, fallback: string): string {
+export function extractErrorMessage(err: unknown, fallback: string): string {
   if (typeof err === 'object' && err !== null && 'response' in err) {
     const response = (err as { response?: { data?: { message?: string } } }).response
     return response?.data?.message ?? fallback
