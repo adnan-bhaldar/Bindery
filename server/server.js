@@ -2,12 +2,16 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import path from "path";
+import { fileURLToPath } from "url";
 
 import { connectDB } from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
 import settingsRoutes from "./routes/settingsRoutes.js";
 import { notFound, errorHandler } from "./middlewares/errorMiddleware.js";
 import { statusPage } from "./utils/statusPage.js";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 dotenv.config();
 
@@ -25,6 +29,8 @@ app.use(
 );
 app.use(express.json());
 app.use(cookieParser());
+// Serves files placed in server/public — e.g. favicon.svg, used by the status page
+app.use(express.static(path.join(__dirname, "public")));
 
 app.get("/", statusPage);
 app.get("/api/health", (req, res) => res.json({ status: "ok" }));
