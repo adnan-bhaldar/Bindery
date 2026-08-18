@@ -1535,11 +1535,23 @@ html[data-reduced-motion="true"] *::after {
    rendered pixels of everything beneath it, which is the only way to make
    these two settings have a real, visible, app-wide effect without a much
    larger refactor of every component's inline styles. */
-html[data-compact="true"] body {
+/* Scoped to #root rather than body for the same reason as large-text below
+   — Tooltip (and any future body-level portal) renders via
+   createPortal(..., document.body), a sibling of #root, not a descendant.
+   Zooming body itself would double-scale portaled fixed-position elements. */
+html[data-compact="true"] #root {
   zoom: 0.92;
 }
 
-html[data-large-text="true"] body {
+/* Scoped to #root rather than body — Tooltip (and any future body-level
+   portal) renders via createPortal(..., document.body), a sibling of
+   #root, not a descendant of it. Zooming body itself would make the
+   portaled tooltip a descendant of the zoomed subtree too, so its
+   position: fixed coordinates (already correct, from getBoundingClientRect
+   on the zoomed trigger) get zoom-scaled a second time by the browser,
+   compounding into a visible offset. Zooming only #root keeps portals
+   outside that scaling entirely. */
+html[data-large-text="true"] #root {
   zoom: 1.15;
 }
 
