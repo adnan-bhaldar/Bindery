@@ -5,7 +5,14 @@
 
 version: 2
 updates:
+  # Frontend updates
   - package-ecosystem: "npm" # See documentation for possible values
-    directory: "/" # Location of package manifests
+    directory: "/client" # Location of package manifests
+    schedule:
+      interval: "weekly"
+
+  # Backend updates
+  - package-ecosystem: "npm" # See documentation for possible values
+    directory: "/server" # Location of package manifests
     schedule:
       interval: "weekly"
