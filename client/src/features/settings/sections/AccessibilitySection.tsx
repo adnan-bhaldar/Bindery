@@ -1,5 +1,5 @@
 import { memo } from 'react'
-import { Accessibility } from 'lucide-react'
+import { Wallpaper } from 'lucide-react'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { Toggle } from '@/components/ui/Toggle'
 import { Card, CardRow } from '../primitives'
@@ -8,7 +8,7 @@ const AccessibilitySection = memo(() => {
     const { settings, updateSetting } = useSettingsStore()
     return (
         <div>
-            <Card title="Visual" icon={Accessibility} desc="Takes effect immediately across the whole app.">
+            <Card title="Visual" icon={Wallpaper} desc="Takes effect immediately across the whole app.">
                 <CardRow label="High contrast" desc="Stronger borders and text contrast for better legibility">
                     <Toggle checked={settings.highContrast} onChange={v => updateSetting('highContrast', v)} />
                 </CardRow>

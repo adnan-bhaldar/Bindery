@@ -1,5 +1,5 @@
 import { memo } from 'react'
-import { Palette, Sun, Moon, Check } from 'lucide-react'
+import { Palette, Sun, Moon, Check, LayoutPanelTop, PanelLeft, Image } from 'lucide-react'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { useThemeStore } from '@/stores/themeStore'
 import { Toggle } from '@/components/ui/Toggle'
@@ -273,7 +273,7 @@ const AppearanceSection = memo(() => {
                 </CardRow>
             </Card>
 
-            <Card title="Interface">
+            <Card title="Interface" icon={LayoutPanelTop}>
                 <CardRow label="Compact mode" desc="Slightly denser layout throughout the app">
                     <Toggle checked={settings.compactMode} onChange={v => updateSetting('compactMode', v)} />
                 </CardRow>
@@ -285,7 +285,7 @@ const AppearanceSection = memo(() => {
                 </CardRow>
             </Card>
 
-            <Card title="Sidebar">
+            <Card title="Sidebar" icon={PanelLeft}>
                 <CardRow label="Page list style" desc="How pages are displayed in the sidebar">
                     <LayoutToggle
                         value={settings.sidebarLayout ?? 'list'}
@@ -297,7 +297,7 @@ const AppearanceSection = memo(() => {
                 </CardRow>
             </Card>
 
-            <Card title="Thumbnails">
+            <Card title="Thumbnails" icon={Image}>
                 <CardRow label="Thumbnail size" desc="Size of page thumbnails — affects generation speed and sharpness" last>
                     <SegRow
                         value={String(settings.thumbnailSize)}

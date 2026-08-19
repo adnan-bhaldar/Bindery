@@ -1,5 +1,5 @@
 import { memo, useState, useEffect } from 'react'
-import { Settings, Info, Eye, EyeOff, Trash2 } from 'lucide-react'
+import { User, Info, Eye, EyeOff, Trash2, Lock, LogOut } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/authStore'
 import { useUIStore } from '@/stores/uiStore'
@@ -154,7 +154,7 @@ const AccountSection = memo(() => {
 
     return (
         <div>
-            <Card title="Profile" icon={Settings}>
+            <Card title="Profile" icon={User}>
                 <CardRow label="Username" desc="Shown in the app header.">
                     <input
                         value={username}
@@ -179,7 +179,7 @@ const AccountSection = memo(() => {
                 </CardRow>
             </Card>
 
-            <Card title="Password" desc="Changing your password does not affect other signed-in devices.">
+            <Card title="Password" desc="Changing your password does not affect other signed-in devices." icon={Lock}>
                 <form onSubmit={handlePasswordSubmit}>
                     <CardRow label="Current password">
                         <input
@@ -231,7 +231,7 @@ const AccountSection = memo(() => {
                 </form>
             </Card>
 
-            <Card title="Sign out" desc="You'll need to log in again to sync settings on this device.">
+            <Card title="Sign out" desc="You'll need to log in again to sync settings on this device." icon={LogOut}>
                 <button
                     onClick={() => logout()}
                     style={{

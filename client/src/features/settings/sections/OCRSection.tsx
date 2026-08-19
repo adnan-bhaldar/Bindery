@@ -1,5 +1,5 @@
 import { memo } from 'react'
-import { ScanText } from 'lucide-react'
+import { ScanText, Languages, Rocket } from 'lucide-react'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { Toggle } from '@/components/ui/Toggle'
 import { OCR_LANGUAGE_LABELS } from '@/constants'
@@ -18,7 +18,7 @@ const OCRSection = memo(() => {
                     <Toggle checked={settings.autoRunOcr} onChange={v => updateSetting('autoRunOcr', v)} />
                 </CardRow>
             </Card>
-            <Card title="Language">
+            <Card title="Language" icon={Languages}>
                 <CardRow label="OCR language" desc="Primary language for text recognition" last>
                     <SelectRow
                         value={settings.ocrLanguage}
@@ -27,7 +27,7 @@ const OCRSection = memo(() => {
                     />
                 </CardRow>
             </Card>
-            <Card title="Performance">
+            <Card title="Performance" icon={Rocket}>
                 <CardRow label="Skip OCR for large documents" desc="Avoid processing documents over the page limit">
                     <Toggle checked={settings.skipOcrForLargeDocuments} onChange={v => updateSetting('skipOcrForLargeDocuments', v)} />
                 </CardRow>

@@ -1,5 +1,5 @@
 import { memo } from 'react'
-import { Download } from 'lucide-react'
+import { Download, FilePen, UserPen } from 'lucide-react'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { Toggle } from '@/components/ui/Toggle'
 import { Card, CardRow } from '../primitives'
@@ -31,7 +31,7 @@ const ExportSection = memo(() => {
                 </CardRow>
             </Card>
 
-            <Card title="Document Title" desc="Controls the sidebar Info tab's Title field.">
+            <Card title="Document Title" desc="Controls the sidebar Info tab's Title field." icon={FilePen}>
                 <CardRow
                     label="Allow custom document title"
                     desc="When off, the exported PDF's title always matches the project name — the sidebar's Title field stays locked to it"
@@ -44,7 +44,7 @@ const ExportSection = memo(() => {
                 </CardRow>
             </Card>
 
-            <Card title="Document Author">
+            <Card title="Document Author" icon={UserPen} >
                 <CardRow
                     label="Default author name"
                     desc="When off, leaving the Author field blank keeps it genuinely empty in the exported PDF instead of filling in a default name"

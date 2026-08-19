@@ -1,5 +1,5 @@
 import { memo, useState, useCallback, useEffect } from 'react'
-import { HardDrive, FileArchive, Trash2 } from 'lucide-react'
+import { HardDrive, TriangleAlert, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useConfirm } from '@/components/ui/ConfirmDialog'
 import { Spinner } from '@/components/ui/Spinner'
@@ -110,7 +110,7 @@ const StorageSection = memo(() => {
                 )}
             </Card>
 
-            <Card title="Danger Zone" icon={FileArchive}>
+            <Card title="Danger Zone" icon={TriangleAlert}>
                 <p style={{ fontSize: 11.5, color: 'var(--tx-3)', marginBottom: 12, lineHeight: 1.6 }}>
                     Permanently delete every project, page, thumbnail, and export record stored in
                     this browser. This cannot be undone.
