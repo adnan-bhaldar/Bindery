@@ -112,7 +112,7 @@ export const AppShell = memo(() => {
     } catch (err) {
       console.warn('[AutoSave] failed:', err)
     }
-  }, [currentProject, pages, setCurrentProject, markSaved])
+  }, [currentProject, pages, setCurrentProject, markSaved, settings.maxRecoverySnapshots])
 
   useAutoSave(handleAutoSave)
 

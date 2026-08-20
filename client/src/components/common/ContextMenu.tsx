@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef, createContext, useContext, useState, useCallback, type ReactNode } from 'react'
+import { memo, useEffect, useRef, useState, useCallback, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 
@@ -22,20 +22,12 @@ interface ContextMenuState {
     items: ContextMenuItem[]
 }
 
-interface ContextMenuContextValue {
-    open: (x: number, y: number, items: ContextMenuItem[]) => void
-    close: () => void
-}
-
 // ─── Context ──────────────────────────────────────────────────────────────────
+// The context and useContextMenu hook live in ./useContextMenu.ts — keeping
+// them out of this file means it exports components only, which Fast Refresh
+// needs (react-refresh/only-export-components).
 
-const ContextMenuContext = createContext<ContextMenuContextValue | null>(null)
-
-export function useContextMenu() {
-    const ctx = useContext(ContextMenuContext)
-    if (!ctx) throw new Error('useContextMenu must be inside <ContextMenuProvider>')
-    return ctx
-}
+import { ContextMenuContext } from '@/hooks/useContextMenu'
 
 // ─── Menu node ────────────────────────────────────────────────────────────────
 

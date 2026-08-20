@@ -2,19 +2,11 @@ import { memo } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Loader2, CheckCircle2 } from 'lucide-react'
 import type { ImportProgress as IProgress } from '@/services/importService'
+import { PHASE_LABELS } from './importPhaseLabels'
 
 interface Props {
     progress: IProgress | null
     isVisible: boolean
-}
-
-export const PHASE_LABELS: Record<IProgress['phase'], string> = {
-    validating: 'Checking files…',
-    'rendering-pdf': 'Rendering PDF pages…',
-    hashing: 'Checking for duplicates…',
-    thumbnails: 'Processing images…',
-    saving: 'Saving…',
-    done: 'Done',
 }
 
 export const ImportProgressOverlay = memo(({ progress, isVisible }: Props) => {

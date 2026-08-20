@@ -3,7 +3,6 @@ import { createRoot } from 'react-dom/client'
 import { Toaster } from 'sonner'
 import { App } from './App'
 import '@/stores/storeLinks'
-// @ts-ignore
 import './index.css'
 
 const root = document.getElementById('root')

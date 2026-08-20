@@ -1,34 +1,18 @@
 import {
-  memo, createContext, useContext,
+  memo,
   useState, useCallback, type ReactNode,
 } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { AlertTriangle, Info, Trash2 } from 'lucide-react'
+import { ConfirmContext, type ConfirmOptions } from '@/hooks/useConfirm'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type Variant = 'danger' | 'warning' | 'info'
 
-interface ConfirmOptions {
-  title: string
-  message: string
-  confirmLabel?: string
-  cancelLabel?: string
-  variant?: Variant
-}
-
 interface ConfirmState extends ConfirmOptions {
   visible: boolean
   resolve: (v: boolean) => void
-}
-
-interface CtxValue { confirm: (opts: ConfirmOptions) => Promise<boolean> }
-const Ctx = createContext<CtxValue | null>(null)
-
-export function useConfirm() {
-  const ctx = useContext(Ctx)
-  if (!ctx) throw new Error('useConfirm must be inside <ConfirmProvider>')
-  return ctx.confirm
 }
 
 // ─── Per-variant tokens (all resolved against CSS vars where possible —
@@ -271,10 +255,10 @@ export const ConfirmProvider = memo(({ children }: { children: ReactNode }) => {
   }, [])
 
   return (
-    <Ctx.Provider value={{ confirm }}>
+    <ConfirmContext.Provider value={{ confirm }}>
       {children}
       <ConfirmDialogNode state={state} onConfirm={handleConfirm} onCancel={handleCancel} />
-    </Ctx.Provider>
+    </ConfirmContext.Provider>
   )
 })
 ConfirmProvider.displayName = 'ConfirmProvider'

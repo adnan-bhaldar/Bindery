@@ -51,7 +51,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
     } catch (err) {
       const message = extractErrorMessage(err, 'Signup failed')
       set({ status: 'unauthenticated', error: message })
-      throw new Error(message)
+      throw new Error(message, { cause: err })
     }
   },
 
@@ -64,7 +64,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
     } catch (err) {
       const message = extractErrorMessage(err, 'Login failed')
       set({ status: 'unauthenticated', error: message })
-      throw new Error(message)
+      throw new Error(message, { cause: err })
     }
   },
 
@@ -110,7 +110,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
     } catch (err) {
       const message = extractErrorMessage(err, 'Could not update profile')
       set({ error: message })
-      throw new Error(message)
+      throw new Error(message, { cause: err })
     }
   },
 
@@ -121,7 +121,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
     } catch (err) {
       const message = extractErrorMessage(err, 'Could not change password')
       set({ error: message })
-      throw new Error(message)
+      throw new Error(message, { cause: err })
     }
   },
 
@@ -133,7 +133,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
     } catch (err) {
       const message = extractErrorMessage(err, 'Could not delete account')
       set({ error: message })
-      throw new Error(message)
+      throw new Error(message, { cause: err })
     }
   },
 

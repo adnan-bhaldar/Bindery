@@ -367,7 +367,7 @@ export const VirtualizedPageList = memo(() => {
         const after = usePagesStore.getState().pages
         pushHistory('reorder-pages', `Moved page ${oldIdx + 1} → ${newIdx + 1}`, before, after)
         if (sortKey !== 'manual') setSortKey('manual')
-    }, [pages, reorderPages, pushHistory, sortKey])
+    }, [pages, reorderPages, pushHistory, sortKey, setPages])
 
     const handleSort = useCallback((key: SortKey) => {
         if (key === 'manual') {

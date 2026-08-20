@@ -145,6 +145,19 @@ npm run dev             # runs via nodemon
 
 `npm start` runs the same server with plain `node` for production.
 
+### Setup Notes (quick reference)
+
+**`client/`**
+
+- Env: create `.env` with `VITE_API_URL=http://localhost:5000` (base domain only, no `/api`)
+- Install: `npm install` · Run: `npm run dev` · Build: `npm run build`
+
+**`server/`**
+
+- Env: copy `.env.example` → `.env`, fill in `MONGO_URI`, `JWT_SECRET`, `JWT_EXPIRES_IN`, `CLIENT_ORIGIN`
+- Install: `npm install` · Run: `npm run dev` (nodemon) · Prod: `npm start`
+- Needs a MongoDB connection (Atlas free tier works) — stores only account credentials and synced settings, nothing else
+
 <br>
 
 ## 📄 License

@@ -52,8 +52,14 @@ export const ProjectDropdown = memo(({ anchor, onClose }: Props) => {
     if (currentProject) {
       const updated = { ...currentProject, name: trimmed, updatedAt: Date.now() }
       setCurrentProject(updated)
-      try { await projectService.saveProject(updated, usePagesStore.getState().pages) } catch { }
-      toast.success(`Renamed to "${trimmed}"`)
+      try {
+        await projectService.saveProject(updated, usePagesStore.getState().pages)
+        toast.success(`Renamed to "${trimmed}"`)
+      } catch (err) {
+        toast.error('Failed to rename project', {
+          description: err instanceof Error ? err.message : undefined,
+        })
+      }
     } else {
       const project = await projectService.createProject(trimmed)
       setCurrentProject(project)

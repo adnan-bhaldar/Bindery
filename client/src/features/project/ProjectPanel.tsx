@@ -10,7 +10,7 @@ import { useProjectStore } from '@/stores/projectStore'
 import { usePagesStore } from '@/stores/pagesStore'
 import { projectService, formatProjectDate } from '@/services/projectService'
 import { Tooltip } from '@/components/ui/Tooltip'
-import { useConfirm } from '@/components/ui/ConfirmDialog'
+import { useConfirm } from '@/hooks/useConfirm'
 import { toast } from 'sonner'
 import type { Project } from '@/types'
 

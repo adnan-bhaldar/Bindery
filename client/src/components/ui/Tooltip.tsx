@@ -52,8 +52,6 @@ function computePosition(
     const vh = window.innerHeight
     const PAD = 8 // min distance from viewport edge
 
-    let x = 0
-    let y = 0
     let actual = placement
 
     const positions: Record<Placement, { x: number; y: number }> = {
@@ -83,8 +81,8 @@ function computePosition(
     }
 
     const pos = positions[actual]
-    x = Math.max(PAD, Math.min(pos.x, vw - tr.width - PAD))
-    y = Math.max(PAD, Math.min(pos.y, vh - tr.height - PAD))
+    const x = Math.max(PAD, Math.min(pos.x, vw - tr.width - PAD))
+    const y = Math.max(PAD, Math.min(pos.y, vh - tr.height - PAD))
 
     return { x, y, actual }
 }
@@ -259,7 +257,7 @@ TooltipProvider.displayName = 'TooltipProvider'
 
 // ─── useTooltip hook ──────────────────────────────────────────────────────────
 
-export function useTooltipContext() {
+function useTooltipContext() {
     const ctx = useContext(TooltipContext)
     if (!ctx) throw new Error('useTooltipContext must be used inside <TooltipProvider>')
     return ctx

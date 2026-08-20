@@ -257,6 +257,29 @@ const MetaTab = memo(() => {
   const { settings } = useSettingsStore()
   const metadata = currentProject?.metadata
 
+  const hasRealProjectName = !!currentProject?.name && currentProject.name !== 'Untitled Project'
+  // Whenever there's a real project name and the toggle is off, the title
+  // is ALWAYS forced to match it — read-only, and overriding any custom
+  // text that might already be stored from when the toggle was previously
+  // on. This is deliberately NOT conditioned on whether metadata.title
+  // happens to currently be empty — that was the actual bug: gating on
+  // "is it empty" meant a title typed while the toggle was on stayed
+  // editable forever afterward, since turning the toggle back off never
+  // re-checked anything once the field held real text.
+  const titleLockedToProjectName = hasRealProjectName && !settings.allowCustomDocumentTitle
+
+  // Moved above the early return below — hooks must run in the same order
+  // on every render. This previously sat after `if (!currentProject) return`,
+  // so it was skipped whenever no project was open and called otherwise —
+  // a genuine Rules of Hooks violation, not just a lint nitpick.
+  const handleLockedTitleClick = useCallback(() => {
+    if (!titleLockedToProjectName) return
+    toast.info('Matches the project name.', {
+      description: 'Custom titles are off in Settings → Export.',
+      duration: 2500,
+    })
+  }, [titleLockedToProjectName])
+
   if (!currentProject) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, minHeight: 220, padding: '0 16px', textAlign: 'center' }}>
@@ -268,25 +291,6 @@ const MetaTab = memo(() => {
       </div>
     )
   }
-
-  const hasRealProjectName = !!currentProject.name && currentProject.name !== 'Untitled Project'
-  // Whenever there's a real project name and the toggle is off, the title
-  // is ALWAYS forced to match it — read-only, and overriding any custom
-  // text that might already be stored from when the toggle was previously
-  // on. This is deliberately NOT conditioned on whether metadata.title
-  // happens to currently be empty — that was the actual bug: gating on
-  // "is it empty" meant a title typed while the toggle was on stayed
-  // editable forever afterward, since turning the toggle back off never
-  // re-checked anything once the field held real text.
-  const titleLockedToProjectName = hasRealProjectName && !settings.allowCustomDocumentTitle
-
-  const handleLockedTitleClick = useCallback(() => {
-    if (!titleLockedToProjectName) return
-    toast.info('Matches the project name.', {
-      description: 'Custom titles are off in Settings → Export.',
-      duration: 2500,
-    })
-  }, [titleLockedToProjectName])
 
   const fields: { key: keyof NonNullable<typeof metadata>; label: string; placeholder: string }[] = [
     { key: 'title', label: 'Title', placeholder: hasRealProjectName ? currentProject.name : 'Untitled Document' },
