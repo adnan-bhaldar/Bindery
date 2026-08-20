@@ -1,7 +1,7 @@
 import { memo, useState, useCallback, useEffect } from 'react'
 import { HardDrive, TriangleAlert, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
-import { useConfirm } from '@/components/ui/ConfirmDialog'
+import { useConfirm } from '@/hooks/useConfirm'
 import { Spinner } from '@/components/ui/Spinner'
 import { getStorageStats, clearDatabase, type StorageStats } from '@/db/schema'
 import { formatFileSize } from '@/lib/utils'

@@ -6,7 +6,7 @@ import { useUIStore } from '@/stores/uiStore'
 import { usePagesStore, selectPageCount } from '@/stores/pagesStore'
 import { PreviewWorkspace } from '@/features/preview/PreviewWorkspace'
 import { ACCEPTED_IMPORT_TYPES } from '@/constants'
-import { PHASE_LABELS } from '@/features/import/ImportProgress'
+import { PHASE_LABELS } from '@/features/import/importPhaseLabels'
 import type { ImportProgress } from '@/services/importService'
 
 interface Props {
@@ -113,7 +113,7 @@ const ImportingState = memo(({ progress }: { progress: ImportProgress | null }) 
             {isDone
               ? <CheckCircle2 size={22} color="#fff" strokeWidth={2} />
               : <Loader2 size={22} color="#fff" strokeWidth={2}
-                  style={{ animation: 'spin 0.8s linear infinite' }} />
+                style={{ animation: 'spin 0.8s linear infinite' }} />
             }
           </div>
         </div>

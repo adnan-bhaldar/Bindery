@@ -3,7 +3,7 @@ import { User, Info, Eye, EyeOff, Trash2, Lock, LogOut } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/authStore'
 import { useUIStore } from '@/stores/uiStore'
-import { useConfirm } from '@/components/ui/ConfirmDialog'
+import { useConfirm } from '@/hooks/useConfirm'
 import { Spinner } from '@/components/ui/Spinner'
 import { Card, CardRow } from '../primitives'
 
