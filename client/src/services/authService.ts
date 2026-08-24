@@ -67,6 +67,31 @@ class AuthService {
     async deleteAccount(password: string): Promise<void> {
         await api.delete('/auth/account', { data: { password } })
     }
+
+    async getBackupCodesStatus(): Promise<{ total: number; unused: number; generatedAt: string | null }> {
+        const res = await api.get<{ total: number; unused: number; generatedAt: string | null }>(
+            '/auth/backup-codes/status'
+        )
+        return res.data
+    }
+
+    async generateBackupCodes(password: string): Promise<{ backupCodes: string[]; generatedAt: string }> {
+        const res = await api.post<{ backupCodes: string[]; generatedAt: string }>('/auth/backup-codes', { password })
+        return res.data
+    }
+
+    async resetPasswordWithBackupCode(
+        email: string,
+        backupCode: string,
+        newPassword: string
+    ): Promise<{ newBackupCode: string }> {
+        const res = await api.post<{ message: string; newBackupCode: string }>('/auth/reset-password', {
+            email,
+            backupCode,
+            newPassword,
+        })
+        return { newBackupCode: res.data.newBackupCode }
+    }
 }
 
 export const authService = new AuthService()

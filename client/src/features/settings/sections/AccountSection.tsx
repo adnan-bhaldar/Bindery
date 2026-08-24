@@ -1,9 +1,10 @@
 import { memo, useState, useEffect } from 'react'
-import { User, Info, Eye, EyeOff, Trash2, Lock, LogOut } from 'lucide-react'
+import { User, Info, Eye, EyeOff, Trash2, Lock, LogOut, KeyRound, Copy, Check } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/authStore'
 import { useUIStore } from '@/stores/uiStore'
 import { useConfirm } from '@/hooks/useConfirm'
+import { authService } from '@/services/authService'
 import { Spinner } from '@/components/ui/Spinner'
 import { Card, CardRow } from '../primitives'
 
@@ -47,11 +48,33 @@ const AccountSection = memo(() => {
     const [deletePassword, setDeletePassword] = useState('')
     const [showDeletePassword, setShowDeletePassword] = useState(false)
     const [isDeletingAccount, setIsDeletingAccount] = useState(false)
+    const [backupCodesPassword, setBackupCodesPassword] = useState('')
+    const [showBackupCodesPassword, setShowBackupCodesPassword] = useState(false)
+    const [isGeneratingCodes, setIsGeneratingCodes] = useState(false)
+    const [generatedCodes, setGeneratedCodes] = useState<string[] | null>(null)
+    const [copiedCodes, setCopiedCodes] = useState(false)
+    // Whether backup codes already exist and how many are currently available.
+    // The backend replaces each used code with a fresh one, so this is an
+    // availability count, not a count of codes that have never been used.
+    const [codesStatus, setCodesStatus] = useState<{ total: number; unused: number; generatedAt: string | null } | null>(null)
+    const [isLoadingStatus, setIsLoadingStatus] = useState(true)
 
     useEffect(() => {
         setUsername(user?.username ?? '')
         setEmail(user?.email ?? '')
     }, [user])
+
+    useEffect(() => {
+        if (status !== 'authenticated') return
+        authService
+            .getBackupCodesStatus()
+            .then(setCodesStatus)
+            .catch(() => {
+                // Non-critical — the Generate/Regenerate button just falls back
+                // to its default "Generate Codes" label if this fails to load.
+            })
+            .finally(() => setIsLoadingStatus(false))
+    }, [status])
 
     if (status !== 'authenticated' || !user) {
         return (
@@ -121,6 +144,46 @@ const AccountSection = memo(() => {
         } finally {
             setIsSavingPassword(false)
         }
+    }
+
+    const handleGenerateBackupCodes = async () => {
+        if (!backupCodesPassword) {
+            toast.error('Enter your password to confirm')
+            return
+        }
+        if (codesStatus && codesStatus.total > 0) {
+            const ok = await confirm({
+                title: 'Generate new backup codes?',
+                message: 'This replaces all 6 of your existing backup codes — any you saved before will stop working. Make sure you save the new ones.',
+                confirmLabel: 'Generate Codes',
+                cancelLabel: 'Cancel',
+                variant: 'warning',
+            })
+            if (!ok) return
+        }
+
+        setIsGeneratingCodes(true)
+        try {
+            const { backupCodes, generatedAt } = await authService.generateBackupCodes(backupCodesPassword)
+            setGeneratedCodes(backupCodes)
+            setCodesStatus({ total: 6, unused: 6, generatedAt })
+            setCopiedCodes(false)
+            toast.success('Backup codes generated')
+        } catch (err) {
+            toast.error('Could not generate backup codes', {
+                description: err instanceof Error ? err.message : undefined,
+            })
+        } finally {
+            setIsGeneratingCodes(false)
+            setBackupCodesPassword('')
+        }
+    }
+
+    const handleCopyBackupCodes = () => {
+        if (!generatedCodes) return
+        navigator.clipboard.writeText(generatedCodes.join('\n'))
+        setCopiedCodes(true)
+        toast.success('Copied to clipboard')
     }
 
     const handleDeleteAccount = async () => {
@@ -229,6 +292,108 @@ const AccountSection = memo(() => {
                         </button>
                     </div>
                 </form>
+            </Card>
+
+            <Card
+                title="Backup Codes"
+                icon={KeyRound}
+                desc="Use one of these codes to reset your password if you ever forget it — no email required. Each code works once; using one automatically replaces it with a fresh code."
+            >
+                {!generatedCodes && !isLoadingStatus && codesStatus && codesStatus.total > 0 && (
+                    <div style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        padding: '10px 12px', borderRadius: 'var(--r-md)',
+                        background: 'var(--s3)', border: '1px solid var(--border)',
+                        marginBottom: 14, fontSize: 12,
+                    }}>
+                        <span style={{ color: 'var(--tx-2)' }}>
+                            {codesStatus.unused} of {codesStatus.total} codes available
+                        </span>
+                        {codesStatus.generatedAt && (
+                            <span style={{ color: 'var(--tx-3)', fontSize: 11 }}>
+                                Generated {new Date(codesStatus.generatedAt).toLocaleDateString()}
+                            </span>
+                        )}
+                    </div>
+                )}
+
+                {generatedCodes && (
+                    <div style={{ marginBottom: 14 }}>
+                        <div style={{
+                            display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8,
+                            padding: 12, borderRadius: 'var(--r-md)',
+                            background: 'var(--s3)', border: '1px solid var(--border)',
+                            marginBottom: 8,
+                        }}>
+                            {generatedCodes.map((code, i) => (
+                                <span key={i} style={{
+                                    fontFamily: 'var(--font-mono)', fontSize: 13,
+                                    color: 'var(--tx-1)', letterSpacing: '0.05em',
+                                    textAlign: 'center', padding: '4px 0',
+                                }}>
+                                    {code}
+                                </span>
+                            ))}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <button
+                                onClick={handleCopyBackupCodes}
+                                style={{
+                                    display: 'flex', alignItems: 'center', gap: 6,
+                                    padding: '6px 12px', borderRadius: 'var(--r-sm)',
+                                    border: '1px solid var(--border)', background: 'var(--s3)',
+                                    color: 'var(--tx-2)', fontSize: 11.5, fontWeight: 500,
+                                    fontFamily: 'var(--font-sans)', cursor: 'pointer',
+                                }}
+                            >
+                                {copiedCodes ? <Check size={12} /> : <Copy size={12} />}
+                                {copiedCodes ? 'Copied' : 'Copy codes'}
+                            </button>
+                            <span style={{ fontSize: 11, color: 'var(--tx-3)' }}>
+                                Save these somewhere safe — they won't be shown again.
+                            </span>
+                        </div>
+                    </div>
+                )}
+
+                <CardRow label="Password" desc="Confirm your password to generate new codes." last>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <div style={{ position: 'relative' }}>
+                            <input
+                                type={showBackupCodesPassword ? 'text' : 'password'}
+                                value={backupCodesPassword}
+                                onChange={e => setBackupCodesPassword(e.target.value)}
+                                style={passwordFieldStyle}
+                                onFocus={textFieldFocus}
+                                onBlurCapture={textFieldBlurStyle}
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowBackupCodesPassword(v => !v)}
+                                aria-label={showBackupCodesPassword ? 'Hide password' : 'Show password'}
+                                style={eyeButtonStyle}
+                            >
+                                {showBackupCodesPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                            </button>
+                        </div>
+                        <button
+                            onClick={handleGenerateBackupCodes}
+                            disabled={isGeneratingCodes || !backupCodesPassword}
+                            style={{
+                                display: 'flex', alignItems: 'center', gap: 8,
+                                padding: '7px 14px', borderRadius: 'var(--r-md)', border: 'none',
+                                background: 'var(--gradient-accent)', color: 'var(--accent-fg)',
+                                fontSize: 12.5, fontWeight: 500, fontFamily: 'var(--font-sans)',
+                                cursor: isGeneratingCodes ? 'not-allowed' : 'pointer',
+                                opacity: !backupCodesPassword ? 0.5 : 1,
+                                whiteSpace: 'nowrap', flexShrink: 0,
+                            }}
+                        >
+                            {isGeneratingCodes && <Spinner size={13} />}
+                            {codesStatus && codesStatus.total > 0 ? 'Regenerate' : 'Generate Codes'}
+                        </button>
+                    </div>
+                </CardRow>
             </Card>
 
             <Card title="Sign out" desc="You'll need to log in again to sync settings on this device." icon={LogOut}>

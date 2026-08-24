@@ -23,6 +23,27 @@ const userSchema = new mongoose.Schema(
       minlength: [8, "Password must be at least 8 characters"],
       select: false, // never return password by default
     },
+    // Each code is stored hashed, never in plaintext — same treatment as
+    // the password itself. `used` codes stay in the array (so history is
+    // visible if ever needed) but are never matched again; resetPassword
+    // replaces a used code's hash in place with a freshly generated one.
+    backupCodes: {
+      type: [
+        {
+          codeHash: { type: String, required: true },
+          used: { type: Boolean, default: false },
+        },
+      ],
+      default: [],
+      select: false,
+    },
+    // Set whenever backup codes are (re)generated. Not select:false — unlike
+    // the codes themselves, a generation date reveals nothing secret, so
+    // the status endpoint can read it without requiring a password.
+    backupCodesGeneratedAt: {
+      type: Date,
+      default: null,
+    },
   },
   { timestamps: true }
 );
@@ -44,10 +65,11 @@ userSchema.methods.comparePassword = async function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
 
-// Strip password if a doc is ever serialized directly
+// Strip password and backup code hashes if a doc is ever serialized directly
 userSchema.set("toJSON", {
   transform: (_doc, ret) => {
     delete ret.password;
+    delete ret.backupCodes;
     return ret;
   },
 });
