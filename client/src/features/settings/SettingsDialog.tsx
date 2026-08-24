@@ -1,6 +1,6 @@
 import { memo, useState, useCallback, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Search, Settings, RotateCcw, Cloud, CloudDownload } from 'lucide-react'
+import { X, Search, Settings, RotateCcw, CloudUpload, CloudDownload } from 'lucide-react'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { useAuthStore, extractErrorMessage } from '@/stores/authStore'
 import { useUIStore } from '@/stores/uiStore'
@@ -231,7 +231,7 @@ export const SettingsDialog = memo(({ isOpen, onClose }: Props) => {
                                     className="icon-btn"
                                     style={{ color: 'var(--tx-3)', cursor: isSaving ? 'not-allowed' : 'pointer' }}
                                 >
-                                    {isSaving ? <Spinner size={14} /> : <Cloud size={14} />}
+                                    {isSaving ? <Spinner size={14} /> : <CloudUpload size={14} />}
                                 </button>
                             </Tooltip>
 
