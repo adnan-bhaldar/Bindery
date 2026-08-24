@@ -2,7 +2,7 @@ import { memo, useCallback, useEffect } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-    X, Download, FileText,
+    X, Download, FileText, FilePen, Layers, SlidersHorizontal, ToggleLeft,
     CheckCircle2, AlertCircle, Loader2, Crown,
 } from 'lucide-react'
 import { useExportStore, useActivePreset } from '@/stores/exportStore'
@@ -14,6 +14,7 @@ import { pdfService } from '@/services/pdfService'
 import { Toggle } from '@/components/ui/Toggle'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { formatFileSize } from '@/lib/utils'
+import { Card, CardRow } from '@/features/settings/primitives'
 import type { ExportProgress, CompressionQuality } from '@/types'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -45,19 +46,6 @@ const QUALITY_OPTIONS: { value: CompressionQuality; label: string; desc: string 
     { value: 50, label: '50%', desc: 'Smaller file' },
 ]
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
-
-const SLabel = memo(({ children }: { children: React.ReactNode }) => (
-    <p style={{
-        fontSize: 10, fontWeight: 700, color: 'var(--tx-4)',
-        textTransform: 'uppercase', letterSpacing: '0.8px',
-        marginBottom: 8, marginTop: 16,
-    }}>
-        {children}
-    </p>
-))
-SLabel.displayName = 'SLabel'
-
 // ─── Left panel — summary ─────────────────────────────────────────────────────
 
 const ExportSummary = memo(({ pageCount, estimatedSize, preset }: {
@@ -81,7 +69,10 @@ const ExportSummary = memo(({ pageCount, estimatedSize, preset }: {
             {/* Cover preview */}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
                 <div style={{
-                    width: 100, height: 136, borderRadius: 6,
+                    // width: 100, height: 136, // Small
+                    // width: 112, height: 152, // Medium
+                    width: 130, height: 176, // Big
+                    borderRadius: 6,
                     background: 'var(--s3)',
                     border: '1px solid var(--border)',
                     overflow: 'hidden',
@@ -159,104 +150,109 @@ const ExportSettings = memo(({ filename, onFilenameChange }: {
     return (
         <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px 32px' }}>
             {/* Filename */}
-            <SLabel>Filename</SLabel>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
-                <input
-                    value={filename}
-                    onChange={e => onFilenameChange(e.target.value)}
-                    style={{
-                        flex: 1, padding: '8px 12px',
-                        background: 'var(--s3)', border: '1px solid var(--border)',
-                        borderRadius: '8px 0 0 8px', color: 'var(--tx-1)',
-                        fontSize: 12.5, fontFamily: 'var(--font-sans)', outline: 'none',
-                        transition: 'border-color 110ms, box-shadow 110ms',
-                    }}
-                    onFocus={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.boxShadow = '0 0 0 3px var(--accent-dim)' }}
-                    onBlur={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.boxShadow = 'none' }}
-                />
-                <div style={{
-                    padding: '8px 12px',
-                    background: 'var(--s4)', border: '1px solid var(--border)', borderLeft: 'none',
-                    borderRadius: '0 8px 8px 0',
-                    fontSize: 12, color: 'var(--tx-3)', fontFamily: 'var(--font-mono)',
-                }}>
-                    .pdf
-                </div>
-            </div>
+            <Card title="Filename" icon={FilePen}>
+                <CardRow label="Save as" desc="The .pdf extension is added automatically" last>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
+                        <input
+                            value={filename}
+                            onChange={e => onFilenameChange(e.target.value)}
+                            style={{
+                                width: 250, padding: '6px 10px',
+                                background: 'var(--s3)', border: '1px solid var(--border)',
+                                borderRadius: '8px 0 0 8px', color: 'var(--tx-1)',
+                                fontSize: 12, fontFamily: 'var(--font-sans)', outline: 'none',
+                                transition: 'border-color 110ms, box-shadow 110ms',
+                            }}
+                            onFocus={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.boxShadow = '0 0 0 3px var(--accent-dim)' }}
+                            onBlur={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.boxShadow = 'none' }}
+                        />
+                        <div style={{
+                            padding: '6px 10px',
+                            background: 'var(--s4)', border: '1px solid var(--border)', borderLeft: 'none',
+                            borderRadius: '0 8px 8px 0',
+                            fontSize: 12, color: 'var(--tx-3)', fontFamily: 'var(--font-mono)',
+                        }}>
+                            .pdf
+                        </div>
+                    </div>
+                </CardRow>
+            </Card>
 
             {/* Preset */}
-            <SLabel>Quality Preset</SLabel>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                {presets.map(p => (
-                    <button key={p.id} onClick={() => setActivePreset(p.id)} style={{
-                        display: 'flex', alignItems: 'center', gap: 12,
-                        padding: '10px 12px',
-                        background: activePresetId === p.id ? 'var(--accent-dim)' : 'var(--s3)',
-                        border: `1px solid ${activePresetId === p.id ? 'var(--accent-border)' : 'var(--border)'}`,
-                        borderRadius: 'var(--r-md)', cursor: 'pointer',
-                        transition: 'all 110ms', textAlign: 'left',
-                    }}>
-                        <div style={{
-                            width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
-                            background: activePresetId === p.id ? 'var(--accent)' : 'var(--border-hard)',
-                            transition: 'background 110ms',
-                        }} />
-                        <div style={{ flex: 1 }}>
-                            <p style={{ fontSize: 12, fontWeight: 500, color: 'var(--tx-1)' }}>{p.name}</p>
-                            <p style={{ fontSize: 11, color: 'var(--tx-3)', marginTop: 1 }}>
-                                {p.pageSize.toUpperCase()} · {p.compression === 'original' ? 'No compression' : `${p.compression}% quality`}
-                            </p>
-                        </div>
-                        {activePresetId === p.id && <CheckCircle2 size={14} color="var(--accent)" />}
-                    </button>
-                ))}
-            </div>
+            <Card title="Quality Preset" icon={Layers}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, paddingTop: 4 }}>
+                    {presets.map(p => (
+                        <button key={p.id} onClick={() => setActivePreset(p.id)} style={{
+                            display: 'flex', alignItems: 'center', gap: 12,
+                            padding: '10px 12px',
+                            background: activePresetId === p.id ? 'var(--accent-dim)' : 'var(--s3)',
+                            border: `1px solid ${activePresetId === p.id ? 'var(--accent-border)' : 'var(--border)'}`,
+                            borderRadius: 'var(--r-md)', cursor: 'pointer',
+                            transition: 'all 110ms', textAlign: 'left',
+                        }}>
+                            <div style={{
+                                width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
+                                background: activePresetId === p.id ? 'var(--accent)' : 'var(--border-hard)',
+                                transition: 'background 110ms',
+                            }} />
+                            <div style={{ flex: 1 }}>
+                                <p style={{ fontSize: 12, fontWeight: 500, color: 'var(--tx-1)' }}>{p.name}</p>
+                                <p style={{ fontSize: 11, color: 'var(--tx-3)', marginTop: 1 }}>
+                                    {p.pageSize.toUpperCase()} · {p.compression === 'original' ? 'No compression' : `${p.compression}% quality`}
+                                </p>
+                            </div>
+                            {activePresetId === p.id && <CheckCircle2 size={14} color="var(--accent)" />}
+                        </button>
+                    ))}
+                </div>
+            </Card>
 
             {/* Compression */}
-            <SLabel>Image Quality</SLabel>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                {QUALITY_OPTIONS.map(q => (
-                    <button key={String(q.value)} onClick={() => updatePreset(preset.id, { compression: q.value })} style={{
-                        display: 'flex', alignItems: 'center', gap: 12, justifyContent: 'space-between',
-                        padding: '8px 12px',
-                        background: preset.compression === q.value ? 'var(--accent-dim)' : 'transparent',
-                        border: `1px solid ${preset.compression === q.value ? 'var(--accent-border)' : 'transparent'}`,
-                        borderRadius: 'var(--r-md)', cursor: 'pointer',
-                        transition: 'all 110ms',
-                    }}>
-                        <div style={{ display: 'flex', gap: 10 }}>
-                            <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--tx-1)', minWidth: 56 }}>{q.label}</span>
-                            <span style={{ fontSize: 11.5, color: 'var(--tx-3)' }}>{q.desc}</span>
-                        </div>
-                        {preset.compression === q.value && <CheckCircle2 size={13} color="var(--accent)" />}
-                    </button>
-                ))}
-            </div>
+            <Card title="Image Quality" icon={SlidersHorizontal}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, paddingTop: 4 }}>
+                    {QUALITY_OPTIONS.map(q => (
+                        <button key={String(q.value)} onClick={() => updatePreset(preset.id, { compression: q.value })} style={{
+                            display: 'flex', alignItems: 'center', gap: 12, justifyContent: 'space-between',
+                            padding: '8px 12px',
+                            background: preset.compression === q.value ? 'var(--accent-dim)' : 'transparent',
+                            border: `1px solid ${preset.compression === q.value ? 'var(--accent-border)' : 'transparent'}`,
+                            borderRadius: 'var(--r-md)', cursor: 'pointer',
+                            transition: 'all 110ms',
+                        }}>
+                            <div style={{ display: 'flex', gap: 10 }}>
+                                <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--tx-1)', minWidth: 56 }}>{q.label}</span>
+                                <span style={{ fontSize: 11.5, color: 'var(--tx-3)' }}>{q.desc}</span>
+                            </div>
+                            {preset.compression === q.value && <CheckCircle2 size={13} color="var(--accent)" />}
+                        </button>
+                    ))}
+                </div>
+            </Card>
 
             {/* Toggles */}
-            <SLabel>Options</SLabel>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                {[
-                    { key: 'pageNumbers', label: 'Page numbers', desc: 'Add page numbers to each page' },
-                    { key: 'includeOcr', label: 'Include OCR layer', desc: 'Embed searchable text layer' },
-                    { key: 'autoOptimize', label: 'Auto optimize', desc: 'Automatically compress large images' },
-                ].map(({ key, label, desc }) => (
-                    <div key={key} style={{
-                        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16,
-                        padding: '8px 0', borderBottom: '1px solid var(--border-soft)',
-                    }}>
-                        <div>
-                            <p style={{ fontSize: 12.5, color: 'var(--tx-1)' }}>{label}</p>
-                            <p style={{ fontSize: 11, color: 'var(--tx-3)', marginTop: 1 }}>{desc}</p>
-                        </div>
-                        <Toggle
-                            checked={preset[key as keyof typeof preset] as boolean}
-                            onChange={v => updatePreset(preset.id, { [key]: v })}
-                            size="sm"
-                        />
-                    </div>
-                ))}
-            </div>
+            <Card title="Options" icon={ToggleLeft}>
+                <CardRow label="Page numbers" desc="Add page numbers to each page">
+                    <Toggle
+                        checked={preset.pageNumbers}
+                        onChange={v => updatePreset(preset.id, { pageNumbers: v })}
+                        size="sm"
+                    />
+                </CardRow>
+                <CardRow label="Include OCR layer" desc="Embed searchable text layer">
+                    <Toggle
+                        checked={preset.includeOcr}
+                        onChange={v => updatePreset(preset.id, { includeOcr: v })}
+                        size="sm"
+                    />
+                </CardRow>
+                <CardRow label="Auto optimize" desc="Automatically compress large images" last>
+                    <Toggle
+                        checked={preset.autoOptimize}
+                        onChange={v => updatePreset(preset.id, { autoOptimize: v })}
+                        size="sm"
+                    />
+                </CardRow>
+            </Card>
         </div>
     )
 })

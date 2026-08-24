@@ -40,6 +40,7 @@ export const HeaderAuthControl = memo(() => {
                         style={{
                             width: 26, height: 26, borderRadius: '50%',
                             background: 'var(--accent-dim)', color: 'var(--accent)',
+                            boxShadow: '0 0 0 1px var(--accent-border), 0 0 14px 2px rgba(99, 102, 241, 0.55)',
                         }}
                     >
                         <User size={13} />
