@@ -1,5 +1,5 @@
 import { memo, useState, useEffect } from 'react'
-import { User, Info, Eye, EyeOff, Trash2, Lock, LogOut, KeyRound, Copy, Check } from 'lucide-react'
+import { User, Info, Eye, EyeOff, Trash2, Lock, LogOut, KeyRound, Copy, Check, Calendar } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/authStore'
 import { useUIStore } from '@/stores/uiStore'
@@ -229,7 +229,7 @@ const AccountSection = memo(() => {
                         onBlurCapture={textFieldBlurStyle}
                     />
                 </CardRow>
-                <CardRow label="Email" desc="Used to log in." last>
+                <CardRow label="Email" desc="Used to log in.">
                     <input
                         type="email"
                         value={email}
@@ -239,6 +239,18 @@ const AccountSection = memo(() => {
                         onFocus={textFieldFocus}
                         onBlurCapture={textFieldBlurStyle}
                     />
+                </CardRow>
+                <CardRow label="Member Since" desc="When your account was created." last>
+                    <span style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 6,
+                        padding: '4px 10px', borderRadius: 999,
+                        background: 'var(--accent-dim)', border: '1px solid var(--border)',
+                        fontSize: 11, fontWeight: 500, color: 'var(--tx-2)',
+                        fontFamily: 'var(--font-mono)', letterSpacing: '0.02em',
+                    }}>
+                        <Calendar size={12} color="var(--accent)" />
+                        {new Date(user.createdAt).toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
+                    </span>
                 </CardRow>
             </Card>
 
@@ -311,7 +323,7 @@ const AccountSection = memo(() => {
                         </span>
                         {codesStatus.generatedAt && (
                             <span style={{ color: 'var(--tx-3)', fontSize: 11 }}>
-                                Generated {new Date(codesStatus.generatedAt).toLocaleDateString()}
+                                Generated on {new Date(codesStatus.generatedAt).toLocaleDateString()}
                             </span>
                         )}
                     </div>
@@ -397,17 +409,25 @@ const AccountSection = memo(() => {
             </Card>
 
             <Card title="Sign out" desc="You'll need to log in again to sync settings on this device." icon={LogOut}>
-                <button
-                    onClick={() => logout()}
-                    style={{
-                        padding: '7px 14px', borderRadius: 'var(--r-md)',
-                        border: '1px solid var(--border)', background: 'transparent',
-                        color: 'var(--tx-1)', fontSize: 12.5, fontWeight: 500,
-                        fontFamily: 'var(--font-sans)', cursor: 'pointer',
-                    }}
-                >
-                    Sign out
-                </button>
+                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                    <button
+                        onClick={() => logout()}
+                        style={{
+                            display: 'flex', alignItems: 'center', gap: 6,
+                            padding: '7px 14px', borderRadius: 'var(--r-md)',
+                            border: '1px solid rgba(245,158,11,0.3)',
+                            background: 'rgba(245,158,11,0.08)',
+                            color: '#f59e0b', fontSize: 12.5, fontWeight: 500,
+                            fontFamily: 'var(--font-sans)', cursor: 'pointer',
+                            transition: 'background 110ms'
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(245,158,11,0.14)' }}
+                        onMouseLeave={e => { e.currentTarget.style.background = 'rgba(245,158,11,0.08)' }}
+                    >
+                        <LogOut size={13} />
+                        Sign out
+                    </button>
+                </div>
             </Card>
 
             <Card title="Delete Account" icon={Trash2}>

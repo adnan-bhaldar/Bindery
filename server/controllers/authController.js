@@ -28,7 +28,7 @@ export const signup = async (req, res, next) => {
     const token = generateToken(user._id);
     setTokenCookie(res, token);
 
-    res.status(201).json({ id: user._id, email: user.email, username: user.username });
+    res.status(201).json({ id: user._id, email: user.email, username: user.username, createdAt: user.createdAt });
   } catch (error) {
     next(error);
   }
@@ -51,7 +51,7 @@ export const login = async (req, res, next) => {
     const token = generateToken(user._id);
     setTokenCookie(res, token);
 
-    res.status(200).json({ id: user._id, email: user.email, username: user.username });
+    res.status(200).json({ id: user._id, email: user.email, username: user.username, createdAt: user.createdAt });
   } catch (error) {
     next(error);
   }
@@ -69,7 +69,7 @@ export const logout = (req, res) => {
 
 // GET /api/auth/me
 export const getMe = async (req, res) => {
-  res.status(200).json({ id: req.user._id, email: req.user.email, username: req.user.username });
+  res.status(200).json({ id: req.user._id, email: req.user.email, username: req.user.username, createdAt: req.user.createdAt });
 };
 
 // PATCH /api/auth/profile — update username and/or email
@@ -92,7 +92,7 @@ export const updateProfile = async (req, res, next) => {
 
     await req.user.save();
 
-    res.status(200).json({ id: req.user._id, email: req.user.email, username: req.user.username });
+    res.status(200).json({ id: req.user._id, email: req.user.email, username: req.user.username, createdAt: req.user.createdAt });
   } catch (error) {
     next(error);
   }
