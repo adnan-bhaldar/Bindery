@@ -28,6 +28,7 @@ interface PagesActions {
     setPageImageFit: (id: string, fit: ImageFit) => void
     setThumbnail: (id: string, thumbnailBlob: Blob, thumbnailUrl: string) => void
     setImageUrl: (id: string, imageUrl: string) => void
+    setPageImage: (id: string, imageBlob: Blob, width: number, height: number) => void
     setOcrText: (id: string, text: string) => void
     setLoading: (loading: boolean) => void
     setError: (error: string | null) => void
@@ -198,6 +199,34 @@ export const usePagesStore = create<PagesStore>()(
             set((state) => ({
                 pages: state.pages.map((p) =>
                     p.id === id ? { ...p, imageUrl } : p
+                ),
+            })),
+
+        // Replaces a page's source image outright — used by the crop tool.
+        // Cropping is destructive (it re-encodes new pixels), and the crop
+        // UI lets the user crop the image exactly as they currently see it
+        // — i.e. already rotated. That cropped result is baked in "upright",
+        // so any prior rotation is reset to 0 here; re-applying page.rotation
+        // on top of an already-rotated crop would rotate it a second time.
+        // imageUrl is intentionally left untouched — every consumer creates
+        // its own local object URL keyed off imageBlob (see PreviewCanvas,
+        // CropDialog) and revokes it on cleanup, so there's no cached URL
+        // here that needs invalidating.
+        setPageImage: (id, imageBlob, width, height) =>
+            set((state) => ({
+                pages: state.pages.map((p) =>
+                    p.id === id
+                        ? {
+                            ...p,
+                            imageBlob,
+                            rotation: 0,
+                            // hash is cleared since the pixel content changed —
+                            // the stale hash would otherwise cause future imports
+                            // to be wrongly compared against pre-crop content.
+                            metadata: { ...p.metadata, width, height, fileSize: imageBlob.size, hash: undefined },
+                            updatedAt: Date.now(),
+                        }
+                        : p
                 ),
             })),
 

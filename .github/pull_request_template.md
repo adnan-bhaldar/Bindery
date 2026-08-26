@@ -32,7 +32,6 @@
 
 - [ ] Tested in light theme
 - [ ] Tested in dark theme
-- [ ] `npm run lint` passes (from `client/`)
 - [ ] `npm run build` passes (from `client/`)
 
 **If server changes:**

@@ -28,6 +28,15 @@ export const PageThumbnail = memo(({ page, index, allPageIds }: Props) => {
         setPreviewPage(page.id, allPageIds.map(id => ({ id })))
     }
 
+    // Right-clicking an already-selected page leaves a multi-selection
+    // intact (so the menu's actions apply to all of them); right-clicking
+    // outside the current selection selects just that page first, so it's
+    // obvious which page the menu is about.
+    const handleContextMenu = (e: React.MouseEvent) => {
+        if (!isSelected) { selectOnly(page.id); setAnchor(page.id) }
+        openPageContextMenu(e, page)
+    }
+
     const { width, height } = page.metadata
     const isLandscape = width > 0 && height > 0 && width > height
     const thumbH = isLandscape ? 38 : 64
@@ -38,7 +47,7 @@ export const PageThumbnail = memo(({ page, index, allPageIds }: Props) => {
     return (
         <div
             onClick={handleClick}
-            onContextMenu={e => openPageContextMenu(e, page)}
+            onContextMenu={handleContextMenu}
             onMouseEnter={() => setHovered(true)}
             onMouseLeave={() => setHovered(false)}
             style={{

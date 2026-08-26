@@ -52,7 +52,7 @@ Drop your files in, arrange and clean up the pages, adjust how each image sits o
 
 ### 📥 Import & Organize
 
-Drag-and-drop or browse to import — including PDFs, not just images. Every page of an imported PDF becomes a fully editable page, just like a photo: reorder by dragging, rotate, duplicate, delete, or set a cover page — with Smart Scan flagging likely duplicate or blank pages along the way. Work in Grid, List, Single-page, or Continuous scroll view throughout.
+Drag-and-drop or browse to import — including PDFs, not just images. Every page of an imported PDF becomes a fully editable page, just like a photo: reorder by dragging, rotate, crop, duplicate, delete, or set a cover page — with Smart Scan flagging likely duplicate or blank pages along the way. The crop tool supports zooming and panning to fine-tune the selection, and can apply to a duplicate page instead of overwriting the original. Work in Grid, List, Single-page, or Continuous scroll view throughout.
 
 ### 🎛️ Per-Page & Project-Wide Control
 

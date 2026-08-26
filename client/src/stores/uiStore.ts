@@ -38,6 +38,9 @@ interface UIState {
 
     // Import drop zone
     isDropZoneActive: boolean
+
+    // Crop dialog
+    cropPageId: string | null
 }
 
 interface UIActions {
@@ -80,6 +83,10 @@ interface UIActions {
 
     // Drop zone
     setDropZoneActive: (active: boolean) => void
+
+    // Crop dialog
+    openCropDialog: (pageId: string) => void
+    closeCropDialog: () => void
 }
 
 type UIStore = UIState & UIActions
@@ -108,6 +115,7 @@ export const useUIStore = create<UIStore>()((set, get) => ({
     focusedPageId: null,
     currentPreviewIndex: 0,
     isDropZoneActive: false,
+    cropPageId: null,
 
     // ── Sidebar ────────────────────────────────────────────────────────────────
 
@@ -188,4 +196,9 @@ export const useUIStore = create<UIStore>()((set, get) => ({
     // ── Drop zone ──────────────────────────────────────────────────────────────
 
     setDropZoneActive: (isDropZoneActive) => set({ isDropZoneActive }),
+
+    // ── Crop dialog ────────────────────────────────────────────────────────────
+
+    openCropDialog: (pageId) => set({ cropPageId: pageId }),
+    closeCropDialog: () => set({ cropPageId: null }),
 }))

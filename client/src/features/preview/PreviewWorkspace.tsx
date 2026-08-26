@@ -220,11 +220,14 @@ const GridView = memo(({ pages, currentIndex, onSelect }: {
                             isActive={i === currentIndex}
                             aspect={gridAspect}
                             onSelect={() => onSelect(i)}
-                            onContextMenu={
-                                settings.enableWorkspaceContextMenu
-                                    ? (e) => openPageContextMenu(e, page)
-                                    : undefined
-                            }
+                            onContextMenu={(e) => {
+                                // Always suppress the browser's native image
+                                // menu — the thumbnail is a blob: URL the app
+                                // owns, not real user content. Our own menu
+                                // still only opens when the setting is on.
+                                e.preventDefault()
+                                if (settings.enableWorkspaceContextMenu) openPageContextMenu(e, page)
+                            }}
                         />
                     ))}
                 </div>
@@ -275,6 +278,8 @@ const ContinuousView = memo(({ pages, zoom }: {
     zoom: number
 }) => {
     const preset = useActivePreset()
+    const { settings } = useSettingsStore()
+    const { openPageContextMenu } = usePageContextMenu()
 
     return (
         <div style={{
@@ -295,6 +300,14 @@ const ContinuousView = memo(({ pages, zoom }: {
                         initial={{ opacity: 0, y: 12 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: i * 0.03, duration: 0.25 }}
+                        onContextMenu={(e) => {
+                            // Always suppress the browser's native image menu —
+                            // the page is a blob: URL the app owns, not real
+                            // user content. Our own menu still only opens when
+                            // the setting is on (same as Grid/Single views).
+                            e.preventDefault()
+                            if (settings.enableWorkspaceContextMenu) openPageContextMenu(e, page)
+                        }}
                         style={{
                             position: 'relative',
                             boxShadow: '0 8px 32px rgba(0,0,0,0.5)',

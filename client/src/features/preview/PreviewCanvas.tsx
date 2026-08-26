@@ -1,6 +1,8 @@
 import { memo, useRef, useEffect, useState, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useActivePreset } from '@/stores/exportStore'
+import { useSettingsStore } from '@/stores/settingsStore'
+import { usePageContextMenu } from '@/hooks/usePageContextMenu'
 import { MARGIN_SIZES } from '@/constants'
 import { resolvePageAspect } from '@/lib/pageLayout'
 import { useUnwrappedRotation } from '@/hooks/useUnwrappedRotation'
@@ -119,6 +121,21 @@ export const PreviewCanvas = memo(({ page, zoom, onZoomChange }: Props) => {
     }, [])
     const onDblClick = useCallback(() => { setPan(p => ({ ...p, x: 0, y: 0 })); onZoomChange(1) }, [onZoomChange])
 
+    // Right-click menu — same "off by default" toggle as the workspace Grid
+    // view (Settings → Interface), rather than always-on like the sidebar
+    // thumbnails. Regardless of that setting, the browser's native image
+    // menu ("Open image in new tab" etc.) is always suppressed here — the
+    // <img> below is a blob: URL the app owns, not real user content, so
+    // that menu is never actually useful and "Open in new tab" just shows
+    // a dead link once the blob URL is revoked.
+    const { settings } = useSettingsStore()
+    const { openPageContextMenu } = usePageContextMenu()
+    const onContextMenu = useCallback((e: React.MouseEvent) => {
+        e.preventDefault()
+        if (!settings.enableWorkspaceContextMenu) return
+        openPageContextMenu(e, page)
+    }, [settings.enableWorkspaceContextMenu, openPageContextMenu, page])
+
     useEffect(() => {
         if (!pan.isDragging) return
         // Bounds are recomputed here (not just read from a stale closure)
@@ -185,6 +202,7 @@ export const PreviewCanvas = memo(({ page, zoom, onZoomChange }: Props) => {
             ref={containerRef}
             onMouseDown={onMouseDown}
             onDoubleClick={onDblClick}
+            onContextMenu={onContextMenu}
             style={{
                 width: '100%', height: '100%',
                 overflow: 'hidden', position: 'relative',

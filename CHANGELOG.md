@@ -5,15 +5,24 @@ All notable changes to Bindery are documented here. This project follows
 release below adds functionality or fixes bugs without breaking existing
 usage, so all of them are `MINOR` or `PATCH` bumps against the `1.0.0`
 baseline.
- 
+
 ## [2.0.0]
- 
+
 ### Added
- 
+
+- **Crop tool** — a new "Crop Image" option in the right-click menu opens a dialog with a freeform or aspect-locked (Free / Square / Original) crop selection, resizable via 8 handles or by dragging the selection itself
+- The crop dialog supports **zoom and pan** — scroll to zoom (centered on the cursor), or use the zoom controls below the stage; once zoomed in, drag the dimmed area outside the selection to pan
+- **Apply as Copy** — a dropdown next to Apply Crop lets you crop into a duplicate page instead of replacing the original, so the source image is left untouched
 - **Accounts** — sign up or log in from a new button in the header, with a combined login/signup dialog (including a confirm-password field on signup and show/hide toggles on password fields)
 - **Settings sync** — two new buttons in Settings let you save your current settings to your account, or load them back on another device. Only fields that actually differ from local state are applied, so loading identical data is a genuine no-op. Sync is manual only — nothing uploads or downloads automatically, only when you click one of the two buttons
 - **Account section** in Settings (new first item in the sidebar) — view and update your username and email (saved automatically when you leave the field), and change your password (requires your current password, plus a dedicated Update button)
 - A backend server (Node/Express + MongoDB) now exists alongside the client, storing only account credentials and synced settings — no project or page data ever leaves the browser
+
+### Fixed
+
+- Right-clicking a page in the sidebar (List or Grid) now selects it first, so it's clear which page a multi-select action from the context menu will apply to; right-clicking within an existing multi-selection leaves the whole selection intact
+- The right-click context menu (when enabled in Settings → Interface) now also works in Single-page and Continuous scroll view, not just the workspace Grid view — previously Single view had no context menu at all, and Continuous view had none either
+- Right-clicking a page image, or the logo in the header and Settings → About, no longer shows the browser's native "Open image in new tab" menu
 
 ## [1.7.2]
 
@@ -35,7 +44,7 @@ baseline.
 
 - Pressing New Project no longer creates a redundant empty project (and duplicate toast) when the current project was already blank and unsaved
 
-## [1.7.0] 
+## [1.7.0]
 
 ### Added
 
@@ -47,20 +56,20 @@ baseline.
 - The project switcher's Recent list showed a stale page count for the currently open project right after an import, until the next autosave
 - The logo in the header and Settings → About failed to load when the app was opened offline, since the service worker never cached it
 
-## [1.6.6] 
+## [1.6.6]
 
 ### Fixed
 
 - Reload dialog bug that would popup on startup in some scenarios.
 
-## [1.6.5] 
+## [1.6.5]
 
 ### Changed
 
 - Refined the "What's New" dialog's More button with a softer, more gradual fade
 - The highlights list no longer scrolls unless it's actually expanded
 
-## [1.6.4] 
+## [1.6.4]
 
 ### Fixed
 
@@ -68,23 +77,24 @@ baseline.
 - Smart Tools panel not showing when no page was selected
 - Inconsistent spacing in the Page panel between the selected and empty states
 
-## [1.6.3] 
+## [1.6.3]
 
 ### Changed
 
 - The "What's New" dialog now features a scroll bar for longer entries
 - If the "What's New" dialog contains more than 5 entries, a More button accompanied by a downward-pointing arrow icon will appear beneath the final entry.
 
-## [1.6.2] 
+## [1.6.2]
 
 ### Changed
 
 - Updated the logo shown in the install banner for a more polished appearance
 - Added descriptive alt text to all logo images for improved accessibility
 
-## [1.6.1] 
+## [1.6.1]
 
 ### Added
+
 - A "What's New" dialog now appears once after updating to a new version,
   summarizing what changed
 
@@ -95,7 +105,7 @@ baseline.
 - Moved the "Choose import type" setting from Appearance to Import, where
   it belongs
 
-## [1.6.0] 
+## [1.6.0]
 
 ### Added
 
@@ -111,14 +121,14 @@ baseline.
 - The `.bindery` project file format (export/import) — superseded by
   direct PDF import as the way to bring existing documents into Bindery
 
-## [1.5.0] 
+## [1.5.0]
 
 ### Added
 
 - Scroll wheel now zooms directly in single-page view (previously
   required holding Ctrl/Cmd)
 
-## [1.4.1] 
+## [1.4.1]
 
 ### Fixed
 
@@ -133,7 +143,7 @@ baseline.
 - Duplicate-page group stayed listed in Smart Scan after its pages were
   removed
 
-## [1.4.0] 
+## [1.4.0]
 
 ### Added
 
@@ -141,7 +151,7 @@ baseline.
 - Image Fit and Margin controls in the Page panel now visually disable
   when Page Size is set to Auto, with an explanatory toast on interaction
 
-## [1.3.1] 
+## [1.3.1]
 
 ### Fixed
 
@@ -156,7 +166,7 @@ baseline.
 - Removed Save, Open Project, Import, and the theme toggle icons from the
   top nav (still available via Command Palette and keyboard shortcuts)
 
-## [1.3.0] 
+## [1.3.0]
 
 ### Added
 
@@ -165,7 +175,7 @@ baseline.
 - Optional right-click context menu in the workspace (off by default —
   Settings → Interface)
 
-## [1.2.1] 
+## [1.2.1]
 
 ### Changed
 
@@ -178,7 +188,7 @@ baseline.
 - The first-launch install banner now auto-dismisses after 3 seconds
   (previously stayed until manually closed)
 
-## [1.2.0] 
+## [1.2.0]
 
 ### Added
 
@@ -198,7 +208,7 @@ baseline.
   redundant worker-inside-a-worker architecture around Tesseract.js
 - Extracted OCR text couldn't be selected or copied
 
-## [1.1.1] 
+## [1.1.1]
 
 ### Fixed
 
@@ -207,7 +217,7 @@ baseline.
 - The recovery dialog didn't reliably offer to restore a session for new
   or manually-saved projects
 
-## [1.1.0] 
+## [1.1.0]
 
 ### Added
 
@@ -219,7 +229,7 @@ baseline.
 
 - Autosave interval reduced from 30 seconds to 10 seconds
 
-## [1.0.1] 
+## [1.0.1]
 
 ### Fixed
 
@@ -231,6 +241,6 @@ baseline.
 - The keyboard focus ring rendered as a hard rectangle instead of
   matching a rounded element's actual shape
 
-## [1.0.0] 
+## [1.0.0]
 
 Initial release.

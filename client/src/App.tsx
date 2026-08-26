@@ -10,6 +10,7 @@ import { UpdateAvailableDialog } from '@/components/common/UpdateAvailableDialog
 import { WhatsNewDialog } from '@/components/common/WhatsNewDialog'
 import { StorageWarningDialog } from '@/components/common/StorageWarningDialog'
 import { AuthDialog } from '@/components/ui/AuthDialog'
+import { CropDialog } from '@/features/crop/CropDialog'
 
 export const App = memo(() => (
   <ErrorBoundary>
@@ -23,6 +24,7 @@ export const App = memo(() => (
           <WhatsNewDialog />
           <StorageWarningDialog />
           <AuthDialog />
+          <CropDialog />
         </ContextMenuProvider>
       </ConfirmProvider>
     </TooltipProvider>

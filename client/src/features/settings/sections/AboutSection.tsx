@@ -17,6 +17,8 @@ const AboutSection = memo(() => (
                     <img
                         src="/icons/favicon.svg"
                         alt="logo"
+                        draggable={false}
+                        onContextMenu={e => e.preventDefault()}
                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     />
                 </div>

@@ -1,10 +1,11 @@
 import { createElement, useCallback } from 'react'
-import { RotateCw, RotateCcw, Copy, Trash2, RefreshCw } from 'lucide-react'
+import { RotateCw, RotateCcw, Copy, Trash2, RefreshCw, Crop } from 'lucide-react'
 import { toast } from 'sonner'
 import { useContextMenu } from '@/hooks/useContextMenu'
 import type { ContextMenuItem } from '@/components/common/ContextMenu'
 import { usePagesStore } from '@/stores/pagesStore'
 import { useSettingsStore } from '@/stores/settingsStore'
+import { useUIStore } from '@/stores/uiStore'
 import { importService } from '@/services/importService'
 import type { Page } from '@/types'
 
@@ -21,6 +22,7 @@ export function usePageContextMenu() {
     const { open } = useContextMenu()
     const { removePage, rotatePage, duplicatePage, setThumbnail } = usePagesStore()
     const { settings } = useSettingsStore()
+    const openCropDialog = useUIStore((s) => s.openCropDialog)
 
     const handleRegenerateThumbnail = useCallback(async (page: Page) => {
         toast.promise(
@@ -59,6 +61,12 @@ export function usePageContextMenu() {
                 icon: createElement(Copy, { size: 14 }),
                 action: () => duplicatePage(page.id),
             },
+            {
+                id: 'crop',
+                label: 'Crop Image',
+                icon: createElement(Crop, { size: 14 }),
+                action: () => openCropDialog(page.id),
+            },
             { id: 'sep-1', label: '', separator: true },
             {
                 id: 'regenerate-thumbnail',
@@ -77,7 +85,7 @@ export function usePageContextMenu() {
         ]
 
         open(e.clientX, e.clientY, items)
-    }, [open, rotatePage, duplicatePage, removePage, handleRegenerateThumbnail])
+    }, [open, rotatePage, duplicatePage, removePage, handleRegenerateThumbnail, openCropDialog])
 
     return { openPageContextMenu }
 }
