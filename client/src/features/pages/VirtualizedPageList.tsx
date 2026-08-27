@@ -144,7 +144,10 @@ const SortBtn = memo(({ label, sortKey, currentKey, currentDir, onClick }: {
     label: string; sortKey: SortKey; currentKey: SortKey; currentDir: SortDir; onClick: (k: SortKey) => void
 }) => {
     const active = currentKey === sortKey
-    const Icon = active ? (currentDir === 'asc' ? ChevronUp : ChevronDown) : null
+    // Manual order has no ascending/descending direction — showing a chevron
+    // here looked like a working toggle but did nothing when clicked, since
+    // handleSort('manual') is a no-op while already on manual.
+    const Icon = active && sortKey !== 'manual' ? (currentDir === 'asc' ? ChevronUp : ChevronDown) : null
     return (
         <button
             onClick={() => onClick(sortKey)}
