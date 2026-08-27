@@ -153,7 +153,6 @@ export const AppShell = memo(() => {
       </div>
 
       <CommandPalette
-        onOpenSettings={() => openSettings()}
         onRunOCR={() => void runOCR()}
         onImport={importFromPicker}
         onSave={handleSave}

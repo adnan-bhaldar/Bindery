@@ -1,7 +1,7 @@
 import { memo, useCallback } from 'react'
 import { Command } from 'cmdk'
 import {
-    Upload, Download, RotateCw, Trash2, Settings,
+    Upload, Download, RotateCw, Trash2,
     Moon, Sun, ScanText, Save,
     Plus, Layers,
 } from 'lucide-react'
@@ -12,6 +12,7 @@ import { useThemeStore } from '@/stores/themeStore'
 import { usePagesStore, selectPageCount } from '@/stores/pagesStore'
 import { useSelectionStore, useSelectedIdsArray } from '@/stores/selectionStore'
 import { useHistoryStore } from '@/stores/historyStore'
+import { SECTIONS, SEARCH_INDEX } from '@/features/settings/searchIndex'
 import { cn } from '@/lib/utils'
 import type { Theme } from '@/types'
 
@@ -25,10 +26,13 @@ interface Cmd {
     action: () => void
     danger?: boolean
     disabled?: boolean
+    // Extra terms folded into the cmdk search value but never rendered —
+    // lets typing an actual setting's name (e.g. "high contrast", "auto
+    // page size") match its section here, not just the section's own label.
+    keywords?: string
 }
 
 interface Props {
-    onOpenSettings: () => void
     onRunOCR: () => void
     onImport: () => void
     onSave: () => void
@@ -36,9 +40,9 @@ interface Props {
 }
 
 export const CommandPalette = memo(({
-    onOpenSettings, onRunOCR, onImport, onSave, onNewProject,
+    onRunOCR, onImport, onSave, onNewProject,
 }: Props) => {
-    const { isCommandPaletteOpen, closeCommandPalette } = useUIStore()
+    const { isCommandPaletteOpen, closeCommandPalette, openSettings } = useUIStore()
     const { openDialog: openExport } = useExportStore()
     const { resolvedTheme, setTheme } = useThemeStore()
     const pageCount = usePagesStore(selectPageCount)
@@ -130,10 +134,19 @@ export const CommandPalette = memo(({
             Icon: ThemeIcon, group: 'Appearance',
             action: () => setTheme(nextTheme),
         },
-        {
-            id: 'settings', label: 'Open Settings', desc: 'Preferences & configuration',
-            Icon: Settings, group: 'App', action: onOpenSettings,
-        },
+        // One entry per settings section (Account, General, Appearance, ...),
+        // each searchable by the real setting names it contains via
+        // SEARCH_INDEX — e.g. typing "high contrast" surfaces "Settings:
+        // Accessibility" — and jumping straight to that section on select,
+        // same as clicking it in the settings sidebar.
+        ...SECTIONS.map((section): Cmd => ({
+            id: `settings-${section.id}`,
+            label: `Settings: ${section.label}`,
+            Icon: section.Icon,
+            group: 'Settings',
+            keywords: (SEARCH_INDEX[section.id] ?? []).join(' '),
+            action: () => openSettings(section.id),
+        })),
     ]
 
     const groups = cmds.reduce((a, c) => {
@@ -191,7 +204,7 @@ export const CommandPalette = memo(({
                                                 return (
                                                     <Command.Item
                                                         key={item.id}
-                                                        value={`${item.label} ${item.desc ?? ''} ${group}`}
+                                                        value={`${item.label} ${item.desc ?? ''} ${group} ${item.keywords ?? ''}`}
                                                         onSelect={() => !item.disabled && run(item.action)}
                                                         className={cn('cmd-item', item.danger && 'danger')}
                                                         style={{ opacity: item.disabled ? 0.4 : 1 }}
