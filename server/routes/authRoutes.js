@@ -20,7 +20,7 @@ router.post("/signup", authLimiter, signup);
 router.post("/login", authLimiter, login);
 router.post("/logout", protect, logout);
 router.get("/me", protect, getMe);
-router.patch("/profile", protect, updateProfile);
+router.patch("/profile", protect, authLimiter, updateProfile);
 router.put("/password", protect, authLimiter, changePassword);
 router.delete("/account", protect, authLimiter, deleteAccount);
 router.get("/backup-codes/status", protect, getBackupCodesStatus);

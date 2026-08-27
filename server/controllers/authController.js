@@ -43,10 +43,41 @@ export const login = async (req, res, next) => {
       return res.status(400).json({ message: "Email and password are required" });
     }
 
-    const user = await User.findOne({ email: email.toLowerCase() }).select("+password");
-    if (!user || !(await user.comparePassword(password))) {
+    const user = await User.findOne({ email: email.toLowerCase() }).select("+password +failedLoginAttempts +lockUntil");
+
+    // "No such user" still gets the plain generic message — nothing to
+    // distinguish there. Once a real account is actually locked, though,
+    // this responds with a distinct status/message pair so the client can
+    // show a specific "locked, try again in N minutes" notice rather than
+    // a generic "wrong password" — the account already had 5 failed
+    // attempts at that point, so revealing "this account is locked" adds
+    // little a determined attacker didn't already narrow down themselves.
+    if (!user) {
       return res.status(401).json({ message: "Invalid email or password" });
     }
+    if (user.isLocked()) {
+      const minutesLeft = Math.ceil((user.lockUntil.getTime() - Date.now()) / 60000);
+      return res.status(423).json({
+        message: `Too many failed attempts. Try again in ${minutesLeft} minute${minutesLeft === 1 ? "" : "s"}.`,
+      });
+    }
+
+    if (!(await user.comparePassword(password))) {
+      await user.registerFailedLogin();
+
+      // If that failure was the one that just triggered the lock, say so
+      // immediately instead of waiting for the next attempt to reveal it.
+      if (user.isLocked()) {
+        const minutesLeft = Math.ceil((user.lockUntil.getTime() - Date.now()) / 60000);
+        return res.status(423).json({
+          message: `Too many failed attempts. Try again in ${minutesLeft} minute${minutesLeft === 1 ? "" : "s"}.`,
+        });
+      }
+
+      return res.status(401).json({ message: "Invalid email or password" });
+    }
+
+    await user.clearLoginAttempts();
 
     const token = generateToken(user._id);
     setTokenCookie(res, token);
