@@ -20,10 +20,10 @@ GithubMark.displayName = 'GithubMark'
 
 // ─── Card primitives (the "modern cards" redesign) ────────────────────────────
 
-export const Card = memo(({ title, desc, icon: Icon, children }: {
-    title?: string; desc?: string; icon?: React.FC<{ size?: number }>; children: React.ReactNode
+export const Card = memo(({ id, title, desc, icon: Icon, children }: {
+    id?: string; title?: string; desc?: string; icon?: React.FC<{ size?: number }>; children: React.ReactNode
 }) => (
-    <div style={{
+    <div id={id} style={{
         background: 'var(--bg-card)',
         border: '1px solid var(--border)',
         borderRadius: 'var(--r-xl)',
@@ -51,10 +51,10 @@ export const Card = memo(({ title, desc, icon: Icon, children }: {
 ))
 Card.displayName = 'Card'
 
-export const CardRow = memo(({ label, desc, children, last }: {
-    label: string; desc?: string; children: React.ReactNode; last?: boolean
+export const CardRow = memo(({ id, label, desc, children, last }: {
+    id?: string; label: string; desc?: string; children: React.ReactNode; last?: boolean
 }) => (
-    <div style={{
+    <div id={id} style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         gap: 20, padding: '9px 0',
         borderBottom: last ? 'none' : '1px solid var(--border-soft)',
@@ -195,4 +195,3 @@ export const SelectRow = memo(({ options, value, onChange }: {
     )
 })
 SelectRow.displayName = 'SelectRow'
-

@@ -10,6 +10,7 @@ const ExportSection = memo(() => {
         <div>
             <Card title="Export Defaults" icon={Download}>
                 <CardRow
+                    id="setting-default-filename"
                     label="Default filename"
                     desc="Used as a prefix (combined with the current date/time) only when a project has no name of its own — a named project always exports as its own name"
                     last
@@ -33,6 +34,7 @@ const ExportSection = memo(() => {
 
             <Card title="Document Title" desc="Controls the sidebar Info tab's Title field." icon={FilePen}>
                 <CardRow
+                    id="setting-doc-title"
                     label="Allow custom document title"
                     desc="When off, the exported PDF's title always matches the project name — the sidebar's Title field stays locked to it"
                     last
@@ -46,6 +48,7 @@ const ExportSection = memo(() => {
 
             <Card title="Document Author" icon={UserPen} >
                 <CardRow
+                    id="setting-default-author"
                     label="Default author name"
                     desc="When off, leaving the Author field blank keeps it genuinely empty in the exported PDF instead of filling in a default name"
                     last

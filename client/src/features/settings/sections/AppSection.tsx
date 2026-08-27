@@ -23,7 +23,7 @@ const AppSection = memo(() => {
 
     return (
         <div>
-            <Card title="Install App" icon={Smartphone}>
+            <Card id="setting-app-status" title="App Status" icon={Smartphone}>
                 <CardRow label="Status">
                     {isInstalled ? (
                         <span style={{
@@ -54,6 +54,7 @@ const AppSection = memo(() => {
                     )}
                 </CardRow>
                 <CardRow
+                    id="setting-offline-support"
                     label="Offline support"
                     desc={swRegistered ? 'Service worker active — Bindery works without a connection' : 'Not active yet'}
                     last
@@ -67,7 +68,7 @@ const AppSection = memo(() => {
             </Card>
 
             {!isInstalled && (
-                <Card>
+                <Card id="setting-install-prompt">
                     <p style={{ fontSize: 12, color: 'var(--tx-3)', lineHeight: 1.65, marginBottom: canInstall ? 14 : 0 }}>
                         {canInstall
                             ? 'Install Bindery as a standalone app — it opens in its own window, works offline, and runs like any other app on your device.'

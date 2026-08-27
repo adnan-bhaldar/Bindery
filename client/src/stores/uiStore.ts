@@ -25,6 +25,13 @@ interface UIState {
     // Settings dialog
     isSettingsOpen: boolean
     settingsSection: string
+    // The specific control to scroll to + flash once the dialog is open,
+    // set when a search (command palette or in-dialog) jumps to one exact
+    // setting rather than just its section. `settingsHighlightNonce` bumps
+    // on every call so re-selecting the same setting re-triggers the flash
+    // even though the id itself hasn't changed.
+    settingsHighlightId: string | null
+    settingsHighlightNonce: number
 
     // Preview
     previewPageId: string | null
@@ -69,7 +76,7 @@ interface UIActions {
     toggleCommandPalette: () => void
 
     // Settings dialog
-    openSettings: (section?: string) => void
+    openSettings: (section?: string, highlightId?: string) => void
     closeSettings: () => void
 
     // Preview
@@ -110,6 +117,8 @@ export const useUIStore = create<UIStore>()((set, get) => ({
     isCommandPaletteOpen: false,
     isSettingsOpen: false,
     settingsSection: 'general',
+    settingsHighlightId: null,
+    settingsHighlightNonce: 0,
     previewPageId: null,
     isPreviewOpen: false,
     focusedPageId: null,
@@ -173,8 +182,13 @@ export const useUIStore = create<UIStore>()((set, get) => ({
 
     // ── Settings dialog ────────────────────────────────────────────────────────
 
-    openSettings: (section = 'general') =>
-        set({ isSettingsOpen: true, settingsSection: section }),
+    openSettings: (section = 'general', highlightId) =>
+        set((state) => ({
+            isSettingsOpen: true,
+            settingsSection: section,
+            settingsHighlightId: highlightId ?? null,
+            settingsHighlightNonce: highlightId ? state.settingsHighlightNonce + 1 : state.settingsHighlightNonce,
+        })),
     closeSettings: () => set({ isSettingsOpen: false }),
 
     // ── Preview ────────────────────────────────────────────────────────────────

@@ -7,12 +7,13 @@ import {
 } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useUIStore } from '@/stores/uiStore'
+import { useAuthStore } from '@/stores/authStore'
 import { useExportStore } from '@/stores/exportStore'
 import { useThemeStore } from '@/stores/themeStore'
 import { usePagesStore, selectPageCount } from '@/stores/pagesStore'
 import { useSelectionStore, useSelectedIdsArray } from '@/stores/selectionStore'
 import { useHistoryStore } from '@/stores/historyStore'
-import { SECTIONS, SEARCH_INDEX } from '@/features/settings/searchIndex'
+import { SECTIONS, SETTINGS_ITEMS, isVisible } from '@/features/settings/searchIndex'
 import { cn } from '@/lib/utils'
 import type { Theme } from '@/types'
 
@@ -43,6 +44,8 @@ export const CommandPalette = memo(({
     onRunOCR, onImport, onSave, onNewProject,
 }: Props) => {
     const { isCommandPaletteOpen, closeCommandPalette, openSettings } = useUIStore()
+    const { status: authStatus, user: authUser } = useAuthStore()
+    const isSignedIn = authStatus === 'authenticated' && !!authUser
     const { openDialog: openExport } = useExportStore()
     const { resolvedTheme, setTheme } = useThemeStore()
     const pageCount = usePagesStore(selectPageCount)
@@ -134,19 +137,24 @@ export const CommandPalette = memo(({
             Icon: ThemeIcon, group: 'Appearance',
             action: () => setTheme(nextTheme),
         },
-        // One entry per settings section (Account, General, Appearance, ...),
-        // each searchable by the real setting names it contains via
-        // SEARCH_INDEX — e.g. typing "high contrast" surfaces "Settings:
-        // Accessibility" — and jumping straight to that section on select,
-        // same as clicking it in the settings sidebar.
-        ...SECTIONS.map((section): Cmd => ({
-            id: `settings-${section.id}`,
-            label: `Settings: ${section.label}`,
-            Icon: section.Icon,
-            group: 'Settings',
-            keywords: (SEARCH_INDEX[section.id] ?? []).join(' '),
-            action: () => openSettings(section.id),
-        })),
+        // One entry per individual setting (not just per section) — each
+        // labeled "<setting> · <section>" and searchable via its own
+        // keywords, so typing e.g. "high contrast" surfaces "High contrast ·
+        // Accessibility" directly. Selecting it opens Settings on that
+        // section AND scrolls to + flashes that exact row, instead of just
+        // landing on the section with the user having to hunt for it.
+        ...SETTINGS_ITEMS.filter(item => isVisible(item, isSignedIn)).map((item): Cmd => {
+            const section = SECTIONS.find(s => s.id === item.section)
+            return {
+                id: `settings-${item.id}`,
+                label: item.label,
+                desc: section?.label,
+                Icon: section?.Icon ?? Sun,
+                group: 'Settings',
+                keywords: `${section?.label ?? ''} ${item.keywords ?? ''}`,
+                action: () => openSettings(item.section, item.id),
+            }
+        }),
     ]
 
     const groups = cmds.reduce((a, c) => {

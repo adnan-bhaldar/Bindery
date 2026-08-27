@@ -3,7 +3,7 @@ import { Shield } from 'lucide-react'
 import { Card } from '../primitives'
 
 const PrivacySection = memo(() => (
-    <Card title="Privacy First" icon={Shield}>
+    <Card id="setting-privacy" title="Privacy First" icon={Shield}>
         <p style={{ fontSize: 12, color: 'var(--tx-2)', lineHeight: 1.7 }}>
             Bindery processes all images entirely on your device. No images, files, or project data
             are ever uploaded to any server — not now, not with an account, not ever. OCR runs via

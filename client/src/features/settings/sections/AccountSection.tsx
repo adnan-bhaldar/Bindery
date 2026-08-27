@@ -78,7 +78,7 @@ const AccountSection = memo(() => {
 
     if (status !== 'authenticated' || !user) {
         return (
-            <Card title="Account" icon={Info}>
+            <Card id="setting-signin" title="Account" icon={Info}>
                 <p style={{ fontSize: 12, color: 'var(--tx-3)', marginBottom: 12, lineHeight: 1.6 }}>
                     Sign in to manage your username, email, and password, and to sync your
                     settings across devices.
@@ -218,7 +218,7 @@ const AccountSection = memo(() => {
     return (
         <div>
             <Card title="Profile" icon={User}>
-                <CardRow label="Username" desc="Shown in the app header.">
+                <CardRow id="setting-account-username" label="Username" desc="Shown in the app header.">
                     <input
                         value={username}
                         onChange={e => setUsername(e.target.value)}
@@ -229,7 +229,7 @@ const AccountSection = memo(() => {
                         onBlurCapture={textFieldBlurStyle}
                     />
                 </CardRow>
-                <CardRow label="Email" desc="Used to log in.">
+                <CardRow id="setting-account-email" label="Email" desc="Used to log in.">
                     <input
                         type="email"
                         value={email}
@@ -258,7 +258,7 @@ const AccountSection = memo(() => {
 
             <Card title="Password" desc="Changing your password does not affect other signed-in devices." icon={Lock}>
                 <form onSubmit={handlePasswordSubmit}>
-                    <CardRow label="Current password">
+                    <CardRow id="setting-account-password" label="Current password">
                         <input
                             type="password"
                             value={currentPassword}
@@ -370,7 +370,7 @@ const AccountSection = memo(() => {
                     </div>
                 )}
 
-                <CardRow label="Password" desc="Confirm your password to generate new codes." last>
+                <CardRow id="setting-account-backup-codes" label="Password" desc="Confirm your password to generate new codes." last>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <div style={{ position: 'relative' }}>
                             <input
@@ -410,7 +410,7 @@ const AccountSection = memo(() => {
                 </CardRow>
             </Card>
 
-            <Card title="Sign out" desc="You'll need to log in again to sync settings on this device." icon={LogOut}>
+            <Card id="setting-signout" title="Sign out" desc="You'll need to log in again to sync settings on this device." icon={LogOut}>
                 <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                     <button
                         onClick={() => logout()}
@@ -432,7 +432,7 @@ const AccountSection = memo(() => {
                 </div>
             </Card>
 
-            <Card title="Delete Account" icon={Trash2}>
+            <Card id="setting-delete-account" title="Delete Account" icon={Trash2}>
                 <p style={{ fontSize: 11.5, color: 'var(--tx-3)', marginBottom: 12, lineHeight: 1.6 }}>
                     Permanently deletes your account and any settings saved to it. Your local
                     projects and pages on this device are not affected. This cannot be undone.

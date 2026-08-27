@@ -23,7 +23,7 @@ const ShortcutsSection = memo(() => {
         { action: 'Navigate Pages', keys: ['← →'] },
     ]
     return (
-        <Card title="Keyboard Shortcuts" icon={Keyboard}>
+        <Card id="setting-shortcuts" title="Keyboard Shortcuts" icon={Keyboard}>
             {shortcuts.map(({ action, keys }, i) => (
                 <div key={action} style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',

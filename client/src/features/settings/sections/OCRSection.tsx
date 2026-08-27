@@ -11,15 +11,15 @@ const OCRSection = memo(() => {
     return (
         <div>
             <Card title="OCR Engine" icon={ScanText}>
-                <CardRow label="Enable OCR" desc="Extract text from images to create searchable PDFs">
+                <CardRow id="setting-enable-ocr" label="Enable OCR" desc="Extract text from images to create searchable PDFs">
                     <Toggle checked={settings.ocrEnabled} onChange={v => updateSetting('ocrEnabled', v)} />
                 </CardRow>
-                <CardRow label="Run OCR automatically" desc="Process OCR when images are imported" last>
+                <CardRow id="setting-ocr-auto" label="Run OCR automatically" desc="Process OCR when images are imported" last>
                     <Toggle checked={settings.autoRunOcr} onChange={v => updateSetting('autoRunOcr', v)} />
                 </CardRow>
             </Card>
             <Card title="Language" icon={Languages}>
-                <CardRow label="OCR language" desc="Primary language for text recognition" last>
+                <CardRow id="setting-ocr-language" label="OCR language" desc="Primary language for text recognition" last>
                     <SelectRow
                         value={settings.ocrLanguage}
                         options={Object.entries(OCR_LANGUAGE_LABELS).map(([value, label]) => ({ value, label }))}
@@ -28,10 +28,10 @@ const OCRSection = memo(() => {
                 </CardRow>
             </Card>
             <Card title="Performance" icon={Rocket}>
-                <CardRow label="Skip OCR for large documents" desc="Avoid processing documents over the page limit">
+                <CardRow id="setting-ocr-skip-large" label="Skip OCR for large documents" desc="Avoid processing documents over the page limit">
                     <Toggle checked={settings.skipOcrForLargeDocuments} onChange={v => updateSetting('skipOcrForLargeDocuments', v)} />
                 </CardRow>
-                <CardRow label="Page limit" desc="Maximum pages to process with OCR" last>
+                <CardRow id="setting-ocr-page-limit" label="Page limit" desc="Maximum pages to process with OCR" last>
                     <SegRow
                         value={String(settings.ocrPageLimit)}
                         options={[{ value: '50', label: '50' }, { value: '100', label: '100' }, { value: '200', label: '200' }, { value: '500', label: '500' }]}

@@ -12,7 +12,7 @@ import { Tooltip } from '@/components/ui/Tooltip'
 import { diffKeys } from '@/lib/utils'
 import { toast } from 'sonner'
 
-import { SECTIONS, sectionMatches } from './searchIndex'
+import { SECTIONS, sectionMatches, matchingSettings } from './searchIndex'
 import AccountSection from './sections/AccountSection'
 import GeneralSection from './sections/GeneralSection'
 import AppearanceSection from './sections/AppearanceSection'
@@ -56,8 +56,10 @@ export const SettingsDialog = memo(({ isOpen, onClose }: Props) => {
     const [isSaving, setIsSaving] = useState(false)
     const [isLoadingRemote, setIsLoadingRemote] = useState(false)
     const { settings, resetSettings, updateSettings } = useSettingsStore()
-    const { status: authStatus, openAuthDialog } = useAuthStore()
+    const { status: authStatus, user: authUser, openAuthDialog } = useAuthStore()
     const settingsSection = useUIStore((s) => s.settingsSection)
+    const settingsHighlightId = useUIStore((s) => s.settingsHighlightId)
+    const settingsHighlightNonce = useUIStore((s) => s.settingsHighlightNonce)
     const confirm = useConfirm()
 
     // Jump to whichever section the dialog was opened for (e.g. the header's
@@ -68,9 +70,39 @@ export const SettingsDialog = memo(({ isOpen, onClose }: Props) => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOpen])
 
+    // Scrolls a specific setting's row into view and flashes it briefly, so a
+    // search that matched one exact setting (not just its section) actually
+    // lands the user's eye on that row. Waits a tick for the section switch /
+    // dialog-open animation to finish painting before measuring layout.
+    const highlightSetting = useCallback((id: string) => {
+        window.setTimeout(() => {
+            const el = document.getElementById(id)
+            if (!el) return
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+            el.classList.remove('setting-flash')
+            // Force reflow so the animation restarts even if the same
+            // element was flashed a moment ago.
+            void el.offsetWidth
+            el.classList.add('setting-flash')
+        }, 220)
+    }, [])
+
+    useEffect(() => {
+        if (isOpen && settingsHighlightId) highlightSetting(settingsHighlightId)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isOpen, settingsHighlightNonce])
+
     const filtered = useMemo(
-        () => SECTIONS.filter(s => sectionMatches(s, search)),
-        [search]
+        () => SECTIONS.filter(s => sectionMatches(s, search, authStatus === 'authenticated' && !!authUser)),
+        [search, authStatus, authUser]
+    )
+
+    // Individual settings matching the search — lets the in-dialog search
+    // jump straight to one control, the same way the command palette does,
+    // instead of only ever landing on its section.
+    const matchedSettings = useMemo(
+        () => matchingSettings(search, authStatus === 'authenticated' && !!authUser),
+        [search, authStatus, authUser]
     )
 
     // If the currently-active section gets filtered out by a search term,
@@ -337,6 +369,48 @@ export const SettingsDialog = memo(({ isOpen, onClose }: Props) => {
                                                 {label}
                                             </button>
                                         ))
+                                    )}
+
+                                    {search && matchedSettings.length > 0 && (
+                                        <div style={{ marginTop: 10, paddingTop: 8, borderTop: '1px solid var(--border-soft)' }}>
+                                            <p style={{
+                                                fontSize: 10, fontWeight: 600, color: 'var(--tx-4)',
+                                                textTransform: 'uppercase', letterSpacing: '0.04em',
+                                                padding: '0 10px 5px',
+                                            }}>
+                                                Jump to setting
+                                            </p>
+                                            {matchedSettings.map(item => (
+                                                <button
+                                                    key={item.id}
+                                                    onClick={() => {
+                                                        setActiveSection(item.section)
+                                                        highlightSetting(item.id)
+                                                    }}
+                                                    style={{
+                                                        width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
+                                                        padding: '6px 10px', borderRadius: 8, border: 'none',
+                                                        background: 'transparent', color: 'var(--tx-2)',
+                                                        fontFamily: 'var(--font-sans)', cursor: 'pointer',
+                                                        textAlign: 'left', transition: 'background 110ms, color 110ms',
+                                                        marginBottom: 1,
+                                                    }}
+                                                    onMouseEnter={e => {
+                                                        e.currentTarget.style.background = 'var(--hover)'
+                                                        e.currentTarget.style.color = 'var(--tx-1)'
+                                                    }}
+                                                    onMouseLeave={e => {
+                                                        e.currentTarget.style.background = 'transparent'
+                                                        e.currentTarget.style.color = 'var(--tx-2)'
+                                                    }}
+                                                >
+                                                    <span style={{ fontSize: 12 }}>{item.label}</span>
+                                                    <span style={{ fontSize: 10, color: 'var(--tx-4)' }}>
+                                                        {SECTIONS.find(s => s.id === item.section)?.label}
+                                                    </span>
+                                                </button>
+                                            ))}
+                                        </div>
                                     )}
                                 </div>
                             </div>

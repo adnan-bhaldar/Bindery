@@ -40,6 +40,19 @@
   --gradient-accent: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
 }
 
+/* ── Text selection ──────────────────────────────────
+   Native ::selection is always a hard rectangle — browsers ignore
+   border-radius on it entirely, so inside a rounded pill (like the
+   settings/command-palette search inputs) the default OS selection
+   color reads as a clashing box against the pill's curved edges.
+   Can't round it, so instead make it a soft tint using the accent
+   color already used throughout the app, rather than a stark
+   system-blue block that looks out of place against the pill. */
+::selection {
+  background: var(--accent-soft);
+  color: var(--tx-1);
+}
+
 /* ── DARK THEME ─────────────────────────────────── */
 html.theme-dark,
 :root {
@@ -361,6 +374,43 @@ textarea,
   100% {
     box-shadow: 0 0 0 0 rgba(99, 102, 241, 0)
   }
+}
+
+/* Momentary highlight for a setting jumped to via search (command palette or
+   the in-dialog settings search) — scrolled into view, then blinked a few
+   times so the user's eye lands on the right row instead of just the right
+   section. CardRow/Card set their own background/box-shadow inline (React
+   `style`), which normally beats a stylesheet class — but a CSS *animation*
+   on those same properties overrides inline values for its duration, so this
+   still works on both plain rows and the whole-card anchors (Shortcuts,
+   Privacy, About, Storage's danger zone) without needing !important.
+   Real `padding` isn't used for the gap around the label/toggle: it would
+   fight the row's own inline padding, and forcing it (even with !important)
+   would resize the row and shove neighboring rows during the blink. A
+   box-shadow spread synced to each "on" keyframe gives the same breathing
+   room by painting outward, without changing the row's actual box. */
+@keyframes settingFlash {
+
+  0%,
+  100%,
+  30%,
+  60%,
+  90% {
+    background: transparent;
+    box-shadow: 0 0 0 0 transparent;
+  }
+
+  15%,
+  45%,
+  75% {
+    background: var(--accent-dim);
+    box-shadow: 0 0 0 6px var(--accent-dim);
+  }
+}
+
+.setting-flash {
+  animation: settingFlash 1.3s ease-in-out;
+  border-radius: var(--r-md, 8px);
 }
 
 /* ═══════════════════════════════════════════════════

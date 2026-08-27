@@ -5,7 +5,7 @@ import { Card, GithubMark } from '../primitives'
 
 const AboutSection = memo(() => (
     <div>
-        <Card>
+        <Card id="setting-about">
             <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 4 }}>
                 <div style={{
                     width: 56, height: 56, borderRadius: 16,
@@ -33,7 +33,7 @@ const AboutSection = memo(() => (
             </div>
         </Card>
 
-        <Card title="Developer" icon={GithubMark}>
+        <Card id="setting-developer" title="Developer" icon={GithubMark}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                 <div style={{
                     width: 44, height: 44, borderRadius: 12,
@@ -86,7 +86,7 @@ const AboutSection = memo(() => (
             </a>
         </Card>
 
-        <Card title="Built With" icon={ImageIcon}>
+        <Card id="setting-built-with" title="Built With" icon={ImageIcon}>
             {[
                 { label: 'Framework', value: 'React 19 + TypeScript' },
                 { label: 'PDF Engine', value: 'pdf-lib' },

@@ -260,7 +260,7 @@ const AppearanceSection = memo(() => {
 
     return (
         <div>
-            <Card title="Theme" icon={Palette}>
+            <Card id="setting-theme" title="Theme" icon={Palette}>
                 <div style={{ display: 'flex', gap: 14, marginBottom: 14 }}>
                     <ThemePreviewCard previewTheme="light" accent={accent} active={resolvedTheme === 'light'} onClick={() => setTheme('light')} disabled={theme === 'system'} />
                     <ThemePreviewCard previewTheme="dark" accent={accent} active={resolvedTheme === 'dark'} onClick={() => setTheme('dark')} disabled={theme === 'system'} />
@@ -274,31 +274,31 @@ const AppearanceSection = memo(() => {
             </Card>
 
             <Card title="Interface" icon={LayoutPanelTop}>
-                <CardRow label="Compact mode" desc="Slightly denser layout throughout the app">
+                <CardRow id="setting-compact-mode" label="Compact mode" desc="Slightly denser layout throughout the app">
                     <Toggle checked={settings.compactMode} onChange={v => updateSetting('compactMode', v)} />
                 </CardRow>
-                <CardRow label="Reduce motion" desc="Minimize animations throughout the interface">
+                <CardRow id="setting-reduce-motion" label="Reduce motion" desc="Minimize animations throughout the interface">
                     <Toggle checked={settings.reducedMotion} onChange={v => updateSetting('reducedMotion', v)} />
                 </CardRow>
-                <CardRow label="Workspace right-click menu" desc="Right-click a page in the main workspace for rotate/duplicate/delete" last>
+                <CardRow id="setting-context-menu" label="Workspace right-click menu" desc="Right-click a page in the main workspace for rotate/duplicate/delete" last>
                     <Toggle checked={settings.enableWorkspaceContextMenu} onChange={v => updateSetting('enableWorkspaceContextMenu', v)} />
                 </CardRow>
             </Card>
 
             <Card title="Sidebar" icon={PanelLeft}>
-                <CardRow label="Page list style" desc="How pages are displayed in the sidebar">
+                <CardRow id="setting-page-list-style" label="Page list style" desc="How pages are displayed in the sidebar">
                     <LayoutToggle
                         value={settings.sidebarLayout ?? 'list'}
                         onChange={v => updateSetting('sidebarLayout', v)}
                     />
                 </CardRow>
-                <CardRow label="Allow drag when sorted" desc="Enable reordering while a sort is active" last>
+                <CardRow id="setting-drag-when-sorted" label="Allow drag when sorted" desc="Enable reordering while a sort is active" last>
                     <Toggle checked={settings.allowDragWhenSorted} onChange={v => updateSetting('allowDragWhenSorted', v)} />
                 </CardRow>
             </Card>
 
             <Card title="Thumbnails" icon={Image}>
-                <CardRow label="Thumbnail size" desc="Size of page thumbnails — affects generation speed and sharpness" last>
+                <CardRow id="setting-thumbnail-size" label="Thumbnail size" desc="Size of page thumbnails — affects generation speed and sharpness" last>
                     <SegRow
                         value={String(settings.thumbnailSize)}
                         options={[{ value: '80', label: 'Small' }, { value: '120', label: 'Medium' }, { value: '160', label: 'Large' }]}

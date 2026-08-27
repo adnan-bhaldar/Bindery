@@ -56,7 +56,7 @@ const StorageSection = memo(() => {
 
     return (
         <div>
-            <Card title="Local Storage" icon={HardDrive} desc="Everything below lives in this browser's IndexedDB — nothing is stored remotely.">
+            <Card id="setting-storage-usage" title="Local Storage" icon={HardDrive} desc="Everything below lives in this browser's IndexedDB — nothing is stored remotely.">
                 {loading ? (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 0', color: 'var(--tx-3)' }}>
                         <Spinner size={14} />
@@ -110,7 +110,7 @@ const StorageSection = memo(() => {
                 )}
             </Card>
 
-            <Card title="Danger Zone" icon={TriangleAlert}>
+            <Card id="setting-clear-data" title="Danger Zone" icon={TriangleAlert}>
                 <p style={{ fontSize: 11.5, color: 'var(--tx-3)', marginBottom: 12, lineHeight: 1.6 }}>
                     Permanently delete every project, page, thumbnail, and export record stored in
                     this browser. This cannot be undone.
