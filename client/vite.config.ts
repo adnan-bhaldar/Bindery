@@ -16,7 +16,7 @@ function stampServiceWorker() {
     name: 'stamp-service-worker',
     apply: 'build' as const,
     closeBundle() {
-      const swPath = path.resolve(__dirname, 'dist/sw.js')
+      const swPath = path.resolve(import.meta.dirname, 'dist/sw.js')
       if (!fs.existsSync(swPath)) return
       const buildId = process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 8)
         || process.env.GITHUB_SHA?.slice(0, 8)
@@ -31,7 +31,7 @@ function stampServiceWorker() {
 export default defineConfig({
   plugins: [react(), tailwindcss(), stampServiceWorker()],
   resolve: {
-    alias: { '@': path.resolve(__dirname, './src') },
+    alias: { '@': path.resolve(import.meta.dirname, './src') },
   },
   worker: { format: 'es' },
   build: {
