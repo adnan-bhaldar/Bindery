@@ -174,13 +174,14 @@ export const useUIStore = create<UIStore>()((set, get) => ({
     setFullscreen: (isFullscreen) => set({ isFullscreen }),
 
     // ── Command palette ────────────────────────────────────────────────────────
-
-    openCommandPalette: () => set({ isCommandPaletteOpen: true }),
+    
+    openCommandPalette: () =>
+        set((state) => (state.isSettingsOpen ? state : { isCommandPaletteOpen: true })),
     closeCommandPalette: () => set({ isCommandPaletteOpen: false }),
     toggleCommandPalette: () =>
-        set((state) => ({
-            isCommandPaletteOpen: !state.isCommandPaletteOpen,
-        })),
+        set((state) =>
+            state.isSettingsOpen ? state : { isCommandPaletteOpen: !state.isCommandPaletteOpen }
+        ),
 
     // ── Settings dialog ────────────────────────────────────────────────────────
 
