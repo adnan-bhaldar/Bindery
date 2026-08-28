@@ -1,6 +1,7 @@
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
+import helmet from "helmet";
 import cookieParser from "cookie-parser";
 import path from "path";
 
@@ -15,6 +16,23 @@ dotenv.config();
 await connectDB();
 
 const app = express();
+
+// JWT_SECRET has no fallback anywhere it's used (generateToken.js,
+// authMiddleware.js) — if it's missing, jwt.sign/jwt.verify don't fail at
+// startup, they fail on the first request that touches auth, with an error
+// that doesn't obviously point back at a missing env var. Same shape of
+// problem as the CLIENT_ORIGIN check above, so it gets the same treatment:
+// fail loudly now rather than confusingly later.
+if (!process.env.JWT_SECRET) {
+  const message =
+    "JWT_SECRET is not set. Every login and authenticated request will fail " +
+    "as soon as it's attempted — set it to a long random string before starting the server.";
+
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(message);
+  }
+  console.warn(`⚠️  ${message}`);
+}
 
 // Previously this was just `(process.env.CLIENT_ORIGIN || "").split(",")...`,
 // which silently became `[""]` if CLIENT_ORIGIN was unset or empty. The cors
@@ -51,6 +69,16 @@ if (!rawClientOrigin) {
 // silently add another `""` into the allow-list.
 const allowedOrigins = (rawClientOrigin || "").split(",").map((o) => o.trim()).filter(Boolean);
 
+// contentSecurityPolicy: false — helmet's default CSP blocks inline <style>
+// tags and any stylesheet/font origin outside 'self' by default. statusPage.js
+// (served at "/") uses a page-level <style> block that also `@import`s from
+// fonts.googleapis.com, which the default CSP would silently break (page
+// still loads, just unstyled) rather than error visibly. This is a JSON API
+// with one simple internal status page, not a security-sensitive
+// HTML/JS-rendering surface, so a hand-tuned CSP isn't worth the upkeep here
+// — every other helmet default (X-Frame-Options, X-Content-Type-Options,
+// Strict-Transport-Security, etc.) still applies and has no such conflict.
+app.use(helmet({ contentSecurityPolicy: false }));
 app.use(
   cors({
     origin: allowedOrigins,
