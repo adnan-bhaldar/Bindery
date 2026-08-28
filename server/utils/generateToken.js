@@ -1,7 +1,9 @@
 import jwt from "jsonwebtoken";
 
-export const generateToken = (userId) => {
-  return jwt.sign({ id: userId }, process.env.JWT_SECRET, {
+// tokenVersion is embedded so protect() can reject every previously-issued
+// token at once by bumping the user's stored version — see User.js.
+export const generateToken = (userId, tokenVersion) => {
+  return jwt.sign({ id: userId, v: tokenVersion }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN || "30d",
   });
 };

@@ -25,7 +25,7 @@ export const signup = async (req, res, next) => {
     // Create an empty settings doc up front so first sync has somewhere to write
     await Settings.create({ user: user._id, data: {} });
 
-    const token = generateToken(user._id);
+    const token = generateToken(user._id, user.tokenVersion);
     setTokenCookie(res, token);
 
     res.status(201).json({ id: user._id, email: user.email, username: user.username, createdAt: user.createdAt });
@@ -79,7 +79,7 @@ export const login = async (req, res, next) => {
 
     await user.clearLoginAttempts();
 
-    const token = generateToken(user._id);
+    const token = generateToken(user._id, user.tokenVersion);
     setTokenCookie(res, token);
 
     res.status(200).json({ id: user._id, email: user.email, username: user.username, createdAt: user.createdAt });
@@ -148,7 +148,15 @@ export const changePassword = async (req, res, next) => {
     }
 
     user.password = newPassword; // pre-save hook re-hashes since password is modified
+    // Invalidates every token issued before this point — any other logged-in
+    // device now fails protect()'s version check on its next request. This
+    // device's own cookie would otherwise also go stale immediately, so its
+    // token is reissued below with the new version to keep it logged in.
+    user.tokenVersion += 1;
     await user.save();
+
+    const token = generateToken(user._id, user.tokenVersion);
+    setTokenCookie(res, token);
 
     res.status(200).json({ message: "Password updated" });
   } catch (error) {
@@ -300,6 +308,12 @@ export const resetPasswordWithBackupCode = async (req, res, next) => {
     user.backupCodes[matchedIndex].used = false;
 
     user.password = newPassword; // pre-save hook re-hashes since password is modified
+    // This flow issues no cookie itself (the user isn't logged in yet after
+    // a reset — they log in normally afterward), but any session that was
+    // already active before the reset should die here too: a lost/stolen
+    // backup code being used to take over the account shouldn't leave the
+    // real owner's still-open session as the attacker's foothold.
+    user.tokenVersion += 1;
     await user.save();
 
     res.status(200).json({

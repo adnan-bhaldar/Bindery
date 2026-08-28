@@ -60,6 +60,17 @@ const userSchema = new mongoose.Schema(
       default: null,
       select: false,
     },
+    // Bumped whenever every existing token should stop working immediately
+    // — currently just password changes (normal or via backup-code reset).
+    // Every issued JWT embeds the tokenVersion current at issue time;
+    // `protect` rejects a token whose embedded version doesn't match the
+    // user's current one. Not select:false: it isn't sensitive, and
+    // needs to be readable by default so `protect` can compare it without
+    // an extra explicit select on every authenticated request.
+    tokenVersion: {
+      type: Number,
+      default: 0,
+    },
   },
   { timestamps: true }
 );
