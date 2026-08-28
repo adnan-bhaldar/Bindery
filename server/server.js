@@ -16,7 +16,40 @@ await connectDB();
 
 const app = express();
 
-const allowedOrigins = (process.env.CLIENT_ORIGIN || "").split(",").map((o) => o.trim());
+// Previously this was just `(process.env.CLIENT_ORIGIN || "").split(",")...`,
+// which silently became `[""]` if CLIENT_ORIGIN was unset or empty. The cors
+// package then only allows a request whose Origin header is the literal
+// string "" — which real browsers never send — so every actual
+// cross-origin request from the frontend gets rejected with a generic CORS
+// error in the browser console, while curl/Postman (no Origin header at
+// all) and same-origin requests keep working fine. That mismatch is what
+// made this confusing to debug: the server looked healthy, health checks
+// passed, but the deployed frontend couldn't log in — with nothing in the
+// server logs pointing at CLIENT_ORIGIN as the cause.
+const rawClientOrigin = process.env.CLIENT_ORIGIN?.trim();
+
+if (!rawClientOrigin) {
+  const message =
+    "CLIENT_ORIGIN is not set. CORS will reject every cross-origin request " +
+    '(including the deployed frontend) — set it to the frontend\'s origin, ' +
+    "e.g. CLIENT_ORIGIN=https://app.example.com (comma-separate multiple origins).";
+
+  // In production this is almost certainly a deploy misconfiguration, not
+  // a deliberate choice, so fail startup loudly rather than let the server
+  // come up "successfully" into a state where nothing can authenticate.
+  // Locally, a warning is enough — CLIENT_ORIGIN is commonly left unset
+  // until a dev's .env is fully set up, and refusing to start would be a
+  // worse first-run experience than authRoutes just not working yet.
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(message);
+  }
+  console.warn(`⚠️  ${message}`);
+}
+
+// filter(Boolean) drops empty entries from stray commas (e.g. a trailing
+// "http://a.com," or "http://a.com,,http://b.com"), which would otherwise
+// silently add another `""` into the allow-list.
+const allowedOrigins = (rawClientOrigin || "").split(",").map((o) => o.trim()).filter(Boolean);
 
 app.use(
   cors({
