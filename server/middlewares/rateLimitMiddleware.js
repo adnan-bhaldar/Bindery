@@ -1,5 +1,15 @@
 import rateLimit from "express-rate-limit";
 
+// Rate limiting exists to slow down a real attacker across real requests
+// over real time — it has nothing to do with what these limiters are
+// meant to test. Without this, a single test file's worth of
+// signup/login/password-change requests (sharing one in-memory counter for
+// the life of the process, since Jest imports the app once) can exceed 20
+// and start failing with 429s that have nothing to do with the behavior
+// actually under test. `skip` bypasses only in NODE_ENV=test — production
+// and local dev are completely unaffected.
+const skipInTest = () => process.env.NODE_ENV === "test";
+
 // Applies to /api/auth/* only — limits brute-force login/signup attempts
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -7,6 +17,7 @@ export const authLimiter = rateLimit({
   message: { message: "Too many attempts. Try again in a few minutes." },
   standardHeaders: true,
   legacyHeaders: false,
+  skip: skipInTest,
 });
 
 // Separate counter for /api/auth/reset-password specifically. A 6-digit
@@ -23,4 +34,5 @@ export const resetPasswordLimiter = rateLimit({
   message: { message: "Too many reset attempts. Try again in a few minutes." },
   standardHeaders: true,
   legacyHeaders: false,
+  skip: skipInTest,
 });
