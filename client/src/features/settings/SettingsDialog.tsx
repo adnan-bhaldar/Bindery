@@ -62,13 +62,19 @@ export const SettingsDialog = memo(({ isOpen, onClose }: Props) => {
     const settingsHighlightNonce = useUIStore((s) => s.settingsHighlightNonce)
     const confirm = useConfirm()
 
-    // Jump to whichever section the dialog was opened for (e.g. the header's
-    // profile icon opens straight to 'account') — only on the open transition,
-    // so navigating between sections while open doesn't get overridden.
+    // Jump to whichever section the dialog was opened/redirected to. Depends
+    // on settingsHighlightNonce (which now bumps on every openSettings() call,
+    // see uiStore.ts) rather than just [isOpen] — otherwise a jump request
+    // arriving while the dialog was ALREADY open (e.g. selecting a setting in
+    // the command palette without closing Settings first) wouldn't switch
+    // sections at all, since `isOpen` never actually changed value. That left
+    // highlightSetting() searching for a row that was never mounted, silently
+    // no-opping — this was the actual cause of some settings (e.g. "Large
+    // text") never flashing when jumped to.
     useEffect(() => {
         if (isOpen) setActiveSection(settingsSection)
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isOpen])
+    }, [isOpen, settingsHighlightNonce])
 
     // Scrolls a specific setting's row into view and flashes it briefly, so a
     // search that matched one exact setting (not just its section) actually

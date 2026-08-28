@@ -28,8 +28,10 @@ interface UIState {
     // The specific control to scroll to + flash once the dialog is open,
     // set when a search (command palette or in-dialog) jumps to one exact
     // setting rather than just its section. `settingsHighlightNonce` bumps
-    // on every call so re-selecting the same setting re-triggers the flash
-    // even though the id itself hasn't changed.
+    // on every openSettings() call (whether or not a highlightId is given)
+    // so SettingsDialog can re-sync activeSection even when the dialog was
+    // already open, and so re-selecting the same setting re-triggers the
+    // flash even though the id itself hasn't changed.
     settingsHighlightId: string | null
     settingsHighlightNonce: number
 
@@ -187,7 +189,14 @@ export const useUIStore = create<UIStore>()((set, get) => ({
             isSettingsOpen: true,
             settingsSection: section,
             settingsHighlightId: highlightId ?? null,
-            settingsHighlightNonce: highlightId ? state.settingsHighlightNonce + 1 : state.settingsHighlightNonce,
+            // Bumped on every call, not just ones with a highlightId — this is
+            // what SettingsDialog uses to know "a fresh jump request just came
+            // in," including a plain section switch with no specific row to
+            // highlight (e.g. the header's account icon). Without that, calling
+            // openSettings() while the dialog is ALREADY open (isOpen doesn't
+            // change) had no way to signal that activeSection should still be
+            // re-synced to the newly requested section.
+            settingsHighlightNonce: state.settingsHighlightNonce + 1,
         })),
     closeSettings: () => set({ isSettingsOpen: false }),
 
