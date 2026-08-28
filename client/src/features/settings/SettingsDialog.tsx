@@ -98,6 +98,16 @@ export const SettingsDialog = memo(({ isOpen, onClose }: Props) => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOpen, settingsHighlightNonce])
 
+    // The dialog is always mounted (visibility is purely the `isOpen` prop,
+    // animated via AnimatePresence inside), so local state like `search`
+    // otherwise survives a close/reopen indefinitely — reopening Settings
+    // would silently show whatever was typed last time. Clearing it here,
+    // rather than on open, avoids a visible flash of the old search results
+    // during the close animation.
+    useEffect(() => {
+        if (!isOpen) setSearch('')
+    }, [isOpen])
+
     const filtered = useMemo(
         () => SECTIONS.filter(s => sectionMatches(s, search, authStatus === 'authenticated' && !!authUser)),
         [search, authStatus, authUser]
