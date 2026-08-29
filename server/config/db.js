@@ -24,7 +24,12 @@ export const connectDB = async () => {
         // a genuinely unreachable database would otherwise delay the
         // whole server coming up by a full 30 seconds instead of failing
         // fast and letting the app start in a visibly "disconnected" state.
-        serverSelectionTimeoutMS: 5000,
+        // 10s (rather than the previously tighter 5s) gives a cold
+        // serverless container enough room for its first-ever TLS
+        // handshake + SRV DNS lookup to Atlas, which was occasionally
+        // tipping over 5s on cold start alone and failing a connection
+        // that would've succeeded a second or two later.
+        serverSelectionTimeoutMS: 10000,
       })
       .then((m) => m);
   }

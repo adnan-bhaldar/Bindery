@@ -17,6 +17,18 @@ await connectDB();
 
 const app = express();
 
+// On Vercel, a container that had a bad first connection attempt (Atlas
+// hiccup, cold-start timeout, etc.) stays warm and keeps serving requests
+// afterward — connectDB() from module load only ran once, so nothing ever
+// retried it, and this container is stuck reporting "disconnected" until
+// it's eventually recycled. Retrying on every request fixes that: if
+// already connected, connectDB() resolves immediately from the cache, so
+// this costs nothing on the common path and only actually does work when
+// a reconnect is genuinely needed.
+app.use((req, res, next) => {
+  connectDB().finally(next);
+});
+
 // JWT_SECRET has no fallback anywhere it's used (generateToken.js,
 // authMiddleware.js) — if it's missing, jwt.sign/jwt.verify don't fail at
 // startup, they fail on the first request that touches auth, with an error
