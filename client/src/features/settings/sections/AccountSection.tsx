@@ -256,7 +256,7 @@ const AccountSection = memo(() => {
                 </CardRow>
             </Card>
 
-            <Card title="Password" desc="Changing your password does not affect other signed-in devices." icon={Lock}>
+            <Card title="Password" desc="This will sign you out of all other devices. You'll stay signed in here." icon={Lock}>
                 <form onSubmit={handlePasswordSubmit}>
                     <CardRow id="setting-account-password" label="Current password">
                         <input
