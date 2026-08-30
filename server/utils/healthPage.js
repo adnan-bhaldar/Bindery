@@ -1,41 +1,68 @@
 import mongoose from "mongoose";
 
 const dbStateLabel = () => {
-  const states = { 0: "disconnected", 1: "connected", 2: "connecting", 3: "disconnecting" };
-  return states[mongoose.connection.readyState] || "unknown";
+    const states = { 0: "disconnected", 1: "connected", 2: "connecting", 3: "disconnecting" };
+    return states[mongoose.connection.readyState] || "unknown";
 };
 
 const formatUptime = (seconds) => {
-  const d = Math.floor(seconds / 86400);
-  const h = Math.floor((seconds % 86400) / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  const s = Math.floor(seconds % 60);
-  const parts = [];
-  if (d) parts.push(`${d}d`);
-  if (h) parts.push(`${h}h`);
-  if (m) parts.push(`${m}m`);
-  parts.push(`${s}s`);
-  return parts.join(" ");
+    const d = Math.floor(seconds / 86400);
+    const h = Math.floor((seconds % 86400) / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = Math.floor(seconds % 60);
+    const parts = [];
+    if (d) parts.push(`${d}d`);
+    if (h) parts.push(`${h}h`);
+    if (m) parts.push(`${m}m`);
+    parts.push(`${s}s`);
+    return parts.join(" ");
 };
 
-// GET / — same console layout (titlebar, checks list, metrics grid) as
-// healthPage.js, so the two pages read as a matched pair, but kept in the
-// original violet/indigo palette rather than health's cyan/blue so they're
-// still visually distinguishable from each other at a glance.
-export const statusPage = (req, res) => {
-  const dbState = dbStateLabel();
-  const dbOk = dbState === "connected";
-  const mem = process.memoryUsage();
-  const now = new Date();
+// GET /api/health — a glassmorphic diagnostics console, deliberately laid
+// out differently from the "/" status card (a table of checks + a live
+// metrics grid vs. a simple summary card) but built to the same visual
+// quality bar: blur, glow, gradient accents, real typography.
+//
+// Serves plain JSON to non-browser clients (curl, the GitHub Actions
+// keep-alive ping, uptime monitors, the client app) so nothing depending on
+// the old `{ status: "ok" }` body breaks; serves the HTML console only to
+// an actual browser.
+export const healthPage = (req, res) => {
+    const start = process.hrtime.bigint();
 
-  const checks = [
-    { name: "Server", ok: true, detail: "running" },
-    { name: "Database", ok: dbOk, detail: dbState },
-  ];
+    const dbState = dbStateLabel();
+    const dbOk = dbState === "connected";
+    const mem = process.memoryUsage();
+    const now = new Date();
+    const overallOk = dbOk;
 
-  const checkRows = checks
-    .map(
-      (c) => /* html */ `
+    // Order matters: a browser's Accept header explicitly prefers text/html,
+    // so it matches "html" regardless of list order. curl and most schedulers
+    // send the bare wildcard `Accept: */*` with no explicit preference — with
+    // a tie, `accepts` picks whichever offered type is listed first, so
+    // "json" has to come first for those callers to keep getting JSON.
+    const wantsHtml = req.accepts(["json", "html"]) === "html";
+
+    const elapsedMs = Number(process.hrtime.bigint() - start) / 1e6;
+
+    if (!wantsHtml) {
+        return res.status(overallOk ? 200 : 503).json({
+            status: overallOk ? "ok" : "degraded",
+            db: dbState,
+            uptimeSeconds: Math.floor(process.uptime()),
+            timestamp: now.toISOString(),
+            responseTimeMs: Number(elapsedMs.toFixed(2)),
+        });
+    }
+
+    const checks = [
+        { name: "API", ok: true, detail: "reachable" },
+        { name: "Database", ok: dbOk, detail: dbState },
+    ];
+
+    const checkRows = checks
+        .map(
+            (c) => /* html */ `
         <div class="check-row">
           <div class="check-left">
             <span class="check-icon ${c.ok ? "ok" : "fail"}">${c.ok ? "✓" : "✕"}</span>
@@ -43,33 +70,34 @@ export const statusPage = (req, res) => {
           </div>
           <span class="pill ${c.ok ? "pill-ok" : "pill-down"}"><span class="dot"></span>${c.detail}</span>
         </div>`
-    )
-    .join("");
+        )
+        .join("");
 
-  const html = /* html */ `
+    const html = /* html */ `
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-  <title>Bindery API</title>
+  <title>Health · Bindery API</title>
+  <meta http-equiv="refresh" content="15" />
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
     :root {
-      --bg: #0a0b10;
-      --panel: rgba(22, 25, 36, 0.72);
+      --bg: #06070b;
+      --panel: rgba(18, 20, 30, 0.72);
       --panel-inner: rgba(255, 255, 255, 0.025);
       --border: rgba(255, 255, 255, 0.08);
       --border-hard: rgba(255, 255, 255, 0.14);
       --text: #f1f2f6;
       --text-dim: #8a8fa3;
       --text-faint: #5c6178;
-      --violet: #8b5cf6;
-      --indigo: #6366f1;
-      --violet-glow: rgba(139, 92, 246, 0.35);
-      --indigo-glow: rgba(99, 102, 241, 0.18);
+      --cyan: #57d9ff;
+      --blue: #4f8dfd;
+      --cyan-glow: rgba(87, 217, 255, 0.32);
+      --blue-glow: rgba(79, 141, 253, 0.2);
       --green: #4ade80;
       --red: #f87171;
       --amber: #ffb454;
@@ -79,8 +107,8 @@ export const statusPage = (req, res) => {
 
     body {
       background:
-        radial-gradient(ellipse 60% 50% at 15% 0%, var(--violet-glow), transparent 60%),
-        radial-gradient(ellipse 50% 45% at 100% 100%, var(--indigo-glow), transparent 60%),
+        radial-gradient(ellipse 55% 45% at 85% 0%, var(--cyan-glow), transparent 60%),
+        radial-gradient(ellipse 50% 45% at 0% 100%, var(--blue-glow), transparent 60%),
         var(--bg);
       color: var(--text);
       font-family: 'Inter', system-ui, sans-serif;
@@ -113,7 +141,7 @@ export const statusPage = (req, res) => {
       position: absolute;
       inset: -40% -40% auto -40%;
       height: 220px;
-      background: radial-gradient(ellipse 60% 100% at 50% 0%, var(--violet-glow), transparent 70%);
+      background: radial-gradient(ellipse 60% 100% at 50% 0%, var(--cyan-glow), transparent 70%);
       pointer-events: none;
       filter: blur(10px);
       z-index: 0;
@@ -156,12 +184,12 @@ export const statusPage = (req, res) => {
       width: 44px;
       height: 44px;
       border-radius: 13px;
-      background: linear-gradient(135deg, var(--indigo), var(--violet));
+      background: linear-gradient(135deg, var(--blue), var(--cyan));
       display: flex;
       align-items: center;
       justify-content: center;
       box-shadow:
-        0 8px 24px var(--violet-glow),
+        0 8px 24px var(--cyan-glow),
         0 1px 0 rgba(255, 255, 255, 0.25) inset;
       overflow: hidden;
       flex-shrink: 0;
@@ -334,13 +362,7 @@ export const statusPage = (req, res) => {
       letter-spacing: 0.02em;
     }
 
-    .footer .healthlink {
-      font-family: 'JetBrains Mono', monospace;
-      color: var(--text-faint);
-      text-decoration: none;
-    }
-
-    .footer .healthlink:hover { color: var(--violet); }
+    .footer .refresh { font-family: 'JetBrains Mono', monospace; }
   </style>
 </head>
 <body>
@@ -349,21 +371,21 @@ export const statusPage = (req, res) => {
       <span class="tb-dot tb-r"></span>
       <span class="tb-dot tb-y"></span>
       <span class="tb-dot tb-g"></span>
-      <span class="tb-label">GET /</span>
+      <span class="tb-label">GET /api/health</span>
     </div>
 
     <div class="content">
       <div class="head">
         <div class="logo"><img src="/favicon.svg" alt="Bindery" /></div>
         <div>
-          <h1>Bindery API</h1>
-          <div class="subtitle">Backend service for account storage &amp; settings sync</div>
+          <h1>Health</h1>
+          <div class="subtitle">Live diagnostics for the Bindery API</div>
         </div>
       </div>
 
-      <div class="overall ${dbOk ? "ok" : "fail"}">
+      <div class="overall ${overallOk ? "ok" : "fail"}">
         <span class="live-dot"></span>
-        ${dbOk ? "All systems operational" : "Degraded — database unreachable"}
+        ${overallOk ? "All systems operational" : "Degraded — one or more checks failing"}
       </div>
 
       <div class="section-label">Checks</div>
@@ -371,11 +393,15 @@ export const statusPage = (req, res) => {
         ${checkRows}
       </div>
 
-      <div class="section-label">Info</div>
+      <div class="section-label">Metrics</div>
       <div class="metrics">
         <div class="metric">
           <div class="metric-label">Uptime</div>
           <div class="metric-value">${formatUptime(process.uptime())}</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Response</div>
+          <div class="metric-value">${elapsedMs.toFixed(2)} ms</div>
         </div>
         <div class="metric">
           <div class="metric-label">Environment</div>
@@ -389,16 +415,20 @@ export const statusPage = (req, res) => {
           <div class="metric-label">Memory (RSS)</div>
           <div class="metric-value">${(mem.rss / 1024 / 1024).toFixed(1)} MB</div>
         </div>
+        <div class="metric">
+          <div class="metric-label">Checked at</div>
+          <div class="metric-value">${now.toLocaleTimeString("en-US", { hour12: false })}</div>
+        </div>
       </div>
 
       <div class="footer">
         <span>Bindery — local-first document assembly</span>
-        <a class="healthlink" href="/api/health">/api/health →</a>
+        <span class="refresh">↻ 15s</span>
       </div>
     </div>
   </div>
 </body>
 </html>`;
 
-  res.status(200).send(html);
+    res.status(overallOk ? 200 : 503).send(html);
 };
