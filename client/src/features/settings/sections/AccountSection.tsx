@@ -377,6 +377,7 @@ const AccountSection = memo(() => {
                                 type={showBackupCodesPassword ? 'text' : 'password'}
                                 value={backupCodesPassword}
                                 onChange={e => setBackupCodesPassword(e.target.value)}
+                                autoComplete="new-password"
                                 style={passwordFieldStyle}
                                 onFocus={textFieldFocus}
                                 onBlurCapture={textFieldBlurStyle}
@@ -448,6 +449,7 @@ const AccountSection = memo(() => {
                                 value={deletePassword}
                                 onChange={e => setDeletePassword(e.target.value)}
                                 placeholder="Confirm with your password"
+                                autoComplete="new-password"
                                 style={{ ...passwordFieldStyle, width: '100%' }}
                                 onFocus={textFieldFocus}
                                 onBlurCapture={textFieldBlurStyle}
