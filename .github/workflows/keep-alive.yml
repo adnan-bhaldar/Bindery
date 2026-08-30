@@ -1,0 +1,19 @@
+name: Keep server alive
+
+on:
+  schedule:
+    # Every 5 minutes. GitHub Actions cron is best-effort, not exact —
+    # on a quiet repo, runs can slip by several minutes during periods
+    # of high platform load. That's fine here; the goal is just to keep
+    # hitting the endpoint often enough that Vercel rarely fully cold-starts.
+    - cron: "*/5 * * * *"
+  workflow_dispatch: {} # lets you trigger it manually from the Actions tab to test
+
+jobs:
+  ping:
+    name: Ping health endpoint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Curl /api/health
+        run: |
+          curl -fsS --max-time 20 https://bindery-server.vercel.app/api/health
