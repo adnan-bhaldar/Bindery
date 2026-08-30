@@ -1,21 +1,21 @@
 import mongoose from "mongoose";
 
 const dbStateLabel = () => {
-    const states = { 0: "disconnected", 1: "connected", 2: "connecting", 3: "disconnecting" };
-    return states[mongoose.connection.readyState] || "unknown";
+  const states = { 0: "disconnected", 1: "connected", 2: "connecting", 3: "disconnecting" };
+  return states[mongoose.connection.readyState] || "unknown";
 };
 
 const formatUptime = (seconds) => {
-    const d = Math.floor(seconds / 86400);
-    const h = Math.floor((seconds % 86400) / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    const s = Math.floor(seconds % 60);
-    const parts = [];
-    if (d) parts.push(`${d}d`);
-    if (h) parts.push(`${h}h`);
-    if (m) parts.push(`${m}m`);
-    parts.push(`${s}s`);
-    return parts.join(" ");
+  const d = Math.floor(seconds / 86400);
+  const h = Math.floor((seconds % 86400) / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.floor(seconds % 60);
+  const parts = [];
+  if (d) parts.push(`${d}d`);
+  if (h) parts.push(`${h}h`);
+  if (m) parts.push(`${m}m`);
+  parts.push(`${s}s`);
+  return parts.join(" ");
 };
 
 // GET /api/health — a glassmorphic diagnostics console, deliberately laid
@@ -28,41 +28,41 @@ const formatUptime = (seconds) => {
 // the old `{ status: "ok" }` body breaks; serves the HTML console only to
 // an actual browser.
 export const healthPage = (req, res) => {
-    const start = process.hrtime.bigint();
+  const start = process.hrtime.bigint();
 
-    const dbState = dbStateLabel();
-    const dbOk = dbState === "connected";
-    const mem = process.memoryUsage();
-    const now = new Date();
-    const overallOk = dbOk;
+  const dbState = dbStateLabel();
+  const dbOk = dbState === "connected";
+  const mem = process.memoryUsage();
+  const now = new Date();
+  const overallOk = dbOk;
 
-    // Order matters: a browser's Accept header explicitly prefers text/html,
-    // so it matches "html" regardless of list order. curl and most schedulers
-    // send the bare wildcard `Accept: */*` with no explicit preference — with
-    // a tie, `accepts` picks whichever offered type is listed first, so
-    // "json" has to come first for those callers to keep getting JSON.
-    const wantsHtml = req.accepts(["json", "html"]) === "html";
+  // Order matters: a browser's Accept header explicitly prefers text/html,
+  // so it matches "html" regardless of list order. curl and most schedulers
+  // send the bare wildcard `Accept: */*` with no explicit preference — with
+  // a tie, `accepts` picks whichever offered type is listed first, so
+  // "json" has to come first for those callers to keep getting JSON.
+  const wantsHtml = req.accepts(["json", "html"]) === "html";
 
-    const elapsedMs = Number(process.hrtime.bigint() - start) / 1e6;
+  const elapsedMs = Number(process.hrtime.bigint() - start) / 1e6;
 
-    if (!wantsHtml) {
-        return res.status(overallOk ? 200 : 503).json({
-            status: overallOk ? "ok" : "degraded",
-            db: dbState,
-            uptimeSeconds: Math.floor(process.uptime()),
-            timestamp: now.toISOString(),
-            responseTimeMs: Number(elapsedMs.toFixed(2)),
-        });
-    }
+  if (!wantsHtml) {
+    return res.status(overallOk ? 200 : 503).json({
+      status: overallOk ? "ok" : "degraded",
+      db: dbState,
+      uptimeSeconds: Math.floor(process.uptime()),
+      timestamp: now.toISOString(),
+      responseTimeMs: Number(elapsedMs.toFixed(2)),
+    });
+  }
 
-    const checks = [
-        { name: "API", ok: true, detail: "reachable" },
-        { name: "Database", ok: dbOk, detail: dbState },
-    ];
+  const checks = [
+    { name: "API", ok: true, detail: "reachable" },
+    { name: "Database", ok: dbOk, detail: dbState },
+  ];
 
-    const checkRows = checks
-        .map(
-            (c) => /* html */ `
+  const checkRows = checks
+    .map(
+      (c) => /* html */ `
         <div class="check-row">
           <div class="check-left">
             <span class="check-icon ${c.ok ? "ok" : "fail"}">${c.ok ? "✓" : "✕"}</span>
@@ -70,10 +70,10 @@ export const healthPage = (req, res) => {
           </div>
           <span class="pill ${c.ok ? "pill-ok" : "pill-down"}"><span class="dot"></span>${c.detail}</span>
         </div>`
-        )
-        .join("");
+    )
+    .join("");
 
-    const html = /* html */ `
+  const html = /* html */ `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -362,7 +362,17 @@ export const healthPage = (req, res) => {
       letter-spacing: 0.02em;
     }
 
+    .footer-right { display: flex; align-items: center; gap: 10px; }
+
     .footer .refresh { font-family: 'JetBrains Mono', monospace; }
+
+    .footer .statuslink {
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text-faint);
+      text-decoration: none;
+    }
+
+    .footer .statuslink:hover { color: var(--cyan); }
   </style>
 </head>
 <body>
@@ -423,12 +433,15 @@ export const healthPage = (req, res) => {
 
       <div class="footer">
         <span>Bindery — local-first document assembly</span>
-        <span class="refresh">↻ 15s</span>
+        <div class="footer-right">
+          <span class="refresh">↻ 15s</span>
+          <a class="statuslink" href="/">← / status</a>
+        </div>
       </div>
     </div>
   </div>
 </body>
 </html>`;
 
-    res.status(overallOk ? 200 : 503).send(html);
+  res.status(overallOk ? 200 : 503).send(html);
 };
