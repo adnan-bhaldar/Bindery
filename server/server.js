@@ -10,7 +10,6 @@ import authRoutes from "./routes/authRoutes.js";
 import settingsRoutes from "./routes/settingsRoutes.js";
 import { notFound, errorHandler } from "./middlewares/errorMiddleware.js";
 import { statusPage } from "./utils/statusPage.js";
-import { healthPage } from "./utils/healthPage.js";
 
 dotenv.config();
 
@@ -104,7 +103,7 @@ app.use(cookieParser());
 app.use(express.static(path.join(import.meta.dirname, "public")));
 
 app.get("/", statusPage);
-app.get("/api/health", healthPage);
+app.get("/api/health", (req, res) => res.json({ status: "ok" }));
 
 app.use("/api/auth", authRoutes);
 app.use("/api/settings", settingsRoutes);
