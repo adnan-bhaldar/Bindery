@@ -7,7 +7,8 @@ on:
     # on a quiet repo, runs can slip by several minutes during periods
     # of high platform load. That's fine here; the goal is just to keep
     # hitting the endpoint often enough that Vercel rarely fully cold-starts.
-    - cron: "*/5 * * * *"
+    # - cron: "*/5 * * * *"
+    - cron: "*/6 * * * *"
   workflow_dispatch: {} # lets you trigger it manually from the Actions tab to test
 
 jobs:
