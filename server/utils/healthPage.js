@@ -18,6 +18,43 @@ const formatUptime = (seconds) => {
   return parts.join(" ");
 };
 
+// Builds a realistic PQRST-style ECG complex, tiled `repeats` times, as an
+// SVG path. Unlike a generic zigzag, a real trace has distinct phases per
+// beat: a small P bump, a flat PR segment, a sharp QRS spike (down-up-down),
+// a flat ST segment, a broader T bump, then a long flat rest period before
+// the next beat — that rest period is what makes it read as an actual
+// heartbeat rather than a repeating wave pattern.
+const buildEcgPath = (segmentWidth, repeats, baseline, amp) => {
+  const w = segmentWidth;
+  let d = `M0,${baseline}`;
+
+  for (let i = 0; i < repeats; i++) {
+    const x = i * w;
+    // Isoelectric line before the P wave
+    d += ` L${x + w * 0.1},${baseline}`;
+    // P wave — small, gentle bump
+    d += ` Q${x + w * 0.14},${baseline - amp * 0.32} ${x + w * 0.18},${baseline}`;
+    // PR segment — flat
+    d += ` L${x + w * 0.28},${baseline}`;
+    // Q — small dip down
+    d += ` L${x + w * 0.3},${baseline + amp * 0.18}`;
+    // R — sharp tall spike up
+    d += ` L${x + w * 0.33},${baseline - amp}`;
+    // S — deeper dip below baseline
+    d += ` L${x + w * 0.36},${baseline + amp * 0.45}`;
+    // back to baseline
+    d += ` L${x + w * 0.39},${baseline}`;
+    // ST segment — flat
+    d += ` L${x + w * 0.5},${baseline}`;
+    // T wave — broader, rounder bump
+    d += ` Q${x + w * 0.58},${baseline - amp * 0.4} ${x + w * 0.66},${baseline}`;
+    // Rest period — long flat line until the next beat
+    d += ` L${x + w},${baseline}`;
+  }
+
+  return d;
+};
+
 // GET /api/health — a glassmorphic diagnostics console, deliberately laid
 // out differently from the "/" status card (a table of checks + a live
 // metrics grid vs. a simple summary card) but built to the same visual
@@ -44,6 +81,12 @@ export const healthPage = (req, res) => {
   const wantsHtml = req.accepts(["json", "html"]) === "html";
 
   const elapsedMs = Number(process.hrtime.bigint() - start) / 1e6;
+
+  // Static (non-scrolling) beat pattern for the small ECG widget — the
+  // animation is done via stroke-dasharray/dashoffset so the line is
+  // actually being "drawn" in real time. Only 3 beats, sized to fit a
+  // small ~168x52px widget rather than stretched across the viewport.
+  const heartbeatPath = buildEcgPath(220, 3, 40, 24);
 
   if (!wantsHtml) {
     return res.status(overallOk ? 200 : 503).json({
@@ -101,6 +144,9 @@ export const healthPage = (req, res) => {
       --green: #4ade80;
       --red: #f87171;
       --amber: #ffb454;
+      --ecg: #39ff9d;
+      --ecg-glow: rgba(57, 255, 157, 0.55);
+      --ecg-dim: #1fae6d;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -118,6 +164,76 @@ export const healthPage = (req, res) => {
       justify-content: center;
       padding: 24px;
       -webkit-font-smoothing: antialiased;
+    }
+
+    .heartbeat-bg {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    /* A small, self-contained widget instead of a full-bleed background —
+       sized and framed like an actual bedside monitor readout rather than
+       a huge decorative line stretched across the whole viewport. */
+    .ecg-widget {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 224px;
+      height: 68px;
+      z-index: -1;
+      background: rgba(6, 12, 10, 0.55);
+      border: 1px solid rgba(57, 255, 157, 0.16);
+      border-radius: 9px;
+      box-shadow: 0 10px 26px rgba(0, 0, 0, 0.4);
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .ecg-widget svg {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Doesn't add value on narrow viewports where it would sit close to
+       the console card. */
+    @media (max-width: 640px) {
+      .ecg-widget { display: none; }
+    }
+
+    /* Main trace: drawn using pathLength=1000 so dasharray/dashoffset are
+       in normalized units regardless of actual path geometry. A single
+       dash equal to the full length, offset from fully-hidden to
+       fully-drawn, makes the line progressively draw itself each cycle
+       instead of just sliding sideways. */
+    .ecg-path {
+      opacity: 0.4;
+      stroke-dasharray: 1000;
+      stroke-dashoffset: 1000;
+    }
+
+    /* Bright "pen tip" — same path, same timing, but a short dash instead
+       of the full length, so a small glowing head travels along exactly
+       at the drawing front, the way a real monitor's trace has a bright
+       leading point with a dimmer trail behind it. */
+    .ecg-comet {
+      opacity: 0.95;
+      stroke-dasharray: 16 984;
+      stroke-dashoffset: 1000;
+      filter: drop-shadow(0 0 2px var(--ecg-glow)) drop-shadow(0 0 5px var(--ecg-glow));
+    }
+
+    .ecg-path,
+    .ecg-comet {
+      animation: ecg-draw 2.6s linear infinite;
+    }
+
+    @keyframes ecg-draw {
+      0% { stroke-dashoffset: 1000; }
+      100% { stroke-dashoffset: 0; }
     }
 
     .console {
@@ -376,6 +492,13 @@ export const healthPage = (req, res) => {
   </style>
 </head>
 <body>
+  <div class="heartbeat-bg"></div>
+  <div class="ecg-widget">
+    <svg viewBox="0 0 660 80" preserveAspectRatio="none">
+      <path class="ecg-path" d="${heartbeatPath}" pathLength="1000" fill="none" stroke="var(--ecg)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+      <path class="ecg-comet" d="${heartbeatPath}" pathLength="1000" fill="none" stroke="var(--ecg)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+    </svg>
+  </div>
   <div class="console">
     <div class="titlebar">
       <span class="tb-dot tb-r"></span>

@@ -1,3 +1,4 @@
+# Re-synced: forces GitHub to re-register the cron schedule for this file
 name: Keep server alive
 
 on:
