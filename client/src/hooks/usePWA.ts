@@ -25,6 +25,13 @@ const INSTALLED_STORAGE_KEY = 'bindery-pwa-installed'
 let capturedPrompt: BeforeInstallPromptEvent | null = null
 let cachedIsInstalled = false
 let swRegistered = false
+// Bumped by appinstalled and the optimistic install() success path, and
+// captured by each refreshInstallState() call at its start. A pending async
+// check (getInstalledRelatedApps can take a moment) that resolves AFTER one
+// of those authoritative updates would otherwise overwrite it with a stale
+// "not installed" result — comparing generations lets a superseded call
+// detect that and discard its own result instead of applying it.
+let installCheckGeneration = 0
 let updateAvailable = false
 let waitingWorker: ServiceWorker | null = null
 let reloadTriggered = false
@@ -64,13 +71,11 @@ function ensureGlobalListeners() {
 
     // 'appinstalled' fires once, in whichever tab triggered the install —
     // including the ordinary browser tab that showed the prompt, not just a
-    // standalone window. It's our only reliable signal that installation
-    // actually happened, so persist it: without this, a later visit to the
-    // site in a plain browser tab has no way to know the app is already
-    // installed (display-mode won't be 'standalone' there, and the browser
-    // won't re-fire beforeinstallprompt for an app it already installed) —
-    // it would wrongly fall through to "not available in this browser".
+    // standalone window. Treat it as an immediate, optimistic "yes" (no need
+    // to wait on an async OS query for the common case of installing right
+    // here), backed up by the authoritative check below for everything else.
     window.addEventListener('appinstalled', () => {
+        installCheckGeneration++ // supersede any in-flight refreshInstallState() so it can't overwrite this with a stale result
         capturedPrompt = null
         cachedIsInstalled = true
         try { localStorage.setItem(INSTALLED_STORAGE_KEY, 'true') } catch { /* ignore */ }
@@ -78,23 +83,54 @@ function ensureGlobalListeners() {
     })
 
     const mq = window.matchMedia('(display-mode: standalone)')
-    let previouslyInstalled = false
-    try { previouslyInstalled = localStorage.getItem(INSTALLED_STORAGE_KEY) === 'true' } catch { /* ignore */ }
-    cachedIsInstalled = mq.matches || previouslyInstalled
-    mq.addEventListener('change', (e) => {
-        // A live display-mode change is authoritative in both directions —
-        // e.g. reflects an actual uninstall — so let it override the stored
-        // flag rather than only ever setting it.
-        cachedIsInstalled = e.matches
-        try {
-            if (e.matches) {
-                localStorage.setItem(INSTALLED_STORAGE_KEY, 'true')
-            } else {
-                localStorage.removeItem(INSTALLED_STORAGE_KEY)
+
+    // Whether the OS actually still has this app installed is not something
+    // a plain browser tab can otherwise know — localStorage only records
+    // that a *previous* install happened, and nothing clears it again on
+    // uninstall (site data has to be cleared separately, which most people
+    // won't think to do). getInstalledRelatedApps() asks the OS/browser
+    // directly, so where it's supported it overrides the stored guess in
+    // both directions — including correcting a stale "installed" flag left
+    // over from before an uninstall. Requires listing this origin under
+    // `related_applications` in manifest.json; unsupported browsers (Safari,
+    // Firefox) just skip this and fall back to the flag/display-mode guess.
+    async function refreshInstallState() {
+        const gen = ++installCheckGeneration
+        const standalone = mq.matches
+        if ('getInstalledRelatedApps' in navigator) {
+            try {
+                const related = await (navigator as Navigator & {
+                    getInstalledRelatedApps: () => Promise<unknown[]>
+                }).getInstalledRelatedApps()
+                if (gen !== installCheckGeneration) return // superseded — e.g. appinstalled fired while this was in flight
+                const confirmed = standalone || related.length > 0
+                cachedIsInstalled = confirmed
+                try {
+                    if (confirmed) localStorage.setItem(INSTALLED_STORAGE_KEY, 'true')
+                    else localStorage.removeItem(INSTALLED_STORAGE_KEY)
+                } catch { /* ignore */ }
+                notifyAll()
+                return
+            } catch {
+                // Falls through to the heuristic below.
             }
-        } catch { /* ignore */ }
+        }
+        if (gen !== installCheckGeneration) return
+        let previouslyInstalled = false
+        try { previouslyInstalled = localStorage.getItem(INSTALLED_STORAGE_KEY) === 'true' } catch { /* ignore */ }
+        cachedIsInstalled = standalone || previouslyInstalled
         notifyAll()
+    }
+
+    refreshInstallState()
+    mq.addEventListener('change', () => refreshInstallState())
+    // A tab left open through an uninstall never gets told about it — there's
+    // no event for that. Re-check whenever the tab becomes relevant again so
+    // the status self-corrects without the user having to manually refresh.
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') refreshInstallState()
     })
+    window.addEventListener('focus', () => refreshInstallState())
 
     if ('serviceWorker' in navigator) {
         // Reload once the new worker actually takes control — triggered by
@@ -172,8 +208,6 @@ function ensureGlobalListeners() {
 }
 
 export function usePWA() {
-    ensureGlobalListeners()
-
     // A tiny piece of local state purely to force a re-render whenever the
     // shared module-level state changes — the actual values read below
     // (capturedPrompt, cachedIsInstalled, swRegistered) always come straight
@@ -183,6 +217,17 @@ export function usePWA() {
     useEffect(() => {
         const rerender = () => setTick(t => t + 1)
         subscribers.add(rerender)
+        // Subscribing before calling ensureGlobalListeners matters: on the
+        // very first usePWA() mount, ensureGlobalListeners kicks off an
+        // async getInstalledRelatedApps() check. If that promise settled
+        // before this effect ran, notifyAll() would fire into an empty
+        // subscriber set and the real result would be silently dropped
+        // until some later, unrelated change happened to trigger a
+        // re-render. All components mounted in this same commit have
+        // already run this effect (React flushes passive effects
+        // synchronously as a batch) well before any real async I/O
+        // resolves, so this ordering is safe regardless of mount order.
+        ensureGlobalListeners()
         return () => { subscribers.delete(rerender) }
     }, [])
 
@@ -191,6 +236,7 @@ export function usePWA() {
         await capturedPrompt.prompt()
         const { outcome } = await capturedPrompt.userChoice
         if (outcome === 'accepted') {
+            installCheckGeneration++ // same reasoning as the appinstalled handler
             capturedPrompt = null
             cachedIsInstalled = true
             notifyAll()
