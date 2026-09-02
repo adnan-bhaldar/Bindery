@@ -20,6 +20,8 @@ interface BeforeInstallPromptEvent extends Event {
 // a simple subscriber list, means every component sees the exact same real
 // state regardless of mount order — there's only one source of truth.
 
+const INSTALLED_STORAGE_KEY = 'bindery-pwa-installed'
+
 let capturedPrompt: BeforeInstallPromptEvent | null = null
 let cachedIsInstalled = false
 let swRegistered = false
@@ -60,10 +62,37 @@ function ensureGlobalListeners() {
         notifyAll()
     })
 
+    // 'appinstalled' fires once, in whichever tab triggered the install —
+    // including the ordinary browser tab that showed the prompt, not just a
+    // standalone window. It's our only reliable signal that installation
+    // actually happened, so persist it: without this, a later visit to the
+    // site in a plain browser tab has no way to know the app is already
+    // installed (display-mode won't be 'standalone' there, and the browser
+    // won't re-fire beforeinstallprompt for an app it already installed) —
+    // it would wrongly fall through to "not available in this browser".
+    window.addEventListener('appinstalled', () => {
+        capturedPrompt = null
+        cachedIsInstalled = true
+        try { localStorage.setItem(INSTALLED_STORAGE_KEY, 'true') } catch { /* ignore */ }
+        notifyAll()
+    })
+
     const mq = window.matchMedia('(display-mode: standalone)')
-    cachedIsInstalled = mq.matches
+    let previouslyInstalled = false
+    try { previouslyInstalled = localStorage.getItem(INSTALLED_STORAGE_KEY) === 'true' } catch { /* ignore */ }
+    cachedIsInstalled = mq.matches || previouslyInstalled
     mq.addEventListener('change', (e) => {
+        // A live display-mode change is authoritative in both directions —
+        // e.g. reflects an actual uninstall — so let it override the stored
+        // flag rather than only ever setting it.
         cachedIsInstalled = e.matches
+        try {
+            if (e.matches) {
+                localStorage.setItem(INSTALLED_STORAGE_KEY, 'true')
+            } else {
+                localStorage.removeItem(INSTALLED_STORAGE_KEY)
+            }
+        } catch { /* ignore */ }
         notifyAll()
     })
 
