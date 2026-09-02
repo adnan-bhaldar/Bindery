@@ -87,7 +87,11 @@ function ensureGlobalListeners() {
         // flag rather than only ever setting it.
         cachedIsInstalled = e.matches
         try {
-            if (e.matches) localStorage.setItem(INSTALLED_STORAGE_KEY, 'true')
+            if (e.matches) {
+                localStorage.setItem(INSTALLED_STORAGE_KEY, 'true')
+            } else {
+                localStorage.removeItem(INSTALLED_STORAGE_KEY)
+            }
         } catch { /* ignore */ }
         notifyAll()
     })
