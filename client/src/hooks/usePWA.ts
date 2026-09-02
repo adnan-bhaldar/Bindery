@@ -64,12 +64,9 @@ function ensureGlobalListeners() {
 
     // 'appinstalled' fires once, in whichever tab triggered the install —
     // including the ordinary browser tab that showed the prompt, not just a
-    // standalone window. It's our only reliable signal that installation
-    // actually happened, so persist it: without this, a later visit to the
-    // site in a plain browser tab has no way to know the app is already
-    // installed (display-mode won't be 'standalone' there, and the browser
-    // won't re-fire beforeinstallprompt for an app it already installed) —
-    // it would wrongly fall through to "not available in this browser".
+    // standalone window. Treat it as an immediate, optimistic "yes" (no need
+    // to wait on an async OS query for the common case of installing right
+    // here), backed up by the authoritative check below for everything else.
     window.addEventListener('appinstalled', () => {
         capturedPrompt = null
         cachedIsInstalled = true
@@ -78,23 +75,51 @@ function ensureGlobalListeners() {
     })
 
     const mq = window.matchMedia('(display-mode: standalone)')
-    let previouslyInstalled = false
-    try { previouslyInstalled = localStorage.getItem(INSTALLED_STORAGE_KEY) === 'true' } catch { /* ignore */ }
-    cachedIsInstalled = mq.matches || previouslyInstalled
-    mq.addEventListener('change', (e) => {
-        // A live display-mode change is authoritative in both directions —
-        // e.g. reflects an actual uninstall — so let it override the stored
-        // flag rather than only ever setting it.
-        cachedIsInstalled = e.matches
-        try {
-            if (e.matches) {
-                localStorage.setItem(INSTALLED_STORAGE_KEY, 'true')
-            } else {
-                localStorage.removeItem(INSTALLED_STORAGE_KEY)
+
+    // Whether the OS actually still has this app installed is not something
+    // a plain browser tab can otherwise know — localStorage only records
+    // that a *previous* install happened, and nothing clears it again on
+    // uninstall (site data has to be cleared separately, which most people
+    // won't think to do). getInstalledRelatedApps() asks the OS/browser
+    // directly, so where it's supported it overrides the stored guess in
+    // both directions — including correcting a stale "installed" flag left
+    // over from before an uninstall. Requires listing this origin under
+    // `related_applications` in manifest.json; unsupported browsers (Safari,
+    // Firefox) just skip this and fall back to the flag/display-mode guess.
+    async function refreshInstallState() {
+        const standalone = mq.matches
+        if ('getInstalledRelatedApps' in navigator) {
+            try {
+                const related = await (navigator as Navigator & {
+                    getInstalledRelatedApps: () => Promise<unknown[]>
+                }).getInstalledRelatedApps()
+                const confirmed = standalone || related.length > 0
+                cachedIsInstalled = confirmed
+                try {
+                    if (confirmed) localStorage.setItem(INSTALLED_STORAGE_KEY, 'true')
+                    else localStorage.removeItem(INSTALLED_STORAGE_KEY)
+                } catch { /* ignore */ }
+                notifyAll()
+                return
+            } catch {
+                // Falls through to the heuristic below.
             }
-        } catch { /* ignore */ }
+        }
+        let previouslyInstalled = false
+        try { previouslyInstalled = localStorage.getItem(INSTALLED_STORAGE_KEY) === 'true' } catch { /* ignore */ }
+        cachedIsInstalled = standalone || previouslyInstalled
         notifyAll()
+    }
+
+    refreshInstallState()
+    mq.addEventListener('change', () => refreshInstallState())
+    // A tab left open through an uninstall never gets told about it — there's
+    // no event for that. Re-check whenever the tab becomes relevant again so
+    // the status self-corrects without the user having to manually refresh.
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') refreshInstallState()
     })
+    window.addEventListener('focus', () => refreshInstallState())
 
     if ('serviceWorker' in navigator) {
         // Reload once the new worker actually takes control — triggered by

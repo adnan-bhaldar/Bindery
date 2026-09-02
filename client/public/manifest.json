@@ -11,6 +11,12 @@
         "productivity",
         "utilities"
     ],
+    "related_applications": [
+        {
+            "platform": "webapp",
+            "url": "https://bindery.vercel.app/manifest.json"
+        }
+    ],
     "icons": [
         {
             "src": "/icons/icon-192.png",
