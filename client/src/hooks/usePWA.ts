@@ -25,6 +25,13 @@ const INSTALLED_STORAGE_KEY = 'bindery-pwa-installed'
 let capturedPrompt: BeforeInstallPromptEvent | null = null
 let cachedIsInstalled = false
 let swRegistered = false
+// Bumped by appinstalled and the optimistic install() success path, and
+// captured by each refreshInstallState() call at its start. A pending async
+// check (getInstalledRelatedApps can take a moment) that resolves AFTER one
+// of those authoritative updates would otherwise overwrite it with a stale
+// "not installed" result — comparing generations lets a superseded call
+// detect that and discard its own result instead of applying it.
+let installCheckGeneration = 0
 let updateAvailable = false
 let waitingWorker: ServiceWorker | null = null
 let reloadTriggered = false
@@ -68,6 +75,7 @@ function ensureGlobalListeners() {
     // to wait on an async OS query for the common case of installing right
     // here), backed up by the authoritative check below for everything else.
     window.addEventListener('appinstalled', () => {
+        installCheckGeneration++ // supersede any in-flight refreshInstallState() so it can't overwrite this with a stale result
         capturedPrompt = null
         cachedIsInstalled = true
         try { localStorage.setItem(INSTALLED_STORAGE_KEY, 'true') } catch { /* ignore */ }
@@ -87,12 +95,14 @@ function ensureGlobalListeners() {
     // `related_applications` in manifest.json; unsupported browsers (Safari,
     // Firefox) just skip this and fall back to the flag/display-mode guess.
     async function refreshInstallState() {
+        const gen = ++installCheckGeneration
         const standalone = mq.matches
         if ('getInstalledRelatedApps' in navigator) {
             try {
                 const related = await (navigator as Navigator & {
                     getInstalledRelatedApps: () => Promise<unknown[]>
                 }).getInstalledRelatedApps()
+                if (gen !== installCheckGeneration) return // superseded — e.g. appinstalled fired while this was in flight
                 const confirmed = standalone || related.length > 0
                 cachedIsInstalled = confirmed
                 try {
@@ -105,6 +115,7 @@ function ensureGlobalListeners() {
                 // Falls through to the heuristic below.
             }
         }
+        if (gen !== installCheckGeneration) return
         let previouslyInstalled = false
         try { previouslyInstalled = localStorage.getItem(INSTALLED_STORAGE_KEY) === 'true' } catch { /* ignore */ }
         cachedIsInstalled = standalone || previouslyInstalled
@@ -197,8 +208,6 @@ function ensureGlobalListeners() {
 }
 
 export function usePWA() {
-    ensureGlobalListeners()
-
     // A tiny piece of local state purely to force a re-render whenever the
     // shared module-level state changes — the actual values read below
     // (capturedPrompt, cachedIsInstalled, swRegistered) always come straight
@@ -208,6 +217,17 @@ export function usePWA() {
     useEffect(() => {
         const rerender = () => setTick(t => t + 1)
         subscribers.add(rerender)
+        // Subscribing before calling ensureGlobalListeners matters: on the
+        // very first usePWA() mount, ensureGlobalListeners kicks off an
+        // async getInstalledRelatedApps() check. If that promise settled
+        // before this effect ran, notifyAll() would fire into an empty
+        // subscriber set and the real result would be silently dropped
+        // until some later, unrelated change happened to trigger a
+        // re-render. All components mounted in this same commit have
+        // already run this effect (React flushes passive effects
+        // synchronously as a batch) well before any real async I/O
+        // resolves, so this ordering is safe regardless of mount order.
+        ensureGlobalListeners()
         return () => { subscribers.delete(rerender) }
     }, [])
 
@@ -216,6 +236,7 @@ export function usePWA() {
         await capturedPrompt.prompt()
         const { outcome } = await capturedPrompt.userChoice
         if (outcome === 'accepted') {
+            installCheckGeneration++ // same reasoning as the appinstalled handler
             capturedPrompt = null
             cachedIsInstalled = true
             notifyAll()
