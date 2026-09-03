@@ -35,19 +35,22 @@ let installCheckGeneration = 0
 
 // getInstalledRelatedApps() has existed since Chrome 80 for Android/Windows
 // app checks, so its presence doesn't confirm THIS check — desktop PWA
-// self-detection — is supported (that's Chrome/Edge 140+; Android's been
-// fine since 84). On an unsupported version it resolves fine but always
+// self-detection in the same scope — is actually supported yet; that
+// landed in Chrome/Edge 140. Anything older resolves fine but always
 // returns [], indistinguishable from "confirmed not installed" without
 // knowing the version. A positive result is always trusted (no realistic
 // false positives); a negative one only counts when this returns true —
 // otherwise it'd wipe the working appinstalled/localStorage signal.
-function isDesktopSelfCheckSupported(): boolean {
+//
+// Desktop-only threshold: SmallScreenNotice already hard-blocks any
+// touch-primary or sub-900px device before it can reach this code, which
+// covers normal Android usage, so there's no separate Android/84
+// threshold to gate here.
+function isSelfCheckSupported(): boolean {
     try {
         const uaData = (navigator as Navigator & {
-            userAgentData?: { platform?: string; brands?: { brand: string; version: string }[] }
+            userAgentData?: { brands?: { brand: string; version: string }[] }
         }).userAgentData
-        if (uaData?.platform && /android/i.test(uaData.platform)) return true
-        if (/android/i.test(navigator.userAgent)) return true
         const brand = uaData?.brands?.find((b) => /chromium|chrome|edge/i.test(b.brand))
         if (brand) {
             const major = parseInt(brand.version, 10)
@@ -134,7 +137,7 @@ function ensureGlobalListeners() {
                     notifyAll()
                     return
                 }
-                if (isDesktopSelfCheckSupported()) {
+                if (isSelfCheckSupported()) {
                     cachedIsInstalled = false
                     try { localStorage.removeItem(INSTALLED_STORAGE_KEY) } catch { /* ignore */ }
                     notifyAll()
