@@ -32,6 +32,37 @@ let swRegistered = false
 // "not installed" result — comparing generations lets a superseded call
 // detect that and discard its own result instead of applying it.
 let installCheckGeneration = 0
+
+// getInstalledRelatedApps() has existed since Chrome 80 for Android/Windows
+// app checks, so its presence doesn't confirm THIS check — desktop PWA
+// self-detection in the same scope — is actually supported yet; that
+// landed in Chrome/Edge 140. Anything older resolves fine but always
+// returns [], indistinguishable from "confirmed not installed" without
+// knowing the version. A positive result is always trusted (no realistic
+// false positives); a negative one only counts when this returns true —
+// otherwise it'd wipe the working appinstalled/localStorage signal.
+//
+// Desktop-only threshold: SmallScreenNotice already hard-blocks any
+// touch-primary or sub-900px device before it can reach this code, which
+// covers normal Android usage, so there's no separate Android/84
+// threshold to gate here.
+function isSelfCheckSupported(): boolean {
+    try {
+        const uaData = (navigator as Navigator & {
+            userAgentData?: { brands?: { brand: string; version: string }[] }
+        }).userAgentData
+        const brand = uaData?.brands?.find((b) => /chromium|chrome|edge/i.test(b.brand))
+        if (brand) {
+            const major = parseInt(brand.version, 10)
+            if (!Number.isNaN(major)) return major >= 140
+        }
+        // Client Hints (userAgentData) aren't available in every Chromium
+        // build, so fall back to parsing the UA string directly.
+        const match = navigator.userAgent.match(/Chrom(?:e|ium)\/(\d+)/)
+        if (match) return parseInt(match[1], 10) >= 140
+    } catch { /* ignore */ }
+    return false
+}
 let updateAvailable = false
 let waitingWorker: ServiceWorker | null = null
 let reloadTriggered = false
@@ -84,16 +115,12 @@ function ensureGlobalListeners() {
 
     const mq = window.matchMedia('(display-mode: standalone)')
 
-    // Whether the OS actually still has this app installed is not something
-    // a plain browser tab can otherwise know — localStorage only records
-    // that a *previous* install happened, and nothing clears it again on
-    // uninstall (site data has to be cleared separately, which most people
-    // won't think to do). getInstalledRelatedApps() asks the OS/browser
-    // directly, so where it's supported it overrides the stored guess in
-    // both directions — including correcting a stale "installed" flag left
-    // over from before an uninstall. Requires listing this origin under
-    // `related_applications` in manifest.json; unsupported browsers (Safari,
-    // Firefox) just skip this and fall back to the flag/display-mode guess.
+    // localStorage alone only ever records a past install — nothing clears
+    // it on uninstall — so getInstalledRelatedApps() is used as the
+    // authoritative source where supported, correcting the stored guess in
+    // both directions. Unsupported browsers (Safari, Firefox) fall back to
+    // the flag/display-mode heuristic. Requires this origin listed under
+    // `related_applications` in manifest.json.
     async function refreshInstallState() {
         const gen = ++installCheckGeneration
         const standalone = mq.matches
@@ -104,13 +131,22 @@ function ensureGlobalListeners() {
                 }).getInstalledRelatedApps()
                 if (gen !== installCheckGeneration) return // superseded — e.g. appinstalled fired while this was in flight
                 const confirmed = standalone || related.length > 0
-                cachedIsInstalled = confirmed
-                try {
-                    if (confirmed) localStorage.setItem(INSTALLED_STORAGE_KEY, 'true')
-                    else localStorage.removeItem(INSTALLED_STORAGE_KEY)
-                } catch { /* ignore */ }
-                notifyAll()
-                return
+                if (confirmed) {
+                    cachedIsInstalled = true
+                    try { localStorage.setItem(INSTALLED_STORAGE_KEY, 'true') } catch { /* ignore */ }
+                    notifyAll()
+                    return
+                }
+                if (isSelfCheckSupported()) {
+                    cachedIsInstalled = false
+                    try { localStorage.removeItem(INSTALLED_STORAGE_KEY) } catch { /* ignore */ }
+                    notifyAll()
+                    return
+                }
+                // Empty result on a version that may not actually support
+                // this check yet — inconclusive, not confirmation of
+                // absence. Fall through to the heuristic below instead of
+                // treating it as authoritative.
             } catch {
                 // Falls through to the heuristic below.
             }
@@ -124,13 +160,17 @@ function ensureGlobalListeners() {
 
     refreshInstallState()
     mq.addEventListener('change', () => refreshInstallState())
-    // A tab left open through an uninstall never gets told about it — there's
-    // no event for that. Re-check whenever the tab becomes relevant again so
-    // the status self-corrects without the user having to manually refresh.
+
+    // A tab left open through an uninstall, or a deploy, never gets told
+    // about it directly — nothing pushes that news to an open tab. Recheck
+    // both install status and SW updates whenever the tab becomes relevant
+    // again, via one shared pair of listeners rather than one pair per
+    // concern.
+    const onVisibleOrFocus: Array<() => void> = [refreshInstallState]
     document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible') refreshInstallState()
+        if (document.visibilityState === 'visible') onVisibleOrFocus.forEach((fn) => fn())
     })
-    window.addEventListener('focus', () => refreshInstallState())
+    window.addEventListener('focus', () => onVisibleOrFocus.forEach((fn) => fn()))
 
     if ('serviceWorker' in navigator) {
         // Reload once the new worker actually takes control — triggered by
@@ -196,10 +236,7 @@ function ensureGlobalListeners() {
                     reg.update().catch(() => { })
                 }
                 setInterval(checkForUpdate, 15_000)
-                document.addEventListener('visibilitychange', () => {
-                    if (document.visibilityState === 'visible') checkForUpdate()
-                })
-                window.addEventListener('focus', checkForUpdate)
+                onVisibleOrFocus.push(checkForUpdate)
             })
             .catch(err => {
                 console.warn('[PWA] Service worker registration failed:', err)

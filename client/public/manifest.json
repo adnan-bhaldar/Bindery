@@ -14,7 +14,8 @@
     "related_applications": [
         {
             "platform": "webapp",
-            "url": "https://bindery.vercel.app/manifest.json"
+            "url": "https://bindery.vercel.app/manifest.json",
+            "id": "https://bindery.vercel.app/"
         }
     ],
     "icons": [

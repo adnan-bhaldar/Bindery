@@ -54,6 +54,7 @@ export const statusPage = (req, res) => {
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <title>Bindery API</title>
+  <meta http-equiv="refresh" content="15" />
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
@@ -341,6 +342,10 @@ export const statusPage = (req, res) => {
     }
 
     .footer .healthlink:hover { color: var(--violet); }
+
+    .footer-right { display: flex; align-items: center; gap: 10px; }
+
+    .footer .refresh { font-family: 'JetBrains Mono', monospace; }
   </style>
 </head>
 <body>
@@ -393,7 +398,10 @@ export const statusPage = (req, res) => {
 
       <div class="footer">
         <span>Bindery — local-first document assembly</span>
-        <a class="healthlink" href="/api/health">/api/health →</a>
+        <div class="footer-right">
+          <span class="refresh">↻ 15s</span>
+          <a class="healthlink" href="/api/health">/api/health →</a>
+        </div>
       </div>
     </div>
   </div>
