@@ -2,6 +2,13 @@
 
 @import "tailwindcss";
 
+/* Custom tailless default cursor. Only replaces the default/auto
+   cursor — every other cursor state (pointer, grab, etc.) is
+   untouched and still uses the browser's native cursor. */
+body {
+  cursor: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTkuMzkxMTggMi4zMTk2M0M4LjQxOTUgMS41NjAyNiA3IDIuMjUyNzkgNyAzLjQ4NjJWMjguNDA5NkM3IDI5Ljk0ODEgOC45NjY0OCAzMC41OTAxIDkuODczODYgMjkuMzQ3OEwxNi4wOTg3IDIwLjgyNTNDMTYuNDc1MiAyMC4zMDk3IDE3LjA3NTIgMjAuMDA0OSAxNy43MTM2IDIwLjAwNDlIMjcuNDAzNUMyOC45MTU2IDIwLjAwNDkgMjkuNTc0IDE4LjA5MjUgMjguMzgyNCAxNy4xNjEyTDkuMzkxMTggMi4zMTk2M1oiCiAgICAgIGZpbGw9IiNmZmZjZmMiCiAgICAgIHN0cm9rZT0iIzAwMDAwMCIKICAgICAgc3Ryb2tlLXdpZHRoPSIxIi8+Cjwvc3ZnPg==') 4 2, auto;
+}
+
 /* ═══════════════════════════════════════════════════
    BINDERY · PREMIUM DESIGN SYSTEM
    Dark  → Deep indigo-slate  
