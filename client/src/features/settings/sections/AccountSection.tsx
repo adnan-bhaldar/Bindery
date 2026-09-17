@@ -235,11 +235,10 @@ const AccountSection = memo(() => {
                         value={email}
                         onChange={e => setEmail(e.target.value)}
                         onBlur={handleEmailBlur}
-                        style={textFieldStyle}
                         onFocus={textFieldFocus}
                         onBlurCapture={textFieldBlurStyle}
-                        // disabled                                                                // Use to disable email editing if you want to,
-                        // style={{ ...textFieldStyle, opacity: 0.5, cursor: 'not-allowed' }}      // prevent users from changing their email.
+                        disabled                                                                // Use to disable email editing if you want to,
+                        style={{ ...textFieldStyle, opacity: 0.5, cursor: 'not-allowed' }}      // prevent users from changing their email. But Keep textFieldStyle
                     />
                 </CardRow>
                 <CardRow label="Member Since" desc="When your account was created." last>
