@@ -8,6 +8,30 @@ import './index.css'
 const root = document.getElementById('root')
 if (!root) throw new Error('Root element not found')
 
+// Disable the browser's right-click menu app-wide (custom menus still work)
+document.addEventListener('contextmenu', (e) => e.preventDefault())
+
+// Chromium/Firefox sometimes fail to show a custom `cursor: url(...)` on the
+// very first paint if the image hasn't finished decoding yet, and don't
+// retry once it has -- leaving the browser's default arrow until a full
+// page reload. Preloading the same image and forcing one style
+// recalculation once it's ready fixes this without changing how the
+// cursor looks. Reads --cursor-app instead of hardcoding it, so it stays
+// in sync with index.css automatically (and does nothing if that variable
+// is ever removed).
+const cursorUrl = getComputedStyle(document.documentElement)
+  .getPropertyValue('--cursor-app')
+  .match(/url\((['"]?)(.*?)\1\)/)?.[2]
+if (cursorUrl) {
+  const preload = new Image()
+  preload.onload = () => {
+    document.body.style.cursor = 'none'
+    void document.body.offsetHeight // force the browser to apply it
+    document.body.style.cursor = ''
+  }
+  preload.src = cursorUrl
+}
+
 createRoot(root).render(
   <StrictMode>
     <App />

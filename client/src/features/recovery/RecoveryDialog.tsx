@@ -138,7 +138,7 @@ export const RecoveryDialog = memo(() => {
                                 </p>
                             </div>
                             <button
-                                className="icon-btn"
+                                className="icon-btn icon-btn-close"
                                 onClick={handleDismiss}
                                 style={{ flexShrink: 0 }}
                             >
@@ -185,22 +185,21 @@ export const RecoveryDialog = memo(() => {
                         }}>
                             <button
                                 onClick={handleDismiss}
+                                className="btn-secondary-hover"
                                 style={{
                                     flex: 1, padding: '9px 16px',
                                     borderRadius: 'var(--r-md)',
                                     border: '1px solid var(--border)', background: 'var(--s3)',
                                     color: 'var(--tx-2)', fontSize: 12.5, fontWeight: 500,
                                     fontFamily: 'var(--font-sans)', cursor: 'pointer',
-                                    transition: 'background 110ms',
                                 }}
-                                onMouseEnter={e => { e.currentTarget.style.background = 'var(--s4)' }}
-                                onMouseLeave={e => { e.currentTarget.style.background = 'var(--s3)' }}
                             >
                                 Start Fresh
                             </button>
                             <button
                                 onClick={() => handleRestore(latest)}
                                 disabled={restoring}
+                                className="btn-primary-glow"
                                 style={{
                                     flex: 1, padding: '9px 16px',
                                     borderRadius: 'var(--r-md)',
@@ -208,8 +207,6 @@ export const RecoveryDialog = memo(() => {
                                     color: '#fff', fontSize: 12.5, fontWeight: 600,
                                     fontFamily: 'var(--font-sans)', cursor: 'pointer',
                                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                                    boxShadow: '0 2px 10px var(--accent-glow)',
-                                    transition: 'opacity 110ms',
                                     opacity: restoring ? 0.7 : 1,
                                 }}
                             >

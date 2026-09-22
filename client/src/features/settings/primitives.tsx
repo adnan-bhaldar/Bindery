@@ -77,20 +77,14 @@ export const SegRow = memo(({ options, value, onChange }: {
     value: string
     onChange: (v: string) => void
 }) => (
-    <div style={{
-        display: 'flex', background: 'var(--s3)',
-        borderRadius: 8, padding: 3, gap: 2,
-    }}>
+    // Look + hover live in index.css (.seg-row / .seg-row-btn)
+    <div className="seg-row">
         {options.map(o => (
-            <button key={o.value} onClick={() => onChange(o.value)} style={{
-                padding: '5px 10px', borderRadius: 6, border: 'none',
-                background: value === o.value ? 'var(--bg-card)' : 'transparent',
-                color: value === o.value ? 'var(--tx-1)' : 'var(--tx-3)',
-                fontSize: 11.5, fontWeight: value === o.value ? 600 : 400,
-                fontFamily: 'var(--font-sans)', cursor: 'pointer',
-                boxShadow: value === o.value ? 'var(--sh-xs)' : 'none',
-                transition: 'all 110ms', whiteSpace: 'nowrap',
-            }}>
+            <button
+                key={o.value}
+                onClick={() => onChange(o.value)}
+                className={value === o.value ? 'seg-row-btn active' : 'seg-row-btn'}
+            >
                 {o.label}
             </button>
         ))}

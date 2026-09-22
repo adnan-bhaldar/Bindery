@@ -10,14 +10,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
     {
-        version: '2.0.0',
+        version: '2.1.0',
         highlights: [
-            'New: crop images right from the page context menu, with zoom and pan to fine-tune the selection',
-            'New: "Apply as Copy" in the crop dialog crops into a duplicate page, leaving the original untouched',
-            'New: sign up or log in from the header — Bindery now has accounts',
-            'New: save your settings to your account and load them on another device, from two new buttons in Settings',
-            'New: an Account section in Settings for managing your username, email, and password',
-            'Fixed: right-clicking a page now selects it, and the context menu now works in Single-page and Continuous scroll view',
+            'New: a custom cursor now replaces the pointer hand on every button, link, toggle, and dropdown',
+            'New: smoother hover animations across the sign-in dialog, Account, App, and recovery-prompt buttons',
+            'New: close buttons turn light red on hover, and Copy-code buttons animate on hover and click',
+            'Changed: the browser\'s right-click menu no longer appears in the app — use Ctrl+V (⌘V) to paste in text fields',
+            'Fixed: the grab cursor at 100% zoom, and a hover glow that was too faint in the light theme',
         ],
     },
 ]

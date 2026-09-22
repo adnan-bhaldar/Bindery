@@ -26,11 +26,9 @@ const passwordFieldStyle: React.CSSProperties = {
   paddingRight: 38,
 }
 
+// Positioning only -- the look and hover animation are in index.css (.auth-eye)
 const eyeButtonStyle: React.CSSProperties = {
   position: 'absolute', right: 4, top: '50%', transform: 'translateY(-50%)',
-  background: 'transparent', border: 'none', cursor: 'pointer',
-  color: 'var(--tx-3)', padding: 6, borderRadius: 'var(--r-sm)',
-  display: 'flex', alignItems: 'center', justifyContent: 'center',
 }
 
 const focusField = (e: React.FocusEvent<HTMLInputElement>) => {
@@ -202,10 +200,11 @@ export function AuthDialog() {
               <button
                 onClick={closeDialogAndReset}
                 aria-label="Close"
+                className="icon-btn icon-btn-close"
                 style={{
-                  position: 'absolute', top: 16, right: 16,
-                  background: 'transparent', border: 'none', cursor: 'pointer',
-                  color: 'var(--tx-3)', padding: 4, borderRadius: 'var(--r-sm)',
+                  // icon-btn is 30x30 (was ~24x24), so top/right shrink by 3px
+                  // to keep the X in exactly the same spot.
+                  position: 'absolute', top: 13, right: 13,
                 }}
               >
                 <X size={16} />
@@ -243,19 +242,20 @@ export function AuthDialog() {
                       </span>
                       <button
                         onClick={handleCopyReplacement}
+                        className="copy-btn"
                         style={{
                           display: 'flex', alignItems: 'center', gap: 5,
                           padding: '5px 10px', borderRadius: 'var(--r-sm)',
-                          border: '1px solid var(--border)', background: 'transparent',
-                          color: 'var(--tx-2)', fontSize: 11.5, cursor: 'pointer',
+                          fontSize: 11.5, cursor: 'pointer',
                         }}
                       >
-                        {copiedReplacement ? <Check size={12} /> : <Copy size={12} />}
+                        <span className="copy-btn-icon" key={copiedReplacement ? 'check' : 'copy'}>{copiedReplacement ? <Check size={12} /> : <Copy size={12} />}</span>
                         {copiedReplacement ? 'Copied' : 'Copy'}
                       </button>
                     </div>
                     <button
                       onClick={backToLogin}
+                      className="btn-glow-hover"
                       style={{
                         width: '100%', padding: '10px 0', borderRadius: 'var(--r-lg)',
                         border: 'none', background: 'var(--gradient-accent)',
@@ -329,6 +329,7 @@ export function AuthDialog() {
                             type="button"
                             onClick={() => setShowResetNewPassword((v) => !v)}
                             aria-label={showResetNewPassword ? 'Hide password' : 'Show password'}
+                            className="auth-eye"
                             style={eyeButtonStyle}
                           >
                             {showResetNewPassword ? <EyeOff size={15} /> : <Eye size={15} />}
@@ -343,6 +344,7 @@ export function AuthDialog() {
                       <button
                         type="submit"
                         disabled={isResetting}
+                        className="auth-submit"
                         style={{
                           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                           padding: '10px 0', marginTop: 4,
@@ -352,7 +354,6 @@ export function AuthDialog() {
                           fontSize: 13, fontWeight: 500, fontFamily: 'var(--font-sans)',
                           cursor: isResetting ? 'not-allowed' : 'pointer',
                           opacity: isResetting ? 0.65 : 1,
-                          boxShadow: '0 2px 12px var(--accent-glow)',
                         }}
                       >
                         {isResetting && <Spinner size={14} />}
@@ -362,9 +363,10 @@ export function AuthDialog() {
                       <button
                         type="button"
                         onClick={backToLogin}
+                        className="auth-link--muted"
                         style={{
                           background: 'transparent', border: 'none', cursor: 'pointer',
-                          color: 'var(--tx-3)', fontSize: 12, fontFamily: 'var(--font-sans)',
+                          fontSize: 12, fontFamily: 'var(--font-sans)',
                           padding: 4,
                         }}
                       >
@@ -386,14 +388,7 @@ export function AuthDialog() {
                       <button
                         key={m}
                         onClick={() => switchMode(m)}
-                        style={{
-                          flex: 1, padding: '7px 0', borderRadius: 'var(--r-md)',
-                          border: 'none', cursor: 'pointer',
-                          fontSize: 13, fontWeight: 500, fontFamily: 'var(--font-sans)',
-                          background: dialogMode === m ? 'var(--gradient-accent)' : 'transparent',
-                          color: dialogMode === m ? 'var(--accent-fg)' : 'var(--tx-2)',
-                          transition: 'background 110ms, color 110ms',
-                        }}
+                        className={dialogMode === m ? 'auth-tab active' : 'auth-tab'}
                       >
                         {m === 'login' ? 'Log in' : 'Sign up'}
                       </button>
@@ -434,11 +429,7 @@ export function AuthDialog() {
                           <button
                             type="button"
                             onClick={openReset}
-                            style={{
-                              background: 'transparent', border: 'none', cursor: 'pointer',
-                              color: 'var(--accent)', fontSize: 11, fontFamily: 'var(--font-sans)',
-                              padding: 0,
-                            }}
+                            className="auth-link"
                           >
                             Forgot password?
                           </button>
@@ -460,6 +451,7 @@ export function AuthDialog() {
                           type="button"
                           onClick={() => setShowPassword((v) => !v)}
                           aria-label={showPassword ? 'Hide password' : 'Show password'}
+                          className="auth-eye"
                           style={eyeButtonStyle}
                         >
                           {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
@@ -488,6 +480,7 @@ export function AuthDialog() {
                             type="button"
                             onClick={() => setShowConfirmPassword((v) => !v)}
                             aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                            className="auth-eye"
                             style={eyeButtonStyle}
                           >
                             {showConfirmPassword ? <EyeOff size={15} /> : <Eye size={15} />}
@@ -506,6 +499,7 @@ export function AuthDialog() {
                     <button
                       type="submit"
                       disabled={isLoading}
+                      className="auth-submit"
                       style={{
                         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                         padding: '10px 0', marginTop: 4,
@@ -515,7 +509,6 @@ export function AuthDialog() {
                         fontSize: 13, fontWeight: 500, fontFamily: 'var(--font-sans)',
                         cursor: isLoading ? 'not-allowed' : 'pointer',
                         opacity: isLoading ? 0.65 : 1,
-                        boxShadow: '0 2px 12px var(--accent-glow)',
                       }}
                     >
                       {isLoading && <Spinner size={14} />}

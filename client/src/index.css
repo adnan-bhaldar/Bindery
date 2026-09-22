@@ -2,11 +2,40 @@
 
 @import "tailwindcss";
 
-/* Custom tailless default cursor. Only replaces the default/auto
-   cursor — every other cursor state (pointer, grab, etc.) is
-   untouched and still uses the browser's native cursor. */
+/* ═══════════════════════════════════════════════════════════════════
+   CUSTOM CURSOR — the only place it lives; no component references it.
+
+   To go back to the browser's normal cursors:
+     • delete this whole block, or
+     • just delete/comment the --cursor-app line (every rule below then
+       falls back to the normal arrow / pointer hand).
+   ═══════════════════════════════════════════════════════════════════ */
+:root {
+  --cursor-app: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTkuMzkxMTggMi4zMTk2M0M4LjQxOTUgMS41NjAyNiA3IDIuMjUyNzkgNyAzLjQ4NjJWMjguNDA5NkM3IDI5Ljk0ODEgOC45NjY0OCAzMC41OTAxIDkuODczODYgMjkuMzQ3OEwxNi4wOTg3IDIwLjgyNTNDMTYuNDc1MiAyMC4zMDk3IDE3LjA3NTIgMjAuMDA0OSAxNy43MTM2IDIwLjAwNDlIMjcuNDAzNUMyOC45MTU2IDIwLjAwNDkgMjkuNTc0IDE4LjA5MjUgMjguMzgyNCAxNy4xNjEyTDkuMzkxMTggMi4zMTk2M1oiCiAgICAgIGZpbGw9IiNmZmZjZmMiCiAgICAgIHN0cm9rZT0iIzAwMDAwMCIKICAgICAgc3Ryb2tlLXdpZHRoPSIxIi8+Cjwvc3ZnPg==') 4 2, auto;
+}
+
+/* The normal arrow. */
 body {
-  cursor: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTkuMzkxMTggMi4zMTk2M0M4LjQxOTUgMS41NjAyNiA3IDIuMjUyNzkgNyAzLjQ4NjJWMjguNDA5NkM3IDI5Ljk0ODEgOC45NjY0OCAzMC41OTAxIDkuODczODYgMjkuMzQ3OEwxNi4wOTg3IDIwLjgyNTNDMTYuNDc1MiAyMC4zMDk3IDE3LjA3NTIgMjAuMDA0OSAxNy43MTM2IDIwLjAwNDlIMjcuNDAzNUMyOC45MTU2IDIwLjAwNDkgMjkuNTc0IDE4LjA5MjUgMjguMzgyNCAxNy4xNjEyTDkuMzkxMTggMi4zMTk2M1oiCiAgICAgIGZpbGw9IiNmZmZjZmMiCiAgICAgIHN0cm9rZT0iIzAwMDAwMCIKICAgICAgc3Ryb2tlLXdpZHRoPSIxIi8+Cjwvc3ZnPg==') 4 2, auto;
+  cursor: var(--cursor-app, auto);
+}
+
+/* Everything that showed the pointer hand: buttons, links, toggles, dropdown
+   options, command-palette items, sidebar page items, and any element whose
+   inline style asks for cursor: pointer. !important so it also beats those
+   inline styles. Disabled / not-allowed / locked / mid-drag elements are left
+   alone so they keep their own cursor. */
+:is(button, a[href], select, summary, .cmd-item,
+  [role='switch'], [role='tab'], [role='option'],
+  .sidebar [data-page-id],
+  [style*='cursor: pointer']):not(:disabled):not([aria-disabled='true']):not([style*='not-allowed']):not([data-drag-locked='true']):not([aria-pressed='true']) {
+  cursor: var(--cursor-app, pointer) !important;
+}
+
+/* Elements that explicitly asked for the plain arrow (e.g. a disabled
+   Install / Clear button, settings rows) get the custom one too. */
+[style*='cursor: default'],
+.settings-row {
+  cursor: var(--cursor-app, default) !important;
 }
 
 /* ═══════════════════════════════════════════════════
@@ -171,6 +200,10 @@ html.theme-light {
 
   --sb-thumb: rgba(80, 80, 160, 0.15);
   --sb-hover: rgba(80, 80, 160, 0.28);
+
+  /* Light backgrounds wash out a soft purple glow; make it stronger and
+     tighter so button hovers (auth-submit, auth-back-btn) stay visible. */
+  --accent-glow: rgba(99, 102, 241, 0.65);
 }
 
 /* ═══════════════════════════════════════════════════
@@ -459,6 +492,21 @@ textarea,
   opacity: 0.25;
   cursor: not-allowed;
   pointer-events: none;
+}
+
+/* Close (X) buttons: light red on hover instead of the neutral grey.
+   Add the class next to icon-btn:  className="icon-btn icon-btn-close" */
+.icon-btn.icon-btn-close {
+  transition: background 260ms var(--ease-std), color 260ms var(--ease-std);
+}
+
+.icon-btn.icon-btn-close:hover {
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+}
+
+.icon-btn.icon-btn-close:active {
+  background: rgba(239, 68, 68, 0.2);
 }
 
 /* Kbd chip */
@@ -855,6 +903,342 @@ textarea,
   background: var(--accent-dim);
   border-color: var(--accent-border);
   color: var(--accent);
+}
+
+/* ── Segmented row (SegRow in Settings and in the Properties panel) ── */
+.seg-row {
+  display: flex;
+  background: var(--s3);
+  border-radius: 8px;
+  padding: 3px;
+  gap: 2px;
+}
+
+.seg-row-btn {
+  padding: 5px 10px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--tx-3);
+  font-size: 11.5px;
+  font-weight: 400;
+  font-family: var(--font-sans);
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: none;
+  transition: all 110ms;
+}
+
+/* Hover on the options that are NOT selected (and not when the row is disabled) */
+.seg-row:not([data-disabled='true']) .seg-row-btn:not(.active):hover {
+  background: var(--hover);
+  color: var(--tx-1);
+}
+
+.seg-row-btn.active {
+  background: var(--bg-card);
+  color: var(--tx-1);
+  font-weight: 600;
+  box-shadow: var(--sh-xs);
+}
+
+/* ── Range slider (Properties panel → Quality) ───────────────────────
+   Custom-drawn instead of the browser's native slider, because native
+   sliders swap colors instantly on hover and can't be transitioned.
+   --pct (set inline by the component) is how far along the track the
+   thumb is, used to paint the filled part. */
+.range-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 16px;
+  margin: 0;
+  background: transparent;
+  outline: none;
+  transition: filter 250ms var(--ease-std);
+}
+
+.range-slider:hover {
+  filter: brightness(1.15);
+}
+
+.range-slider::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 9999px;
+  background: linear-gradient(to right, var(--accent) var(--pct, 0%), var(--s5) var(--pct, 0%));
+}
+
+.range-slider::-moz-range-track {
+  height: 4px;
+  border-radius: 9999px;
+  background: linear-gradient(to right, var(--accent) var(--pct, 0%), var(--s5) var(--pct, 0%));
+}
+
+.range-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  margin-top: -5px;
+  /* centers the 14px thumb on the 4px track */
+  border: none;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 0 var(--accent-glow), 0 1px 3px rgba(0, 0, 0, 0.3);
+  transition: box-shadow 250ms var(--ease-std), transform 250ms var(--ease-std);
+}
+
+.range-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  box-sizing: border-box;
+  border: none;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 0 var(--accent-glow), 0 1px 3px rgba(0, 0, 0, 0.3);
+  transition: box-shadow 250ms var(--ease-std), transform 250ms var(--ease-std);
+}
+
+.range-slider:hover::-webkit-slider-thumb,
+.range-slider:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 5px var(--accent-glow), 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.range-slider:hover::-moz-range-thumb,
+.range-slider:focus-visible::-moz-range-thumb {
+  box-shadow: 0 0 0 5px var(--accent-glow), 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.range-slider:active::-webkit-slider-thumb {
+  transform: scale(1.15);
+}
+
+.range-slider:active::-moz-range-thumb {
+  transform: scale(1.15);
+}
+
+/* ── Sign-in dialog (AuthDialog) hover animations ────────────────── */
+
+/* Show / hide password eye. The icon itself scales, because the button's own
+   transform is used for vertical centering. */
+.auth-eye {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--tx-3);
+  padding: 6px;
+  border-radius: var(--r-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 220ms var(--ease-std), color 220ms var(--ease-std);
+}
+
+.auth-eye svg {
+  transition: transform 220ms var(--ease-std);
+}
+
+.auth-eye:hover {
+  background: var(--hover);
+  color: var(--tx-1);
+}
+
+.auth-eye:hover svg {
+  transform: scale(1.15);
+}
+
+.auth-eye:active svg {
+  transform: scale(0.92);
+}
+
+/* Log in / Sign up tabs. The active tab's gradient can't be transitioned,
+   so its hover is a brightness fade instead. */
+.auth-tab {
+  flex: 1;
+  padding: 7px 0;
+  border-radius: var(--r-md);
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: var(--font-sans);
+  background: transparent;
+  color: var(--tx-2);
+  transition: background 220ms var(--ease-std), color 220ms var(--ease-std),
+    filter 220ms var(--ease-std);
+}
+
+.auth-tab:not(.active):hover {
+  background: var(--hover);
+  color: var(--tx-1);
+}
+
+.auth-tab.active {
+  background: var(--gradient-accent);
+  color: var(--accent-fg);
+}
+
+.auth-tab.active:hover {
+  filter: brightness(1.1);
+}
+
+/* "Forgot password?" — underline draws in from the left on hover */
+.auth-link {
+  background-color: transparent;
+  background-image: linear-gradient(currentColor, currentColor);
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 0 1px;
+  border: none;
+  cursor: pointer;
+  color: var(--accent);
+  font-size: 11px;
+  font-family: var(--font-sans);
+  padding: 0 0 1px;
+  transition: background-size 240ms var(--ease-std);
+}
+
+.auth-link:hover,
+.auth-link:focus-visible {
+  background-size: 100% 1px;
+}
+
+/* Log in / Create account / Reset password submit button: grows a bigger
+   glow on hover, no movement or color change -- kept subtle since this is
+   the dialog's primary action. */
+.auth-submit {
+  box-shadow: 0 2px 12px var(--accent-glow);
+  transition: box-shadow 220ms var(--ease-std);
+}
+
+.auth-submit:hover:not(:disabled) {
+  box-shadow: 0 4px 22px var(--accent-glow);
+}
+
+/* Gradient buttons with no glow at rest, growing one in on hover: the
+   full-width "Back to log in" (after a password reset), and Settings ->
+   Account's "Update password" and "Generate Codes" / "Regenerate". */
+.btn-glow-hover {
+  box-shadow: none;
+  transition: box-shadow 220ms var(--ease-std);
+}
+
+.btn-glow-hover:hover:not(:disabled) {
+  box-shadow: 0 4px 22px var(--accent-glow);
+}
+
+/* Gradient buttons that already glow at rest and lift + glow more on hover:
+   Settings -> App's "Install App" (was JS onMouseEnter/Leave -- moved to CSS
+   so a mid-hover state change, e.g. installing starting, can't leave the
+   lift/shadow stuck since :disabled now resets it automatically). */
+.btn-glow-lift {
+  box-shadow: 0 4px 16px var(--accent-glow);
+  transition: transform 220ms var(--ease-std), box-shadow 220ms var(--ease-std);
+}
+
+.btn-glow-lift:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px var(--accent-glow);
+}
+
+/* Amber (Sign out) and red (Delete Account) buttons: background fade plus
+   a soft glow in the button's own color that grows on hover. Replaces
+   their JS onMouseEnter/Leave handlers. Background lives entirely here
+   (not inline) -- an inline style always wins over a CSS class, hover or
+   not, so the fade would otherwise never show. */
+.btn-amber-hover {
+  background: rgba(245, 158, 11, 0.08);
+  transition: background 220ms var(--ease-std), box-shadow 220ms var(--ease-std);
+}
+
+.btn-amber-hover:hover:not(:disabled) {
+  background: rgba(245, 158, 11, 0.14);
+  box-shadow: 0 4px 18px rgba(245, 158, 11, 0.25);
+}
+
+.btn-red-hover {
+  background: rgba(239, 68, 68, 0.08);
+  transition: background 220ms var(--ease-std), box-shadow 220ms var(--ease-std);
+}
+
+.btn-red-hover:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.14);
+  box-shadow: 0 4px 18px rgba(239, 68, 68, 0.25);
+}
+
+/* Copy (backup/replacement/account codes) button.
+   Background/border/text color live entirely here (not inline) -- an
+   inline style always wins over a CSS class, hover or not, so the hover
+   below would otherwise never show. */
+.copy-btn {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--tx-2);
+  transition: background 220ms var(--ease-std), border-color 220ms var(--ease-std),
+    color 220ms var(--ease-std);
+}
+
+.copy-btn:hover {
+  background: var(--hover);
+  border-color: var(--tx-3);
+  color: var(--tx-1);
+}
+
+/* Filled variant (Settings -> Account's "Copy codes") -- same hover, solid
+   background at rest instead of transparent */
+.copy-btn--filled {
+  background: var(--s3);
+}
+
+/* Icon swaps to a checkmark on click -- pop it in instead of a hard cut */
+@keyframes copy-pop {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+
+  60% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+.copy-btn-icon {
+  display: inline-flex;
+  animation: copy-pop 320ms var(--ease-spring);
+}
+
+/* Primary gradient button with a glow that grows on hover (Restore Session,
+   the sign-in dialog's submit button) */
+.btn-primary-glow {
+  box-shadow: 0 2px 12px var(--accent-glow);
+  transition: box-shadow 220ms var(--ease-std), opacity var(--dur-fast);
+}
+
+.btn-primary-glow:hover:not(:disabled) {
+  box-shadow: 0 4px 22px var(--accent-glow);
+}
+
+/* Secondary button: smooth background fade on hover (Start Fresh) */
+.btn-secondary-hover {
+  transition: background 220ms var(--ease-std);
+}
+
+.btn-secondary-hover:hover {
+  background: var(--s4) !important;
+}
+
+.auth-link--muted {
+  color: var(--tx-3);
+  transition: color 220ms var(--ease-std);
+}
+
+.auth-link--muted:hover,
+.auth-link--muted:focus-visible {
+  color: var(--tx-1);
 }
 
 /* ── Page thumbnail card ─────────────────────────── */

@@ -188,6 +188,10 @@ export const PreviewCanvas = memo(({ page, zoom, onZoomChange }: Props) => {
             page.imageFit === 'stretch' ? 'fill' :
                 page.imageFit === 'original' ? 'none' : 'contain'
 
+    // No grab hand while the zoom label reads 100% (the fit-to-view size).
+    // Uses the same rounding as the toolbar label, so they always agree.
+    const isFitZoom = Math.round(zoom * 100) === 100
+
     // Badge
     const badge = useMemo(() => {
         const parts: string[] = []
@@ -206,7 +210,7 @@ export const PreviewCanvas = memo(({ page, zoom, onZoomChange }: Props) => {
             style={{
                 width: '100%', height: '100%',
                 overflow: 'hidden', position: 'relative',
-                cursor: pan.isDragging ? 'grabbing' : 'grab',
+                cursor: isFitZoom ? 'default' : pan.isDragging ? 'grabbing' : 'grab',
                 userSelect: 'none',
             }}
         >

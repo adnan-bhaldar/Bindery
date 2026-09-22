@@ -20,11 +20,9 @@ const textFieldStyle: React.CSSProperties = {
     transition: 'border-color 110ms, box-shadow 110ms',
 }
 const passwordFieldStyle: React.CSSProperties = { ...textFieldStyle, paddingRight: 34 }
+// Positioning only -- the look and hover animation are in index.css (.auth-eye)
 const eyeButtonStyle: React.CSSProperties = {
     position: 'absolute', right: 3, top: '50%', transform: 'translateY(-50%)',
-    background: 'transparent', border: 'none', cursor: 'pointer',
-    color: 'var(--tx-3)', padding: 5, borderRadius: 'var(--r-sm)',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
 }
 const textFieldFocus = (e: React.FocusEvent<HTMLInputElement>) => {
     e.currentTarget.style.borderColor = 'var(--accent)'
@@ -85,6 +83,7 @@ const AccountSection = memo(() => {
                 </p>
                 <button
                     onClick={() => openAuthDialog('login')}
+                    className="auth-submit"
                     style={{
                         padding: '7px 14px', borderRadius: 'var(--r-md)', border: 'none',
                         background: 'var(--gradient-accent)', color: 'var(--accent-fg)',
@@ -281,6 +280,7 @@ const AccountSection = memo(() => {
                                 type="button"
                                 onClick={() => setShowNewPassword(v => !v)}
                                 aria-label={showNewPassword ? 'Hide password' : 'Show password'}
+                                className="auth-eye"
                                 style={eyeButtonStyle}
                             >
                                 {showNewPassword ? <EyeOff size={14} /> : <Eye size={14} />}
@@ -291,6 +291,7 @@ const AccountSection = memo(() => {
                         <button
                             type="submit"
                             disabled={isSavingPassword || !currentPassword || !newPassword}
+                            className="btn-glow-hover"
                             style={{
                                 display: 'flex', alignItems: 'center', gap: 8,
                                 padding: '7px 14px', borderRadius: 'var(--r-md)', border: 'none',
@@ -351,15 +352,17 @@ const AccountSection = memo(() => {
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                             <button
                                 onClick={handleCopyBackupCodes}
+                                className="copy-btn copy-btn--filled"
                                 style={{
                                     display: 'flex', alignItems: 'center', gap: 6,
                                     padding: '6px 12px', borderRadius: 'var(--r-sm)',
-                                    border: '1px solid var(--border)', background: 'var(--s3)',
-                                    color: 'var(--tx-2)', fontSize: 11.5, fontWeight: 500,
+                                    fontSize: 11.5, fontWeight: 500,
                                     fontFamily: 'var(--font-sans)', cursor: 'pointer',
                                 }}
                             >
-                                {copiedCodes ? <Check size={12} /> : <Copy size={12} />}
+                                <span className="copy-btn-icon" key={copiedCodes ? 'check' : 'copy'}>
+                                    {copiedCodes ? <Check size={12} /> : <Copy size={12} />}
+                                </span>
                                 {copiedCodes ? 'Copied' : 'Copy codes'}
                             </button>
                             <span style={{ fontSize: 11, color: 'var(--tx-3)' }}>
@@ -385,6 +388,7 @@ const AccountSection = memo(() => {
                                 type="button"
                                 onClick={() => setShowBackupCodesPassword(v => !v)}
                                 aria-label={showBackupCodesPassword ? 'Hide password' : 'Show password'}
+                                className="auth-eye"
                                 style={eyeButtonStyle}
                             >
                                 {showBackupCodesPassword ? <EyeOff size={14} /> : <Eye size={14} />}
@@ -393,6 +397,7 @@ const AccountSection = memo(() => {
                         <button
                             onClick={handleGenerateBackupCodes}
                             disabled={isGeneratingCodes || !backupCodesPassword}
+                            className="btn-glow-hover"
                             style={{
                                 display: 'flex', alignItems: 'center', gap: 8,
                                 padding: '7px 14px', borderRadius: 'var(--r-md)', border: 'none',
@@ -414,17 +419,14 @@ const AccountSection = memo(() => {
                 <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                     <button
                         onClick={() => logout()}
+                        className="btn-amber-hover"
                         style={{
                             display: 'flex', alignItems: 'center', gap: 6,
                             padding: '7px 14px', borderRadius: 'var(--r-md)',
                             border: '1px solid rgba(245,158,11,0.3)',
-                            background: 'rgba(245,158,11,0.08)',
                             color: '#f59e0b', fontSize: 12.5, fontWeight: 500,
                             fontFamily: 'var(--font-sans)', cursor: 'pointer',
-                            transition: 'background 110ms'
                         }}
-                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(245,158,11,0.14)' }}
-                        onMouseLeave={e => { e.currentTarget.style.background = 'rgba(245,158,11,0.08)' }}
                     >
                         <LogOut size={13} />
                         Sign out
@@ -457,6 +459,7 @@ const AccountSection = memo(() => {
                                 type="button"
                                 onClick={() => setShowDeletePassword(v => !v)}
                                 aria-label={showDeletePassword ? 'Hide password' : 'Show password'}
+                                className="auth-eye"
                                 style={eyeButtonStyle}
                             >
                                 {showDeletePassword ? <EyeOff size={14} /> : <Eye size={14} />}
@@ -466,19 +469,17 @@ const AccountSection = memo(() => {
                     <button
                         onClick={handleDeleteAccount}
                         disabled={isDeletingAccount || !deletePassword}
+                        className="btn-red-hover"
                         style={{
                             display: 'flex', alignItems: 'center', gap: 6,
                             padding: '8px 16px', borderRadius: 'var(--r-md)',
                             border: '1px solid rgba(239,68,68,0.3)',
-                            background: 'rgba(239,68,68,0.08)',
                             color: '#ef4444', fontSize: 12, fontWeight: 500,
                             fontFamily: 'var(--font-sans)',
                             cursor: (isDeletingAccount || !deletePassword) ? 'default' : 'pointer',
                             opacity: (isDeletingAccount || !deletePassword) ? 0.6 : 1,
-                            transition: 'background 110ms', flexShrink: 0,
+                            flexShrink: 0,
                         }}
-                        onMouseEnter={e => { if (!isDeletingAccount && deletePassword) e.currentTarget.style.background = 'rgba(239,68,68,0.14)' }}
-                        onMouseLeave={e => { if (!isDeletingAccount && deletePassword) e.currentTarget.style.background = 'rgba(239,68,68,0.08)' }}
                     >
                         {isDeletingAccount ? <Spinner size={13} /> : <Trash2 size={13} />}
                         {isDeletingAccount ? 'Deleting…' : 'Delete Account'}

@@ -6,6 +6,26 @@ release below adds functionality or fixes bugs without breaking existing
 usage, so all of them are `MINOR` or `PATCH` bumps against the `1.0.0`
 baseline.
 
+## [2.1.0]
+
+### Added
+
+- **Hover feedback on segmented controls** — unselected options in every segmented row (Settings sections and the Properties panel) now highlight when hovered; the selected option and disabled rows are unchanged
+- **Hover animations** — buttons across the app now animate smoothly on hover instead of switching instantly: the sign-in dialog (eye icons, tabs, submit glow, Forgot/Back to log in, Copy button with a pop on click), Settings → Account (the same eye-icon and Copy animations, plus a growing glow on Sign in, Update password, and Generate Codes / Regenerate, and a color-matched glow on Sign out and Delete Account), and Settings → App's Install App button (now CSS-driven instead of JS, so it can no longer get stuck lifted if installation starts mid-hover)
+- **Light-red hover on close buttons** — the close (X) button in Settings, the sign-in dialog, and the session-recovery prompt now fades to a soft red on hover instead of the neutral grey
+
+### Changed
+
+- The **custom cursor** now replaces the pointer hand on every clickable element — buttons, links, toggles, dropdown options, command-palette items, and the page items in the sidebar — instead of only the default arrow. Disabled, locked, and mid-drag elements keep their own cursors. It is defined in a single block in `index.css`, so removing that block restores the browser's normal cursors everywhere
+- The **Quality slider** in the Properties panel is now custom-drawn (same accent-colored fill and thumb) so its hover glow and brightness fade in smoothly instead of switching instantly
+- The browser's native right-click menu is now disabled throughout the app, including in text fields; Bindery's own page menu (when enabled in Settings → Interface) is unaffected. Paste in text fields with `Ctrl+V` / `⌘V`
+- **Session-recovery prompt** — "Restore Session" now has the same glowing hover as the sign-in dialog's submit button, and "Start Fresh" fades smoothly instead of switching instantly
+- The **accent glow** used on button hovers (e.g. Log in, Back to log in) is now stronger in the light theme, where it was barely visible against the lighter background
+
+### Fixed
+
+- The grab cursor no longer appears in the workspace's single-page viewer at 100% zoom, where the page already fits and there is nothing to drag
+
 ## [2.0.0]
 
 ### Added

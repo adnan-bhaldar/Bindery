@@ -298,7 +298,7 @@ export const SettingsDialog = memo(({ isOpen, onClose }: Props) => {
                             </Tooltip>
 
                             <Tooltip content="Close" shortcut="Esc" placement="bottom">
-                                <button className="icon-btn" onClick={onClose}>
+                                <button className="icon-btn icon-btn-close" onClick={onClose}>
                                     <X size={15} />
                                 </button>
                             </Tooltip>
