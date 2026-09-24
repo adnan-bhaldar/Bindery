@@ -216,12 +216,9 @@ const LayoutToggle = memo(({ value, onChange }: {
                 <button
                     key={v}
                     onClick={() => onChange(v)}
+                    className={active ? 'layout-toggle-btn active' : 'layout-toggle-btn'}
                     style={{
                         width: 72, height: 52, borderRadius: 10, border: 'none', cursor: 'pointer',
-                        background: active ? 'var(--accent-dim)' : 'var(--s3)',
-                        outline: active ? '2px solid var(--accent-border)' : '2px solid var(--border)',
-                        outlineOffset: 0,
-                        transition: 'all 150ms',
                         display: 'flex', flexDirection: 'column',
                         alignItems: 'center', justifyContent: 'center', gap: 4,
                         padding: 8,

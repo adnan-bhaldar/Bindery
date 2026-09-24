@@ -1105,12 +1105,12 @@ textarea,
    glow on hover, no movement or color change -- kept subtle since this is
    the dialog's primary action. */
 .auth-submit {
-  box-shadow: 0 2px 12px var(--accent-glow);
+  box-shadow: 0 0 12px var(--accent-glow);
   transition: box-shadow 220ms var(--ease-std);
 }
 
 .auth-submit:hover:not(:disabled) {
-  box-shadow: 0 4px 22px var(--accent-glow);
+  box-shadow: 0 0 22px var(--accent-glow);
 }
 
 /* Gradient buttons with no glow at rest, growing one in on hover: the
@@ -1122,21 +1122,21 @@ textarea,
 }
 
 .btn-glow-hover:hover:not(:disabled) {
-  box-shadow: 0 4px 22px var(--accent-glow);
+  box-shadow: 0 0 22px var(--accent-glow);
 }
 
-/* Gradient buttons that already glow at rest and lift + glow more on hover:
-   Settings -> App's "Install App" (was JS onMouseEnter/Leave -- moved to CSS
-   so a mid-hover state change, e.g. installing starting, can't leave the
-   lift/shadow stuck since :disabled now resets it automatically). */
+/* Gradient button that already glows at rest and grows the glow more on
+   hover: Settings -> App's "Install App" (was JS onMouseEnter/Leave --
+   moved to CSS so a mid-hover state change, e.g. installing starting,
+   can't leave the shadow stuck since :disabled now resets it
+   automatically). No movement on hover, glow only. */
 .btn-glow-lift {
-  box-shadow: 0 4px 16px var(--accent-glow);
-  transition: transform 220ms var(--ease-std), box-shadow 220ms var(--ease-std);
+  box-shadow: 0 0 16px var(--accent-glow);
+  transition: box-shadow 220ms var(--ease-std);
 }
 
 .btn-glow-lift:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 20px var(--accent-glow);
+  box-shadow: 0 0 20px var(--accent-glow);
 }
 
 /* Amber (Sign out) and red (Delete Account) buttons: background fade plus
@@ -1151,7 +1151,7 @@ textarea,
 
 .btn-amber-hover:hover:not(:disabled) {
   background: rgba(245, 158, 11, 0.14);
-  box-shadow: 0 4px 18px rgba(245, 158, 11, 0.25);
+  box-shadow: 0 0 18px rgba(245, 158, 11, 0.25);
 }
 
 .btn-red-hover {
@@ -1161,7 +1161,7 @@ textarea,
 
 .btn-red-hover:hover:not(:disabled) {
   background: rgba(239, 68, 68, 0.14);
-  box-shadow: 0 4px 18px rgba(239, 68, 68, 0.25);
+  box-shadow: 0 0 18px rgba(239, 68, 68, 0.25);
 }
 
 /* Copy (backup/replacement/account codes) button.
@@ -1213,12 +1213,12 @@ textarea,
 /* Primary gradient button with a glow that grows on hover (Restore Session,
    the sign-in dialog's submit button) */
 .btn-primary-glow {
-  box-shadow: 0 2px 12px var(--accent-glow);
+  box-shadow: 0 0 12px var(--accent-glow);
   transition: box-shadow 220ms var(--ease-std), opacity var(--dur-fast);
 }
 
 .btn-primary-glow:hover:not(:disabled) {
-  box-shadow: 0 4px 22px var(--accent-glow);
+  box-shadow: 0 0 22px var(--accent-glow);
 }
 
 /* Secondary button: smooth background fade on hover (Start Fresh) */
@@ -1877,6 +1877,26 @@ html.theme-switching *::after {
    showing a plain pointer instead. */
 .nav-export-btn:disabled {
   cursor: not-allowed;
+}
+
+/* Settings -> Appearance's page-list-style toggle (List / Grid preview
+   cards). Background/outline live entirely here (not inline) so a hover
+   state is possible on the non-selected card. */
+.layout-toggle-btn {
+  background: var(--s3);
+  outline: 2px solid var(--border);
+  outline-offset: 0;
+  transition: background 220ms var(--ease-std), outline-color 220ms var(--ease-std);
+}
+
+.layout-toggle-btn.active {
+  background: var(--accent-dim);
+  outline-color: var(--accent-border);
+}
+
+.layout-toggle-btn:not(.active):hover {
+  background: var(--s4);
+  outline-color: var(--tx-4);
 }
 
 /* ═══════════════════════════════════════════════════
