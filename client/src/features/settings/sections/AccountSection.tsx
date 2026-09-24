@@ -297,7 +297,7 @@ const AccountSection = memo(() => {
                                 padding: '7px 14px', borderRadius: 'var(--r-md)', border: 'none',
                                 background: 'var(--gradient-accent)', color: 'var(--accent-fg)',
                                 fontSize: 12.5, fontWeight: 500, fontFamily: 'var(--font-sans)',
-                                cursor: isSavingPassword ? 'not-allowed' : 'pointer',
+                                cursor: (isSavingPassword || !currentPassword || !newPassword) ? 'not-allowed' : 'pointer',
                                 opacity: (!currentPassword || !newPassword) ? 0.5 : 1,
                             }}
                         >
@@ -403,7 +403,7 @@ const AccountSection = memo(() => {
                                 padding: '7px 14px', borderRadius: 'var(--r-md)', border: 'none',
                                 background: 'var(--gradient-accent)', color: 'var(--accent-fg)',
                                 fontSize: 12.5, fontWeight: 500, fontFamily: 'var(--font-sans)',
-                                cursor: isGeneratingCodes ? 'not-allowed' : 'pointer',
+                                cursor: (isGeneratingCodes || !backupCodesPassword) ? 'not-allowed' : 'pointer',
                                 opacity: !backupCodesPassword ? 0.5 : 1,
                                 whiteSpace: 'nowrap', flexShrink: 0,
                             }}
@@ -476,7 +476,7 @@ const AccountSection = memo(() => {
                             border: '1px solid rgba(239,68,68,0.3)',
                             color: '#ef4444', fontSize: 12, fontWeight: 500,
                             fontFamily: 'var(--font-sans)',
-                            cursor: (isDeletingAccount || !deletePassword) ? 'default' : 'pointer',
+                            cursor: (isDeletingAccount || !deletePassword) ? 'not-allowed' : 'pointer',
                             opacity: (isDeletingAccount || !deletePassword) ? 0.6 : 1,
                             flexShrink: 0,
                         }}

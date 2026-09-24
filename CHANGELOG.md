@@ -22,6 +22,16 @@ baseline.
 - **Session-recovery prompt** — "Restore Session" now has the same glowing hover as the sign-in dialog's submit button, and "Start Fresh" fades smoothly instead of switching instantly
 - The **accent glow** used on button hovers (e.g. Log in, Back to log in) is now stronger in the light theme, where it was barely visible against the lighter background
 
+- The **Import Images**, header **Export**, and header **Sign up** buttons no longer shift upward on hover; each still shows a bigger glow, growing in smoothly (220ms) instead of snapping
+
+- The header's **Export PDF** button now shows the custom cursor when enabled and a proper not-allowed cursor when disabled (empty project), instead of a plain pointer either way
+
+- Settings → Account's **Update password**, **Generate Codes** / **Regenerate**, and **Delete Account** buttons now show a not-allowed cursor whenever they're actually disabled (e.g. an empty field), not just mid-action -- Delete Account's disabled state matched already, only its cursor style (plain arrow) was inconsistent with the rest, now aligned to not-allowed too
+
+- **Fixed a real focus bug**: the session-recovery prompt listened for Enter/Escape globally even while the sign-in dialog was open on top of it, so pressing Enter to log in or sign up silently triggered "Restore Session" instead, and Log in / Sign up needed a manual click every time. The recovery prompt now steps aside while the sign-in dialog is open
+
+- Settings → Storage's **Clear all data** button now has the same red glow hover as Delete Account, is CSS-driven instead of JS, and shows not-allowed while clearing instead of the plain arrow
+
 ### Fixed
 
 - The grab cursor no longer appears in the workspace's single-page viewer at 100% zoom, where the page already fits and there is nothing to drag

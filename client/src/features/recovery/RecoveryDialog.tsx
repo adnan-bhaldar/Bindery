@@ -5,6 +5,7 @@ import { projectService } from '@/services/projectService'
 import { useProjectStore } from '@/stores/projectStore'
 import { usePagesStore } from '@/stores/pagesStore'
 import { useSettingsStore } from '@/stores/settingsStore'
+import { useAuthStore } from '@/stores/authStore'
 import { formatRelativeTime } from '@/lib/utils'
 import { toast } from 'sonner'
 import type { RecoverySnapshot } from '@/types'
@@ -62,9 +63,15 @@ export const RecoveryDialog = memo(() => {
     }, [setCurrentProject, setPages])
 
     const handleDismiss = useCallback(() => setVisible(false), [])
+    const authDialogOpen = useAuthStore(s => s.dialogOpen)
 
     useEffect(() => {
-        if (!visible) return
+        // The sign-in dialog can be open on top of this one (e.g. right after
+        // opening the app). Without this check, Enter/Escape here always won
+        // the race against the sign-in form's own submit/close -- pressing
+        // Enter to log in silently triggered "Restore" instead, and needed a
+        // manual click on Log in/Sign up every time.
+        if (!visible || authDialogOpen) return
         const onKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Enter') {
                 e.preventDefault()
@@ -76,7 +83,7 @@ export const RecoveryDialog = memo(() => {
         }
         window.addEventListener('keydown', onKeyDown)
         return () => window.removeEventListener('keydown', onKeyDown)
-    }, [visible, restoring, snapshots, handleRestore, handleDismiss])
+    }, [visible, authDialogOpen, restoring, snapshots, handleRestore, handleDismiss])
 
     if (snapshots.length === 0) return null
 

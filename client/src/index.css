@@ -722,7 +722,6 @@ textarea,
 
 .nav-export-btn:hover {
   opacity: 0.90;
-  transform: translateY(-1px);
   box-shadow: 0 6px 22px var(--accent-glow),
     inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
@@ -1469,7 +1468,6 @@ textarea,
 
 .ws-import-btn:hover {
   opacity: 0.91;
-  transform: translateY(-2px);
   box-shadow: 0 8px 28px var(--accent-glow), inset 0 1px 0 rgba(255, 255, 255, 0.18);
 }
 
@@ -1863,6 +1861,22 @@ html.theme-switching *::after {
   transition-property: background, color, opacity, transform, box-shadow, border-color;
   transition-duration: var(--dur-fast);
   transition-timing-function: var(--ease-std);
+}
+
+/* The shared var(--dur-fast) (110ms) above felt abrupt for this button's
+   larger glow -- slow just its transition down a bit. */
+.ws-import-btn,
+.nav-export-btn {
+  transition-duration: 220ms;
+}
+
+/* This class hardcodes cursor: pointer with no disabled variant, unlike
+   every other disabled button in the app. When Export PDF has no pages
+   to export (disabled), it fell outside the custom-cursor rule above (by
+   design, since most disabled buttons set their own not-allowed) and was
+   showing a plain pointer instead. */
+.nav-export-btn:disabled {
+  cursor: not-allowed;
 }
 
 /* ═══════════════════════════════════════════════════

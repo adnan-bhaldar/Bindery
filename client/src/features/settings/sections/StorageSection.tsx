@@ -118,18 +118,15 @@ const StorageSection = memo(() => {
                 <button
                     onClick={handleClearAll}
                     disabled={clearing}
+                    className="btn-red-hover"
                     style={{
                         display: 'flex', alignItems: 'center', gap: 6,
                         padding: '8px 16px', borderRadius: 'var(--r-md)',
                         border: '1px solid rgba(239,68,68,0.3)',
-                        background: 'rgba(239,68,68,0.08)',
                         color: '#ef4444', fontSize: 12, fontWeight: 500,
-                        fontFamily: 'var(--font-sans)', cursor: clearing ? 'default' : 'pointer',
+                        fontFamily: 'var(--font-sans)', cursor: clearing ? 'not-allowed' : 'pointer',
                         opacity: clearing ? 0.6 : 1,
-                        transition: 'background 110ms',
                     }}
-                    onMouseEnter={e => { if (!clearing) e.currentTarget.style.background = 'rgba(239,68,68,0.14)' }}
-                    onMouseLeave={e => { if (!clearing) e.currentTarget.style.background = 'rgba(239,68,68,0.08)' }}
                 >
                     {clearing ? <Spinner size={13} /> : <Trash2 size={13} />}
                     {clearing ? 'Clearing…' : 'Clear all data'}
