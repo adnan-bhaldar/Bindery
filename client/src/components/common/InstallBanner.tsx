@@ -108,7 +108,7 @@ export const InstallBanner = memo(() => {
                             </p>
                         </div>
                         <button
-                            className="icon-btn"
+                            className="icon-btn icon-btn-close"
                             onClick={handleDismiss}
                             style={{ flexShrink: 0 }}
                             aria-label="Dismiss install prompt"
