@@ -714,7 +714,7 @@ textarea,
   letter-spacing: -0.1px;
   cursor: pointer;
   white-space: nowrap;
-  box-shadow: 0 2px 12px var(--accent-glow),
+  box-shadow: 0 0 10px var(--accent-glow),
     inset 0 1px 0 rgba(255, 255, 255, 0.15);
   transition: opacity var(--dur-fast), transform var(--dur-fast),
     box-shadow var(--dur-fast);
@@ -722,7 +722,7 @@ textarea,
 
 .nav-export-btn:hover {
   opacity: 0.90;
-  box-shadow: 0 6px 22px var(--accent-glow),
+  box-shadow: 0 0 22px var(--accent-glow),
     inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 
