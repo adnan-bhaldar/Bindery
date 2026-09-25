@@ -120,6 +120,7 @@ export const InstallBanner = memo(() => {
                     {/* Install button */}
                     <button
                         onClick={handleInstall}
+                        className="btn-glow-lift"
                         style={{
                             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
                             padding: '9px 16px',
@@ -127,11 +128,7 @@ export const InstallBanner = memo(() => {
                             border: 'none', borderRadius: 'var(--r-md)',
                             fontSize: 12.5, fontWeight: 600, fontFamily: 'var(--font-sans)',
                             cursor: 'pointer',
-                            boxShadow: '0 2px 10px var(--accent-glow)',
-                            transition: 'opacity 110ms, transform 110ms',
                         }}
-                        onMouseEnter={e => { e.currentTarget.style.opacity = '0.9'; e.currentTarget.style.transform = 'translateY(-1px)' }}
-                        onMouseLeave={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'none' }}
                     >
                         <Download size={13} strokeWidth={2.5} />
                         Install App

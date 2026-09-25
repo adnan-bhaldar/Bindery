@@ -11,7 +11,7 @@ baseline.
 ### Added
 
 - **Hover feedback on segmented controls** — unselected options in every segmented row (Settings sections and the Properties panel) now highlight when hovered; the selected option and disabled rows are unchanged
-- **Hover animations** — buttons across the app now animate smoothly on hover instead of switching instantly: the sign-in dialog (eye icons, tabs, submit glow, Forgot/Back to log in, Copy button with a pop on click), Settings → Account (the same eye-icon and Copy animations, plus a growing glow on Sign in, Update password, and Generate Codes / Regenerate, and a color-matched glow on Sign out and Delete Account), and Settings → App's Install App button (now CSS-driven instead of JS, so it can no longer get stuck lifted if installation starts mid-hover)
+- **Hover animations** — buttons across the app now animate smoothly on hover instead of switching instantly: the sign-in dialog (eye icons, tabs, submit glow, Forgot/Back to log in, Copy button with a pop on click), Settings → Account (the same eye-icon and Copy animations, plus a growing glow on Sign in, Update password, and Generate Codes / Regenerate, and a color-matched glow on Sign out and Delete Account), and Settings → App's Install App button (now CSS-driven instead of JS -- glow only, no lift -- so it can no longer get stuck if installation starts mid-hover)
 - **Light-red hover on close buttons** — the close (X) button in Settings, the sign-in dialog, and the session-recovery prompt now fades to a soft red on hover instead of the neutral grey
 
 ### Changed
@@ -31,6 +31,18 @@ baseline.
 - **Fixed a real focus bug**: the session-recovery prompt listened for Enter/Escape globally even while the sign-in dialog was open on top of it, so pressing Enter to log in or sign up silently triggered "Restore Session" instead, and Log in / Sign up needed a manual click every time. The recovery prompt now steps aside while the sign-in dialog is open
 
 - Settings → Storage's **Clear all data** button now has the same red glow hover as Delete Account, is CSS-driven instead of JS, and shows not-allowed while clearing instead of the plain arrow
+
+- Settings → Appearance's page-list-style toggle (List / Grid preview cards) now highlights the non-selected option on hover instead of showing nothing
+
+- The hover glow on Log in / Create account, Update password, Generate Codes, Sign out, Delete Account, Clear all data, and Restore Session now spreads evenly on all sides instead of leaning downward
+
+- **Fixed a real bug**: Settings → Appearance's Light/Dark theme cards were disabled whenever "Follow system theme" was on (the default), so they couldn't be clicked at all, and their hover animation never showed for the same reason. Clicking either card now switches to it and turns off "Follow system theme" automatically, and the non-selected card's hover now also brightens its outline
+
+- The theme cards' hover is now much more noticeable: an accent-colored outline, and a soft glow, instead of a barely-visible 1px shift
+- The **Install App** button in the install banner/toast (a third copy of this button, separate from the one in Settings → App) no longer shifts upward on hover; it now shows the same glow-only treatment
+
+- The theme card's hover now also fades its background to a lighter shade, smoothly, alongside the lift/outline/glow
+- The Install App glow (used by both the install banner and Settings → App) grows much more noticeably on hover now
 
 ### Fixed
 
