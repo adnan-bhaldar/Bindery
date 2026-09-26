@@ -1870,6 +1870,18 @@ html.theme-switching *::after {
   transition-duration: 220ms;
 }
 
+/* Header's round account icon (logged in). Its ring + glow were a static
+   inline box-shadow (rest === hover) -- moved to a class so hover can grow
+   the glow, matching the rest of the app's hover language. */
+.header-account-btn {
+  box-shadow: 0 0 0 1px var(--accent-border), 0 0 14px 2px rgba(99, 102, 241, 0.55);
+  transition: box-shadow 220ms var(--ease-std);
+}
+
+.header-account-btn:hover {
+  box-shadow: 0 0 0 1px var(--accent-border), 0 0 24px 4px rgba(99, 102, 241, 0.55);
+}
+
 /* This class hardcodes cursor: pointer with no disabled variant, unlike
    every other disabled button in the app. When Export PDF has no pages
    to export (disabled), it fell outside the custom-cursor rule above (by

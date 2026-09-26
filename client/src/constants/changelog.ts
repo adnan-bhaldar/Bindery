@@ -16,7 +16,7 @@ export const CHANGELOG: ChangelogEntry[] = [
             'New: smoother hover animations across the sign-in dialog, Account, App, and recovery-prompt buttons',
             'New: close buttons turn light red on hover, and Copy-code buttons animate on hover and click',
             'Changed: the browser\'s right-click menu no longer appears in the app — use Ctrl+V (⌘V) to paste in text fields',
-            'Fixed: the grab cursor at 100% zoom, and a hover glow that was too faint in the light theme',
+            'Fixed: Light/Dark theme selection was blocked whenever \'Follow system theme\' was on; plus cursor, glow, and hover polish',
         ],
     },
 ]

@@ -22,7 +22,7 @@ baseline.
 - **Session-recovery prompt** — "Restore Session" now has the same glowing hover as the sign-in dialog's submit button, and "Start Fresh" fades smoothly instead of switching instantly
 - The **accent glow** used on button hovers (e.g. Log in, Back to log in) is now stronger in the light theme, where it was barely visible against the lighter background
 
-- The **Import Images**, header **Export**, and header **Sign up** buttons no longer shift upward on hover; each still shows a bigger glow, growing in smoothly (220ms) instead of snapping
+- The **Import Images**, header **Export**, and header **Sign up** buttons no longer shift upward on hover; each shows a bigger glow, growing in smoothly (220ms) and evenly on all sides instead of snapping and leaning downward
 
 - The header's **Export PDF** button now shows the custom cursor when enabled and a proper not-allowed cursor when disabled (empty project), instead of a plain pointer either way
 
@@ -38,11 +38,13 @@ baseline.
 
 - **Fixed a real bug**: Settings → Appearance's Light/Dark theme cards were disabled whenever "Follow system theme" was on (the default), so they couldn't be clicked at all, and their hover animation never showed for the same reason. Clicking either card now switches to it and turns off "Follow system theme" automatically, and the non-selected card's hover now also brightens its outline
 
-- The theme cards' hover is now much more noticeable: an accent-colored outline, and a soft glow, instead of a barely-visible 1px shift
+- The theme cards' hover is now much more noticeable: a bigger lift, an accent-colored outline, and a soft glow, instead of a barely-visible 1px shift
 - The **Install App** button in the install banner/toast (a third copy of this button, separate from the one in Settings → App) no longer shifts upward on hover; it now shows the same glow-only treatment
 
 - The theme card's hover now also fades its background to a lighter shade, smoothly, alongside the lift/outline/glow
 - The Install App glow (used by both the install banner and Settings → App) grows much more noticeably on hover now
+
+- The header's round account icon (when logged in) now grows its glow on hover, instead of showing the same static ring always
 
 ### Fixed
 
