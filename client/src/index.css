@@ -1882,6 +1882,35 @@ html.theme-switching *::after {
   box-shadow: 0 0 0 1px var(--accent-border), 0 0 24px 4px rgba(99, 102, 241, 0.55);
 }
 
+/* Sidebar pages panel's List/Grid view-select (separate from the near-
+   identical one in Settings -> Appearance). Had no hover at all before. */
+.view-toggle-btn {
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: var(--tx-3);
+  cursor: pointer;
+  box-shadow: none;
+  transition: background 220ms var(--ease-std), color 220ms var(--ease-std),
+    box-shadow 220ms var(--ease-std);
+}
+
+.view-toggle-btn.active {
+  background: var(--bg-card);
+  color: var(--tx-1);
+  box-shadow: var(--sh-xs);
+}
+
+.view-toggle-btn:not(.active):hover {
+  background: var(--hover);
+  color: var(--tx-1);
+}
+
 /* This class hardcodes cursor: pointer with no disabled variant, unlike
    every other disabled button in the app. When Export PDF has no pages
    to export (disabled), it fell outside the custom-cursor rule above (by

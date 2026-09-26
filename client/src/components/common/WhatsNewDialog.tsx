@@ -134,7 +134,7 @@ export const WhatsNewDialog = memo(() => {
                                     </p>
                                 </div>
                             </div>
-                            <button className="icon-btn" onClick={dismiss} aria-label="Close" style={{ flexShrink: 0 }}>
+                            <button className="icon-btn icon-btn-close" onClick={dismiss} aria-label="Close" style={{ flexShrink: 0 }}>
                                 <X size={14} />
                             </button>
                         </div>

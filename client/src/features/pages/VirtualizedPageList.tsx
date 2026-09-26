@@ -433,27 +433,13 @@ export const VirtualizedPageList = memo(() => {
                         <Tooltip content="List view" placement="bottom">
                             <button
                                 onClick={() => updateSetting('sidebarLayout', 'list')}
-                                style={{
-                                    width: 22, height: 22, borderRadius: 5, border: 'none',
-                                    background: layout === 'list' ? 'var(--bg-card)' : 'transparent',
-                                    color: layout === 'list' ? 'var(--tx-1)' : 'var(--tx-3)',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    cursor: 'pointer', transition: 'all 110ms',
-                                    boxShadow: layout === 'list' ? 'var(--sh-xs)' : 'none',
-                                }}
+                                className={layout === 'list' ? 'view-toggle-btn active' : 'view-toggle-btn'}
                             ><LayoutList size={12} /></button>
                         </Tooltip>
                         <Tooltip content="Grid view" placement="bottom">
                             <button
                                 onClick={() => updateSetting('sidebarLayout', 'grid')}
-                                style={{
-                                    width: 22, height: 22, borderRadius: 5, border: 'none',
-                                    background: layout === 'grid' ? 'var(--bg-card)' : 'transparent',
-                                    color: layout === 'grid' ? 'var(--tx-1)' : 'var(--tx-3)',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    cursor: 'pointer', transition: 'all 110ms',
-                                    boxShadow: layout === 'grid' ? 'var(--sh-xs)' : 'none',
-                                }}
+                                className={layout === 'grid' ? 'view-toggle-btn active' : 'view-toggle-btn'}
                             ><LayoutGrid size={12} /></button>
                         </Tooltip>
                     </div>
