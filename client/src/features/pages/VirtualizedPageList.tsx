@@ -434,12 +434,14 @@ export const VirtualizedPageList = memo(() => {
                             <button
                                 onClick={() => updateSetting('sidebarLayout', 'list')}
                                 className={layout === 'list' ? 'view-toggle-btn active' : 'view-toggle-btn'}
+                                style={{ width: 22, height: 22, borderRadius: 5 }}
                             ><LayoutList size={12} /></button>
                         </Tooltip>
                         <Tooltip content="Grid view" placement="bottom">
                             <button
                                 onClick={() => updateSetting('sidebarLayout', 'grid')}
                                 className={layout === 'grid' ? 'view-toggle-btn active' : 'view-toggle-btn'}
+                                style={{ width: 22, height: 22, borderRadius: 5 }}
                             ><LayoutGrid size={12} /></button>
                         </Tooltip>
                     </div>

@@ -1884,10 +1884,10 @@ html.theme-switching *::after {
 
 /* Sidebar pages panel's List/Grid view-select (separate from the near-
    identical one in Settings -> Appearance). Had no hover at all before. */
+/* Size/shape are set per usage (inline width/height/borderRadius), since the
+   sidebar's version (22x22, 5px) and the preview toolbar's (28x26, 6px)
+   differ; only the look and hover live here. */
 .view-toggle-btn {
-  width: 22px;
-  height: 22px;
-  border-radius: 5px;
   border: none;
   display: flex;
   align-items: center;

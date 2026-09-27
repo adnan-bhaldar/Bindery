@@ -16,6 +16,7 @@ export const CHANGELOG: ChangelogEntry[] = [
             "Fixed: Light/Dark theme cards couldn't be clicked while 'Follow system theme' was on",
             'Changed: theme card hover is now much more noticeable (lift, outline, glow, background fade)',
             'Changed: the List/Grid view toggles (Appearance and the sidebar) now highlight on hover',
+            "Changed: the What's New dialog's Got it button now glows on hover",
             'Changed: Import Images, Export, Sign up, and Install App no longer shift on hover, just glow',
             'Changed: the header account icon and several buttons now glow evenly on all sides on hover',
             'Changed: Export PDF, Update password, Generate Codes, and Delete Account show the right cursor when disabled',

@@ -12,6 +12,10 @@ baseline.
 
 - The grab cursor no longer appears in the workspace's single-page viewer at 100% zoom, where the page already fits and there is nothing to drag
 
+### Changed
+
+- The What's New dialog's **Got it** button now has the same glowing hover as the sign-in dialog's submit button, instead of just dimming slightly on hover
+
 ## [2.7.0]
 
 ### Changed
@@ -19,7 +23,7 @@ baseline.
 - **Fixed a real bug**: Settings → Appearance's Light/Dark theme cards were disabled whenever "Follow system theme" was on (the default), so they couldn't be clicked at all, and their hover animation never showed for the same reason. Clicking either card now switches to it and turns off "Follow system theme" automatically
 - The theme cards' hover is now much more noticeable: a bigger lift, an accent-colored outline, a soft glow, and a smooth background fade, instead of a barely-visible 1px shift
 - Settings → Appearance's page-list-style toggle (List / Grid preview cards) now highlights the non-selected option on hover instead of showing nothing
-- The sidebar pages panel's List/Grid view-select now highlights the non-selected option on hover (it had no hover feedback at all before) -- separate from the similar toggle in Settings → Appearance above
+- The sidebar pages panel's List/Grid view-select, and the floating preview toolbar's Single/Continuous/Grid view toggle, now highlight the non-selected option on hover (neither had any hover feedback before) -- both separate from the similar toggle in Settings → Appearance above
 
 ## [2.6.0]
 

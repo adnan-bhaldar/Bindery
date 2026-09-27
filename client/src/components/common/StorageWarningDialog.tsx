@@ -133,7 +133,7 @@ const ClearDataConfirm = memo(({
                     }} />
 
                     <button
-                        className="icon-btn"
+                        className="icon-btn icon-btn-close"
                         onClick={onClose}
                         disabled={busy}
                         aria-label="Close"
