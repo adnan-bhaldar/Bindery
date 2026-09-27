@@ -9,7 +9,19 @@ const root = document.getElementById('root')
 if (!root) throw new Error('Root element not found')
 
 // Disable the browser's right-click menu app-wide (custom menus still work)
-document.addEventListener('contextmenu', (e) => e.preventDefault())
+document.addEventListener('contextmenu', (e) => e.preventDefault()) 
+
+
+// Disable browser context menu globally except for interactive elements (inputs, textareas, links)
+// document.addEventListener('contextmenu', (e) => {
+//   if (
+//     e.target instanceof Element &&
+//     e.target.closest('input, textarea, [contenteditable="true"], a')
+//   ) {
+//     return
+//   }
+//   e.preventDefault()
+// })
 
 createRoot(root).render(
   <StrictMode>
