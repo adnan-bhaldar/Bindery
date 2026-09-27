@@ -8,7 +8,6 @@
 
 - [ ] Client (`client/`)
 - [ ] Server (`server/`)
-- [ ] Both
 
 ## Related issue
 
