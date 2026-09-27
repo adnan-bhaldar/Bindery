@@ -134,7 +134,7 @@ export const WhatsNewDialog = memo(() => {
                                     </p>
                                 </div>
                             </div>
-                            <button className="icon-btn" onClick={dismiss} aria-label="Close" style={{ flexShrink: 0 }}>
+                            <button className="icon-btn icon-btn-close" onClick={dismiss} aria-label="Close" style={{ flexShrink: 0 }}>
                                 <X size={14} />
                             </button>
                         </div>
@@ -222,16 +222,14 @@ export const WhatsNewDialog = memo(() => {
                         <div style={{ flexShrink: 0, padding: '0 22px 22px' }}>
                             <button
                                 onClick={dismiss}
+                                className="auth-submit"
                                 style={{
                                     width: '100%', padding: '10px 16px',
                                     background: 'var(--gradient-accent)', color: '#fff',
                                     border: 'none', borderRadius: 12,
                                     fontSize: 12.5, fontWeight: 600, fontFamily: 'var(--font-sans)',
-                                    cursor: 'pointer', boxShadow: '0 2px 10px var(--accent-glow)',
-                                    transition: 'opacity 110ms',
+                                    cursor: 'pointer',
                                 }}
-                                onMouseEnter={e => { e.currentTarget.style.opacity = '0.9' }}
-                                onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}
                             >
                                 Got it
                             </button>

@@ -56,7 +56,7 @@ export const UpdateAvailableDialog = memo(() => {
                             </p>
                         </div>
                         <button
-                            className="icon-btn"
+                            className="icon-btn icon-btn-close"
                             onClick={() => setDismissed(true)}
                             style={{ flexShrink: 0 }}
                             aria-label="Dismiss update prompt"

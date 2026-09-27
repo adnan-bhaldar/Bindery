@@ -25,23 +25,21 @@ const SegRow = ({ options, value, onChange, disabled, onDisabledClick }: {
   disabled?: boolean
   onDisabledClick?: () => void
 }) => (
-  <div style={{
-    display: 'flex', background: 'var(--s3)', borderRadius: 8, padding: 3, gap: 2,
-    opacity: disabled ? 0.45 : 1,
-    transition: 'opacity 110ms',
-  }}>
+  // Look + hover live in index.css (.seg-row / .seg-row-btn); only what differs
+  // from the Settings version (fill the row, smaller text, disabled state) is inline.
+  <div
+    className="seg-row"
+    data-disabled={disabled ? 'true' : undefined}
+    style={{ opacity: disabled ? 0.45 : 1, transition: 'opacity 110ms' }}
+  >
     {options.map(o => (
       <button
         key={o.value}
         onClick={() => disabled ? onDisabledClick?.() : onChange(o.value)}
+        className={value === o.value ? 'seg-row-btn active' : 'seg-row-btn'}
         style={{
-          flex: 1, padding: '5px 4px', borderRadius: 6, border: 'none',
-          background: value === o.value ? 'var(--bg-card)' : 'transparent',
-          color: value === o.value ? 'var(--tx-1)' : 'var(--tx-3)',
-          fontSize: 11, fontWeight: value === o.value ? 600 : 400,
-          fontFamily: 'var(--font-sans)', cursor: disabled ? 'not-allowed' : 'pointer',
-          boxShadow: value === o.value ? 'var(--sh-xs)' : 'none',
-          transition: 'all 110ms', whiteSpace: 'nowrap',
+          flex: 1, padding: '5px 4px', fontSize: 11,
+          cursor: disabled ? 'not-allowed' : 'pointer',
         }}>
         {o.label}
       </button>
@@ -195,6 +193,11 @@ const ExportTab = memo(() => {
     pages.forEach(p => setPageMargin(p.id, v))
   }, [preset.id, updatePreset, pages, setPageMargin])
 
+  // Quality slider: current value ("original" counts as the max, 100) and how
+  // far along the track it is, so index.css can paint the filled part.
+  const quality = preset.compression === 'original' ? 100 : preset.compression
+  const qualityPct = ((quality - 50) / (100 - 50)) * 100
+
   return (
     <div style={{ padding: '14px 14px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
       <div>
@@ -232,9 +235,10 @@ const ExportTab = memo(() => {
           <span style={{ fontSize: 10, color: 'var(--tx-4)', fontFamily: 'var(--font-mono)' }}>50%</span>
           <input
             type="range" min={50} max={100}
-            value={preset.compression === 'original' ? 100 : preset.compression}
+            className="range-slider"
+            value={quality}
             onChange={e => updatePreset(preset.id, { compression: Number(e.target.value) as CompressionQuality })}
-            style={{ flex: 1, accentColor: 'var(--accent)', cursor: 'pointer' }}
+            style={{ flex: 1, cursor: 'pointer', '--pct': `${qualityPct}%` } as React.CSSProperties}
           />
           <span style={{ fontSize: 10, color: 'var(--tx-4)', fontFamily: 'var(--font-mono)' }}>Max</span>
         </div>

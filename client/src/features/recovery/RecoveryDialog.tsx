@@ -5,6 +5,7 @@ import { projectService } from '@/services/projectService'
 import { useProjectStore } from '@/stores/projectStore'
 import { usePagesStore } from '@/stores/pagesStore'
 import { useSettingsStore } from '@/stores/settingsStore'
+import { useAuthStore } from '@/stores/authStore'
 import { formatRelativeTime } from '@/lib/utils'
 import { toast } from 'sonner'
 import type { RecoverySnapshot } from '@/types'
@@ -62,9 +63,15 @@ export const RecoveryDialog = memo(() => {
     }, [setCurrentProject, setPages])
 
     const handleDismiss = useCallback(() => setVisible(false), [])
+    const authDialogOpen = useAuthStore(s => s.dialogOpen)
 
     useEffect(() => {
-        if (!visible) return
+        // The sign-in dialog can be open on top of this one (e.g. right after
+        // opening the app). Without this check, Enter/Escape here always won
+        // the race against the sign-in form's own submit/close -- pressing
+        // Enter to log in silently triggered "Restore" instead, and needed a
+        // manual click on Log in/Sign up every time.
+        if (!visible || authDialogOpen) return
         const onKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Enter') {
                 e.preventDefault()
@@ -76,7 +83,7 @@ export const RecoveryDialog = memo(() => {
         }
         window.addEventListener('keydown', onKeyDown)
         return () => window.removeEventListener('keydown', onKeyDown)
-    }, [visible, restoring, snapshots, handleRestore, handleDismiss])
+    }, [visible, authDialogOpen, restoring, snapshots, handleRestore, handleDismiss])
 
     if (snapshots.length === 0) return null
 
@@ -138,7 +145,7 @@ export const RecoveryDialog = memo(() => {
                                 </p>
                             </div>
                             <button
-                                className="icon-btn"
+                                className="icon-btn icon-btn-close"
                                 onClick={handleDismiss}
                                 style={{ flexShrink: 0 }}
                             >
@@ -185,22 +192,21 @@ export const RecoveryDialog = memo(() => {
                         }}>
                             <button
                                 onClick={handleDismiss}
+                                className="btn-secondary-hover"
                                 style={{
                                     flex: 1, padding: '9px 16px',
                                     borderRadius: 'var(--r-md)',
                                     border: '1px solid var(--border)', background: 'var(--s3)',
                                     color: 'var(--tx-2)', fontSize: 12.5, fontWeight: 500,
                                     fontFamily: 'var(--font-sans)', cursor: 'pointer',
-                                    transition: 'background 110ms',
                                 }}
-                                onMouseEnter={e => { e.currentTarget.style.background = 'var(--s4)' }}
-                                onMouseLeave={e => { e.currentTarget.style.background = 'var(--s3)' }}
                             >
                                 Start Fresh
                             </button>
                             <button
                                 onClick={() => handleRestore(latest)}
                                 disabled={restoring}
+                                className="btn-primary-glow"
                                 style={{
                                     flex: 1, padding: '9px 16px',
                                     borderRadius: 'var(--r-md)',
@@ -208,8 +214,6 @@ export const RecoveryDialog = memo(() => {
                                     color: '#fff', fontSize: 12.5, fontWeight: 600,
                                     fontFamily: 'var(--font-sans)', cursor: 'pointer',
                                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                                    boxShadow: '0 2px 10px var(--accent-glow)',
-                                    transition: 'opacity 110ms',
                                     opacity: restoring ? 0.7 : 1,
                                 }}
                             >

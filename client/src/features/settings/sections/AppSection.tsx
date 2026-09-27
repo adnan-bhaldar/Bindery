@@ -78,6 +78,7 @@ const AppSection = memo(() => {
                         <button
                             onClick={handleInstall}
                             disabled={installing}
+                            className="btn-glow-lift"
                             style={{
                                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                                 width: '100%', padding: '10px 16px',
@@ -87,11 +88,7 @@ const AppSection = memo(() => {
                                 fontFamily: 'var(--font-sans)',
                                 cursor: installing ? 'default' : 'pointer',
                                 opacity: installing ? 0.7 : 1,
-                                boxShadow: '0 4px 16px var(--accent-glow)',
-                                transition: 'transform 130ms, box-shadow 130ms',
                             }}
-                            onMouseEnter={e => { if (!installing) { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 6px 20px var(--accent-glow)' } }}
-                            onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 4px 16px var(--accent-glow)' }}
                         >
                             {installing ? <Spinner size={14} /> : <Download size={14} />}
                             {installing ? 'Installing…' : 'Install App'}

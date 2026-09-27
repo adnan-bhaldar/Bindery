@@ -153,14 +153,8 @@ export const PreviewToolbar = memo((props: Props) => {
                     <Tooltip key={id} content={label} placement="top">
                         <button
                             onClick={() => onViewChange(id)}
-                            style={{
-                                width: 28, height: 26, borderRadius: 6, border: 'none',
-                                background: view === id ? 'var(--bg-card)' : 'transparent',
-                                color: view === id ? 'var(--tx-1)' : 'var(--tx-3)',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                cursor: 'pointer', transition: 'all 110ms',
-                                boxShadow: view === id ? 'var(--sh-xs)' : 'none',
-                            }}
+                            className={view === id ? 'view-toggle-btn active' : 'view-toggle-btn'}
+                            style={{ width: 28, height: 26, borderRadius: 6 }}
                         >
                             <Icon size={13} />
                         </button>

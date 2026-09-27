@@ -128,6 +128,11 @@ export const healthPage = (req, res) => {
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
+    body,
+    a[href] {
+      cursor: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTkuMzkxMTggMi4zMTk2M0M4LjQxOTUgMS41NjAyNiA3IDIuMjUyNzkgNyAzLjQ4NjJWMjguNDA5NkM3IDI5Ljk0ODEgOC45NjY0OCAzMC41OTAxIDkuODczODYgMjkuMzQ3OEwxNi4wOTg3IDIwLjgyNTNDMTYuNDc1MiAyMC4zMDk3IDE3LjA3NTIgMjAuMDA0OSAxNy43MTM2IDIwLjAwNDlIMjcuNDAzNUMyOC45MTU2IDIwLjAwNDkgMjkuNTc0IDE4LjA5MjUgMjguMzgyNCAxNy4xNjEyTDkuMzkxMTggMi4zMTk2M1oiCiAgICAgIGZpbGw9IiNmZmZjZmMiCiAgICAgIHN0cm9rZT0iIzAwMDAwMCIKICAgICAgc3Ryb2tlLXdpZHRoPSIxIi8+Cjwvc3ZnPg==') 4 2, auto;
+    }
+
     :root {
       --bg: #06070b;
       --panel: rgba(18, 20, 30, 0.72);

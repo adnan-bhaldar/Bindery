@@ -41,8 +41,20 @@ const ThemePreviewCard = memo(({ previewTheme, accent, active, onClick, disabled
                 opacity: disabled ? 0.45 : 1,
                 transition: 'all 220ms var(--ease-out)',
             }}
-            onMouseEnter={e => { if (!active && !disabled) e.currentTarget.style.transform = 'translateY(-1px)' }}
-            onMouseLeave={e => { if (!active && !disabled) e.currentTarget.style.transform = 'none' }}
+            onMouseEnter={e => {
+                if (active || disabled) return
+                e.currentTarget.style.transform = 'translateY(-2px)'
+                e.currentTarget.style.outlineColor = accent
+                e.currentTarget.style.boxShadow = `0 0 22px ${accent}33, var(--sh-xs)`
+                e.currentTarget.style.background = 'var(--s3)'
+            }}
+            onMouseLeave={e => {
+                if (active || disabled) return
+                e.currentTarget.style.transform = 'none'
+                e.currentTarget.style.outlineColor = 'var(--border)'
+                e.currentTarget.style.boxShadow = 'var(--sh-xs)'
+                e.currentTarget.style.background = 'var(--s2)'
+            }}
         >
             {/* Ambient glow — only for the active card, gives it a "lit up" feel */}
             {active && (
@@ -216,12 +228,9 @@ const LayoutToggle = memo(({ value, onChange }: {
                 <button
                     key={v}
                     onClick={() => onChange(v)}
+                    className={active ? 'layout-toggle-btn active' : 'layout-toggle-btn'}
                     style={{
                         width: 72, height: 52, borderRadius: 10, border: 'none', cursor: 'pointer',
-                        background: active ? 'var(--accent-dim)' : 'var(--s3)',
-                        outline: active ? '2px solid var(--accent-border)' : '2px solid var(--border)',
-                        outlineOffset: 0,
-                        transition: 'all 150ms',
                         display: 'flex', flexDirection: 'column',
                         alignItems: 'center', justifyContent: 'center', gap: 4,
                         padding: 8,
@@ -262,8 +271,8 @@ const AppearanceSection = memo(() => {
         <div>
             <Card id="setting-theme" title="Theme" icon={Palette}>
                 <div style={{ display: 'flex', gap: 14, marginBottom: 14 }}>
-                    <ThemePreviewCard previewTheme="light" accent={accent} active={resolvedTheme === 'light'} onClick={() => setTheme('light')} disabled={theme === 'system'} />
-                    <ThemePreviewCard previewTheme="dark" accent={accent} active={resolvedTheme === 'dark'} onClick={() => setTheme('dark')} disabled={theme === 'system'} />
+                    <ThemePreviewCard previewTheme="light" accent={accent} active={resolvedTheme === 'light'} onClick={() => setTheme('light')} />
+                    <ThemePreviewCard previewTheme="dark" accent={accent} active={resolvedTheme === 'dark'} onClick={() => setTheme('dark')} />
                 </div>
                 <CardRow label="Follow system theme" desc="Auto-switch based on OS preference" last>
                     <Toggle

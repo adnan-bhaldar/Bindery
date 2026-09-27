@@ -1,6 +1,6 @@
 {
   "name": "server",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Bindery backend — stores user accounts and app settings in MongoDB",
   "type": "module",
   "main": "server.js",
