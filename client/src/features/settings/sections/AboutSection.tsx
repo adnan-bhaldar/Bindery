@@ -6,28 +6,48 @@ import { Card, GithubMark } from '../primitives'
 const AboutSection = memo(() => (
     <div>
         <Card id="setting-about">
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 4 }}>
-                <div style={{
-                    width: 56, height: 56, borderRadius: 16,
-                    background: 'var(--gradient-accent)',
-                    boxShadow: '0 4px 20px var(--accent-glow)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    overflow: 'hidden',
-                }}>
-                    <img
-                        src="/icons/favicon.svg"
-                        alt="logo"
-                        draggable={false}
-                        onContextMenu={e => e.preventDefault()}
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                    />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
+                {/* Ambient glow sits behind the tile so the mark reads as the
+                    hero of this card, not just another icon in the list. */}
+                <div style={{ position: 'relative', width: 56, height: 56, flexShrink: 0 }}>
+                    <div style={{
+                        position: 'absolute', inset: -10, borderRadius: '50%',
+                        background: 'radial-gradient(circle, var(--accent-glow), transparent 70%)',
+                        filter: 'blur(6px)', opacity: 0.8,
+                    }} />
+                    <div style={{
+                        position: 'relative',
+                        width: 56, height: 56, borderRadius: 16,
+                        background: 'var(--gradient-accent)',
+                        boxShadow: '0 0 24px var(--accent-glow), inset 0 1px 0 rgba(255, 255, 255, 0.22)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        overflow: 'hidden',
+                    }}>
+                        <img
+                            src="/icons/favicon.svg"
+                            alt="logo"
+                            draggable={false}
+                            onContextMenu={e => e.preventDefault()}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
+                    </div>
                 </div>
                 <div>
-                    <p style={{ fontSize: 16, fontWeight: 700, color: 'var(--tx-1)', letterSpacing: '-0.4px' }}>
-                        Bindery
-                    </p>
-                    <p style={{ fontSize: 12, color: 'var(--tx-3)', marginTop: 2 }}>
-                        Version {APP_VERSION} · Professional Image to PDF
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <p style={{ fontSize: 17, fontWeight: 700, color: 'var(--tx-1)', letterSpacing: '-0.4px' }}>
+                            Bindery
+                        </p>
+                        <span style={{
+                            padding: '2px 8px', borderRadius: 'var(--r-full)',
+                            background: 'var(--accent-dim)', color: 'var(--accent)',
+                            fontSize: 10.5, fontWeight: 600, fontFamily: 'var(--font-mono)',
+                            letterSpacing: '0.2px',
+                        }}>
+                            v{APP_VERSION}
+                        </span>
+                    </div>
+                    <p style={{ fontSize: 12, color: 'var(--tx-3)', marginTop: 4 }}>
+                        Professional Image to PDF
                     </p>
                 </div>
             </div>
