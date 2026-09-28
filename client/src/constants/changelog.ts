@@ -10,7 +10,7 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
     {
-        version: '2.7.1',
+        version: '2.7.2',
         highlights: [
             'Fixed: the grab cursor no longer shows in the workspace viewer at 100% zoom',
             "Fixed: Light/Dark theme cards couldn't be clicked while 'Follow system theme' was on",
