@@ -182,19 +182,16 @@ const ExportSettings = memo(({ filename, onFilenameChange }: {
             <Card title="Quality Preset" icon={Layers}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4, paddingTop: 4 }}>
                     {presets.map(p => (
-                        <button key={p.id} onClick={() => setActivePreset(p.id)} style={{
-                            display: 'flex', alignItems: 'center', gap: 12,
-                            padding: '10px 12px',
-                            background: activePresetId === p.id ? 'var(--accent-dim)' : 'var(--s3)',
-                            border: `1px solid ${activePresetId === p.id ? 'var(--accent-border)' : 'var(--border)'}`,
-                            borderRadius: 'var(--r-md)', cursor: 'pointer',
-                            transition: 'all 110ms', textAlign: 'left',
-                        }}>
-                            <div style={{
-                                width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
-                                background: activePresetId === p.id ? 'var(--accent)' : 'var(--border-hard)',
-                                transition: 'background 110ms',
-                            }} />
+                        <button
+                            key={p.id}
+                            onClick={() => setActivePreset(p.id)}
+                            className={activePresetId === p.id ? 'option-row option-row--filled active' : 'option-row option-row--filled'}
+                            style={{
+                                display: 'flex', alignItems: 'center', gap: 12,
+                                padding: '10px 12px',
+                                borderRadius: 'var(--r-md)', textAlign: 'left',
+                            }}>
+                            <div className="option-dot" style={{ width: 8, height: 8, borderRadius: '50%', flexShrink: 0 }} />
                             <div style={{ flex: 1 }}>
                                 <p style={{ fontSize: 12, fontWeight: 500, color: 'var(--tx-1)' }}>{p.name}</p>
                                 <p style={{ fontSize: 11, color: 'var(--tx-3)', marginTop: 1 }}>
@@ -211,14 +208,15 @@ const ExportSettings = memo(({ filename, onFilenameChange }: {
             <Card title="Image Quality" icon={SlidersHorizontal}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4, paddingTop: 4 }}>
                     {QUALITY_OPTIONS.map(q => (
-                        <button key={String(q.value)} onClick={() => updatePreset(preset.id, { compression: q.value })} style={{
-                            display: 'flex', alignItems: 'center', gap: 12, justifyContent: 'space-between',
-                            padding: '8px 12px',
-                            background: preset.compression === q.value ? 'var(--accent-dim)' : 'transparent',
-                            border: `1px solid ${preset.compression === q.value ? 'var(--accent-border)' : 'transparent'}`,
-                            borderRadius: 'var(--r-md)', cursor: 'pointer',
-                            transition: 'all 110ms',
-                        }}>
+                        <button
+                            key={String(q.value)}
+                            onClick={() => updatePreset(preset.id, { compression: q.value })}
+                            className={preset.compression === q.value ? 'option-row active' : 'option-row'}
+                            style={{
+                                display: 'flex', alignItems: 'center', gap: 12, justifyContent: 'space-between',
+                                padding: '8px 12px',
+                                borderRadius: 'var(--r-md)',
+                            }}>
                             <div style={{ display: 'flex', gap: 10 }}>
                                 <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--tx-1)', minWidth: 56 }}>{q.label}</span>
                                 <span style={{ fontSize: 11.5, color: 'var(--tx-3)' }}>{q.desc}</span>
@@ -515,7 +513,7 @@ export const ExportDialog = memo(() => {
                                 </p>
                             </div>
                             <Tooltip content="Close" shortcut="Esc" placement="bottom">
-                                <button className="icon-btn" onClick={closeDialog} disabled={isExporting}>
+                                <button className="icon-btn icon-btn-close" onClick={closeDialog} disabled={isExporting}>
                                     <X size={15} />
                                 </button>
                             </Tooltip>
@@ -571,19 +569,19 @@ export const ExportDialog = memo(() => {
                             <button
                                 onClick={handleExport}
                                 disabled={isExporting || pageCount === 0}
+                                className="auth-submit"
                                 style={{
                                     display: 'flex', alignItems: 'center', gap: 7,
                                     padding: '8px 20px', borderRadius: 'var(--r-md)',
                                     background: isExporting ? 'var(--s4)' : 'var(--gradient-accent)',
                                     color: '#fff', border: 'none',
                                     fontSize: 12.5, fontWeight: 600,
-                                    fontFamily: 'var(--font-sans)', cursor: isExporting ? 'not-allowed' : 'pointer',
-                                    boxShadow: isExporting ? 'none' : '0 2px 12px var(--accent-glow)',
-                                    transition: 'opacity 110ms, transform 110ms, box-shadow 110ms',
+                                    fontFamily: 'var(--font-sans)',
+                                    cursor: (isExporting || pageCount === 0) ? 'not-allowed' : 'pointer',
+                                    // No glow while exporting (inline beats the class's shadow)
+                                    boxShadow: isExporting ? 'none' : undefined,
                                     opacity: (isExporting || pageCount === 0) ? 0.6 : 1,
                                 }}
-                                onMouseEnter={e => { if (!isExporting && pageCount > 0) { e.currentTarget.style.opacity = '0.9'; e.currentTarget.style.transform = 'translateY(-1px)' } }}
-                                onMouseLeave={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'none' }}
                             >
                                 {isExporting
                                     ? <><Loader2 size={13} style={{ animation: 'spin 0.8s linear infinite' }} /> Exporting…</>

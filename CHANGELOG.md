@@ -6,15 +6,28 @@ release below adds functionality or fixes bugs without breaking existing
 usage, so all of them are `MINOR` or `PATCH` bumps against the `1.0.0`
 baseline.
 
+## [2.7.2]
+
+### Fixed
+
+- The custom cursor is now re-applied as soon as the system file picker (Import Images) closes
+
+### Changed
+
+- The Export dialog's **Quality Preset** cards and **Image Quality** rows now highlight on hover when they aren't selected (the preset's dot also brightens and grows slightly); they had no hover feedback before
+
 ## [2.7.1]
+
+### Changed
+
+- Settings → About has a more premium look while staying compact: an ambient glow behind the logo, a version pill next to the app name, Profile and Source as pill buttons on one row (the Source arrow nudges right on hover), and Built With rows with a small accent dot per entry and the value in a subtle chip
+- The What's New dialog's **Got it** button now has the same glowing hover as the sign-in dialog's submit button, instead of just dimming slightly on hover
+- The Export dialog's **Export PDF** button now grows a glow on hover instead of lifting and dimming, and shows a not-allowed cursor when there is nothing to export
 
 ### Fixed
 
 - The grab cursor no longer appears in the workspace's single-page viewer at 100% zoom, where the page already fits and there is nothing to drag
-
-### Changed
-
-- The What's New dialog's **Got it** button now has the same glowing hover as the sign-in dialog's submit button, instead of just dimming slightly on hover
+- The custom cursor no longer falls back to the browser's default arrow after the system file picker (Import Images) closes
 
 ## [2.7.0]
 
