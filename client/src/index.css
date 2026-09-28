@@ -1882,6 +1882,65 @@ html.theme-switching *::after {
   box-shadow: 0 0 0 1px var(--accent-border), 0 0 24px 4px rgba(99, 102, 241, 0.55);
 }
 
+/* Settings -> About: the Profile / Source chip buttons */
+.about-chip-btn {
+  background: var(--s3);
+  border: 1px solid var(--border);
+  transition: background 220ms var(--ease-std), border-color 220ms var(--ease-std),
+    transform 220ms var(--ease-std);
+}
+
+.about-chip-btn:hover {
+  background: var(--s4);
+  border-color: var(--border-hard);
+  transform: translateY(-1px);
+}
+
+.about-source-arrow {
+  transition: transform 220ms var(--ease-std);
+}
+
+.about-chip-btn:hover .about-source-arrow {
+  transform: translateX(3px);
+}
+
+/* Export dialog option rows (Quality Preset cards and Image Quality rows).
+   Background/border live here, not inline, so the non-selected hover works. */
+.option-row {
+  background: transparent;
+  border: 1px solid transparent;
+  transition: background 220ms var(--ease-std), border-color 220ms var(--ease-std);
+}
+
+.option-row--filled {
+  background: var(--s3);
+  border-color: var(--border);
+}
+
+.option-row.active {
+  background: var(--accent-dim);
+  border-color: var(--accent-border);
+}
+
+.option-row:not(.active):hover {
+  background: var(--s4);
+  border-color: var(--border-hard);
+}
+
+.option-dot {
+  background: var(--border-hard);
+  transition: background 220ms var(--ease-std), transform 220ms var(--ease-std);
+}
+
+.option-row.active .option-dot {
+  background: var(--accent);
+}
+
+.option-row:not(.active):hover .option-dot {
+  background: var(--tx-3);
+  transform: scale(1.25);
+}
+
 /* Sidebar pages panel's List/Grid view-select (separate from the near-
    identical one in Settings -> Appearance). Had no hover at all before. */
 /* Size/shape are set per usage (inline width/height/borderRadius), since the
