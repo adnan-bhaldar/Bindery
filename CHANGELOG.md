@@ -6,11 +6,15 @@ release below adds functionality or fixes bugs without breaking existing
 usage, so all of them are `MINOR` or `PATCH` bumps against the `1.0.0`
 baseline.
 
-## [2.7.2]
+## [2.7.3]
 
 ### Fixed
 
-- The custom cursor is now re-applied as soon as the system file picker (Import Images) closes
+- The recovery prompt's **Restore Session** button now shows a not-allowed cursor while restoring, instead of the plain pointer for that moment
+- The custom cursor is now re-applied as soon as the system file picker (Import Images) closes, instead of staying the browser's default arrow until the mouse moved; it refreshes every element (not just the page background) and also dispatches a synthetic pointer event at the last known mouse position, since browsers only repaint the cursor bitmap in response to a hit-test, not a CSS change alone
+- The custom-cursor fix now lives in its own `src/lib/cursorRefresh.ts` instead of inline in `main.tsx`, to keep that file short
+
+## [2.7.2]
 
 ### Changed
 
@@ -27,7 +31,6 @@ baseline.
 ### Fixed
 
 - The grab cursor no longer appears in the workspace's single-page viewer at 100% zoom, where the page already fits and there is nothing to drag
-- The custom cursor no longer falls back to the browser's default arrow after the system file picker (Import Images) closes
 
 ## [2.7.0]
 
