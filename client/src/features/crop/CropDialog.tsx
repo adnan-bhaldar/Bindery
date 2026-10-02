@@ -556,11 +556,12 @@ export const CropDialog = memo(() => {
                                 <button
                                     onClick={handleClose}
                                     aria-label="Close"
-                                    style={{
-                                        background: 'transparent', border: 'none', cursor: 'pointer',
-                                        color: 'var(--tx-3)', padding: 4, borderRadius: 'var(--r-sm)',
-                                        display: 'flex',
-                                    }}
+                                    className='icon-btn icon-btn-close'
+                                    // style={{
+                                    //     background: 'transparent', border: 'none', cursor: 'pointer',
+                                    //     color: 'var(--tx-3)', padding: 4, borderRadius: 'var(--r-sm)',
+                                    //     display: 'flex',
+                                    // }}
                                 >
                                     <X size={16} />
                                 </button>

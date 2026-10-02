@@ -11,6 +11,7 @@ baseline.
 ### Fixed
 
 - The recovery prompt's **Restore Session** button now shows a not-allowed cursor while restoring, instead of the plain pointer for that moment
+- The custom-cursor fix now also polls window focus directly (every 200ms) instead of relying only on the file input's change/cancel events and the window focus event, since closing the file picker without choosing an image didn't reliably fire any of those
 - The custom cursor is now re-applied as soon as the system file picker (Import Images) closes, instead of staying the browser's default arrow until the mouse moved; it refreshes every element (not just the page background) and also dispatches a synthetic pointer event at the last known mouse position, since browsers only repaint the cursor bitmap in response to a hit-test, not a CSS change alone
 - The custom-cursor fix now lives in its own `src/lib/cursorRefresh.ts` instead of inline in `main.tsx`, to keep that file short
 

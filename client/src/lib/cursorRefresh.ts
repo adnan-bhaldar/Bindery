@@ -73,12 +73,26 @@ export function initCursorRefresh(): () => void {
     document.addEventListener('change', onFileEvent, true)
     document.addEventListener('cancel', onFileEvent, true)
 
+    // Belt-and-braces: 'cancel' on a file input isn't supported everywhere,
+    // and 'focus' isn't guaranteed to fire the same way for every browser/OS
+    // combination when a dialog is dismissed vs. when a file is picked --
+    // which is exactly the asymmetry (works after importing, not after
+    // closing without picking a file) this is meant to catch. Poll actual
+    // focus state directly instead of trusting any single event to fire.
+    let wasFocused = document.hasFocus()
+    const pollId = window.setInterval(() => {
+        const isFocused = document.hasFocus()
+        if (isFocused && !wasFocused) nudgeSoon()
+        wasFocused = isFocused
+    }, 200)
+
     return () => {
         window.removeEventListener('mousemove', trackPointer)
         window.removeEventListener('focus', nudgeSoon)
         document.removeEventListener('visibilitychange', onVisibility)
         document.removeEventListener('change', onFileEvent, true)
         document.removeEventListener('cancel', onFileEvent, true)
+        window.clearInterval(pollId)
         timeouts.forEach(clearTimeout)
     }
 }

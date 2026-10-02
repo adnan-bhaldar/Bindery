@@ -13,6 +13,7 @@ export const CHANGELOG: ChangelogEntry[] = [
         version: '2.7.3',
         highlights: [
             'Fixed: the custom cursor is re-applied right after the file picker closes',
+            'Fixed: Restore Session showed a plain pointer instead of not-allowed while restoring',
         ],
     },
 ]
