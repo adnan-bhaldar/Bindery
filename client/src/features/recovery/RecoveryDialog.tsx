@@ -212,7 +212,7 @@ export const RecoveryDialog = memo(() => {
                                     borderRadius: 'var(--r-md)',
                                     border: 'none', background: 'var(--gradient-accent)',
                                     color: '#fff', fontSize: 12.5, fontWeight: 600,
-                                    fontFamily: 'var(--font-sans)', cursor: 'pointer',
+                                    fontFamily: 'var(--font-sans)', cursor: restoring ? 'not-allowed' : 'pointer',
                                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                                     opacity: restoring ? 0.7 : 1,
                                 }}
